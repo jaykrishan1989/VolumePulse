@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Volume Pulse — IBKR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=8" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <h1>Volume Pulse</h1>
+          <p>High-volume US stocks, streamed from IBKR Gateway</p>
+        </div>
+      </div>
+
+      <div class="session" id="sessionChip">
+        <span class="dot"></span>
+        <span id="sessionLabel">connecting</span>
+        <span class="sep">·</span>
+        <span id="nyClock">--:--:-- ET</span>
+      </div>
+
+      <div class="link" id="linkChip" title="IBKR Gateway connection">
+        <span class="pill" id="modePill">…</span>
+        <span id="linkText">127.0.0.1:4001</span>
+      </div>
+    </header>
+
+    <section class="toolbar">
+      <div class="scans" id="scanPills" role="tablist" aria-label="Scanner">
+        <button class="scan on" data-scan="sp500">S&amp;P 500</button>
+        <button class="scan" data-scan="hot_volume">Hot by volume</button>
+        <button class="scan" data-scan="most_active">Most active</button>
+        <button class="scan" data-scan="top_percent_gain">Top % gain</button>
+        <button class="scan" data-scan="top_percent_lose">Top % lose</button>
+      </div>
+      <div class="tools">
+        <div class="view-toggle" role="tablist" aria-label="Layout">
+          <button class="view" data-view="tiles" type="button">Tiles</button>
+          <button class="view on" data-view="bubbles" type="button">Bubbles</button>
+        </div>
+        <label class="sort">
+          Rank by
+          <select id="sortBy">
+            <option value="pace">Pace (projected RVOL)</option>
+            <option value="rvol">Relative volume</option>
+            <option value="volumeRate">Volume per minute</option>
+            <option value="volume">Share volume</option>
+            <option value="dollarVolume">Dollar volume</option>
+            <option value="changePct">% change</option>
+            <option value="tradeRate">Trades per minute</option>
+          </select>
+        </label>
+        <input id="filter" type="search" placeholder="Filter ticker…" spellcheck="false" />
+      </div>
+    </section>
+
+    <div class="legend-row">
+      <p class="legend" id="legendText">
+        Tile size is <strong>pace</strong> — today’s volume vs a typical full day, adjusted for how much of the session has elapsed.
+        Color is <strong>price change</strong>. A 1.0× pace is normal; 2.0× means the stock is trading twice its usual rate.
+      </p>
+      <p class="meta" id="metaLine"></p>
+    </div>
+
+    <div class="alert" id="alertBar" hidden></div>
+
+    <main class="stage">
+      <section class="viz" id="vizWrap" data-mode="bubbles">
+        <div class="heat" id="heat"></div>
+        <div class="bubble-stage" id="bubbleStage"></div>
+      </section>
+
+      <aside class="side">
+        <article class="detail" id="detail">
+          <div class="detail-empty">Click a name to pin it</div>
+        </article>
+        <section class="tape-wrap">
+          <h2>Prints</h2>
+          <div class="tape" id="tape"></div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="board-wrap">
+      <table class="board">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Symbol</th>
+            <th class="num">Last</th>
+            <th class="num">Chg</th>
+            <th class="num">Chg %</th>
+            <th class="num" id="volHeading">Volume</th>
+            <th class="num">Avg vol</th>
+            <th class="num">RVOL</th>
+            <th class="num">Pace</th>
+            <th>Pace bar</th>
+            <th class="num">Vol / min</th>
+            <th>Flow</th>
+          </tr>
+        </thead>
+        <tbody id="boardBody"></tbody>
+      </table>
+    </section>
+  </div>
+  <script src="app.js?v=8"></script>
+</body>
+</html>
