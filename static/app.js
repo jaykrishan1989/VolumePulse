@@ -26,6 +26,7 @@ const bubbleStage = document.getElementById("bubbleStage");
 const etfBoard = document.getElementById("etfBoard");
 const overviewBoard = document.getElementById("overviewBoard");
 const midBoard = document.getElementById("midBoard");
+const entryBoard = document.getElementById("entryBoard");
 const printsBoard = document.getElementById("printsBoard");
 const printsBody = document.getElementById("printsBody");
 const printsBtn = document.getElementById("printsBtn");
@@ -458,6 +459,69 @@ function fmtVol(n) {
   if (abs >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
   if (abs >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
   return Math.round(n).toString();
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[ch]));
+}
+
+function entryAge(row) {
+  const bars = row.entryBars;
+  if (bars == null) return "—";
+  if (bars <= 0) return "this bar";
+  const mins = row.entryAgoSec != null ? Math.max(0, Math.round(row.entryAgoSec / 60)) : bars * 5;
+  return `${bars} bar${bars === 1 ? "" : "s"} · ${mins}m`;
+}
+
+function entryPlan(row) {
+  if (row.entryScore == null) return "";
+  const chips = (row.entryReasons || [])
+    .map((reason) => `<span class="reason-chip">${esc(reason)}</span>`)
+    .join("");
+  return `<div class="entry-side">
+    <div class="reason-row">${chips}</div>
+    <div class="kv">
+      <div><span>Entry</span><b>${fmtNum(row.entryLow)} – ${fmtNum(row.entryHigh)}</b></div>
+      <div><span>Stop</span><b>${fmtNum(row.entryStop)}</b></div>
+      <div><span>Target</span><b>${fmtNum(row.entryTarget)}</b></div>
+      <div><span>Reward / risk</span><b>${fmtX(row.entryRR)}</b></div>
+      <div><span>Since trigger</span><b>${esc(entryAge(row))}</b></div>
+    </div>
+  </div>`;
+}
+
+function renderEntryBoard(snap, rows, selectedSymbol) {
+  if (!entryBoard) return;
+  const cards = rows.length
+    ? `<div class="entry-list">${rows.map((row) => `
+        <button type="button" class="entry-card${row.symbol === selectedSymbol ? " selected" : ""}" data-symbol="${esc(row.symbol)}">
+          <div class="entry-score">${row.entryScore ?? "—"}<span>score</span></div>
+          <div>
+            <div class="entry-top">
+              <div class="entry-sym">${esc(row.symbol)}${feedMode === "demo" ? " · SIM" : ""}</div>
+              <div class="entry-last"><b>${fmtNum(row.last)}</b> <span class="${chgClass(row.changePct)}">${signedPct(row.changePct)}</span> · ${esc(entryAge(row))}</div>
+            </div>
+            <div class="reason-row">${(row.entryReasons || []).map((reason) => `<span class="reason-chip">${esc(reason)}</span>`).join("")}</div>
+            <div class="entry-metrics">
+              <div><span>Entry</span><b>${fmtNum(row.entryLow)} – ${fmtNum(row.entryHigh)}</b></div>
+              <div class="stop"><span>Stop</span><b>${fmtNum(row.entryStop)}</b></div>
+              <div class="target"><span>Target</span><b>${fmtNum(row.entryTarget)}</b></div>
+              <div><span>Reward / risk</span><b>${fmtX(row.entryRR)}</b></div>
+            </div>
+          </div>
+        </button>`).join("")}</div>`
+    : `<p class="entry-empty">${esc(snap.entryNote || "No fresh long entry on this tape.")}</p>`;
+  entryBoard.innerHTML = `
+    <p class="entry-disclaimer">${esc(snap.entryDisclaimer || "Not financial advice. Volume Pulse never places orders.")}</p>
+    ${rows.length ? `<p class="entry-note">${esc(snap.entryNote || "")}</p>` : ""}
+    ${cards}
+  `;
 }
 
 function fmtX(n) {
@@ -991,7 +1055,7 @@ function render(snap) {
   } else if (snap.lastError && snap.mode !== "live") {
     alertBar.hidden = false;
     alertBar.textContent = snap.lastError;
-  } else if (snap.mode === "live" && !snap.usingScanner && snap.scan !== "etfs" && snap.scan !== "overview" && snap.scan !== "mid_price") {
+  } else if (snap.mode === "live" && !snap.usingScanner && snap.scan !== "etfs" && snap.scan !== "overview" && snap.scan !== "mid_price" && snap.scan !== "right_time") {
     alertBar.hidden = false;
     alertBar.textContent = snap.scan === "sp500"
       ? "S&P 500 mode — showing liquid index names ranked by volume. IBKR’s raw hot-volume scan had few S&P 500 hits this session."
@@ -1024,6 +1088,9 @@ function render(snap) {
   } else if (legend && snap.scan === "overview") {
     legend.innerHTML =
       "Each card is a <strong>market category</strong>. The large number is that group’s ETF move — <strong>blue up / dark red down</strong>. Click a card to see the stocks.";
+  } else if (legend && snap.scan === "right_time") {
+    legend.innerHTML =
+      "A name is here only while it is a <strong>fresh intraday long</strong>: a real pullback that just turned up, with volume behind the bounce and room back toward the high. It <strong>leaves the list</strong> once that setup is stale, broken, or extended. Double-click for the chart. <strong>Not financial advice</strong> — this app never places orders.";
   } else if (legend && snap.scan === "mid_price") {
     legend.innerHTML =
       "S&amp;P 500 names trading <strong>$10–$50</strong> with established financials. Color is <strong>% vs yesterday’s close</strong>. Click <strong>+2%</strong> or <strong>−4%</strong> for quality names up at least 2% or down at least 4%.";
@@ -1070,7 +1137,9 @@ function render(snap) {
     if (midMoverFilter === "up2") rows = midMoverLists(rows).up2;
     else if (midMoverFilter === "down4") rows = midMoverLists(rows).down4;
   }
-  if (!(snap.scan === "mid_price" && midMoverFilter)) {
+  if (snap.scan === "right_time") {
+    rows = [...rows].sort((a, b) => (b.entryScore || 0) - (a.entryScore || 0) || String(a.symbol).localeCompare(String(b.symbol)));
+  } else if (!(snap.scan === "mid_price" && midMoverFilter)) {
     const sortKey = snap.scan === "mid_price" && sortBy.value === "pace" ? "volume" : sortBy.value;
     rows = sortTickers(rows, sortKey, sortKey === "changePct" ? sortDir : "desc");
   }
@@ -1089,7 +1158,7 @@ function render(snap) {
   });
   document.querySelector(".app")?.classList.toggle(
     "etf-mode",
-    viewMode === "prints" || snap.scan === "etfs" || snap.scan === "overview" || snap.scan === "mid_price"
+    viewMode === "prints" || snap.scan === "etfs" || snap.scan === "overview" || snap.scan === "mid_price" || snap.scan === "right_time"
   );
   printsBtn?.classList.toggle("on", viewMode === "prints");
 
@@ -1115,6 +1184,10 @@ function render(snap) {
     bubbleSim.stop();
     vizWrap.dataset.mode = "mid";
     renderMidTable(rows, selected, midUniverse);
+  } else if (snap.scan === "right_time") {
+    bubbleSim.stop();
+    vizWrap.dataset.mode = "entry";
+    renderEntryBoard(snap, rows, selected);
   } else if (viewMode === "bubbles") {
     vizWrap.dataset.mode = "bubbles";
     bubbleSim.setRows(rows, selected);
@@ -1195,6 +1268,7 @@ function renderDetail(row) {
     <h3>${row.symbol}${feedMode === "demo" ? " · SIM" : ""}</h3>
     <div class="px ${chgClass(row.changePct)}">${fmtNum(row.last)}</div>
     <div class="${chgClass(row.changePct)}">${signedChg(row.change)} (${signedPct(row.changePct)})</div>
+    ${entryPlan(row)}
     <div class="meter"><i style="width:${bar}%"></i></div>
     <div class="kv">
       <div><span>Bid / Ask</span><b>${fmtNum(row.bid)} / ${fmtNum(row.ask)}</b></div>
@@ -1255,6 +1329,9 @@ function pinSymbol(symbol) {
   });
   midBoard.querySelectorAll("tr[data-symbol]").forEach((tr) => {
     tr.classList.toggle("selected", tr.dataset.symbol === symbol);
+  });
+  entryBoard?.querySelectorAll("[data-symbol]").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.symbol === symbol);
   });
   if (viewMode === "prints" && lastSnap) {
     renderPrintsBoard(lastSnap, lastRows, symbol);
@@ -1343,6 +1420,20 @@ function bindClicks() {
     }
     const hit = e.target.closest("[data-symbol]");
     if (hit) pinSymbol(hit.dataset.symbol);
+  });
+  entryBoard?.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-symbol]");
+    if (!card) return;
+    const symbol = card.dataset.symbol;
+    const now = performance.now();
+    if (tickerTap.symbol === symbol && now - tickerTap.t < 420) {
+      tickerTap = { t: 0, symbol: null };
+      const row = lastRows.find((item) => item.symbol === symbol);
+      if (typeof openTickerChart === "function") openTickerChart(symbol, row);
+      return;
+    }
+    tickerTap = { t: now, symbol };
+    pinSymbol(symbol);
   });
   printsBoard.addEventListener("click", (e) => {
     const row = e.target.closest("[data-symbol]");

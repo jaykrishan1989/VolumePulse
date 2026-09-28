@@ -36,7 +36,7 @@ If Gateway is not up yet, the page shows a **DEMO** tape so you can learn the la
 | `IBKR_HOST` | `127.0.0.1` | Gateway host |
 | `IBKR_PORT` | `4001` | Matches your API socket port |
 | `IBKR_CLIENT_ID` | `7` | API client id (tries the next few if busy) |
-| `IBKR_SCAN` | `hot_volume` | `hot_volume`, `most_active`, `top_percent_gain`, `top_percent_lose` |
+| `IBKR_SCAN` | `sp500` | `sp500`, `etfs`, `overview`, `mid_price`, `right_time`, `hot_volume`, `most_active`, `top_percent_gain`, `top_percent_lose` |
 | `IBKR_MKT_DATA_TYPE` | `3` | `1` live, `3` delayed (needed without exchange subscriptions) |
 
 ## How to read the board
@@ -48,3 +48,42 @@ If Gateway is not up yet, the page shows a **DEMO** tape so you can learn the la
 - **Prints** — last size/price updates as they land
 
 The heatmap and table are the same universe: IBKR `HOT_BY_VOLUME` on `STK.US.MAJOR` by default, refreshed about every 20 seconds, with market data streaming in between.
+
+## Right Time to Buy
+
+The **Right Time to Buy** tab lists names that are at a short-term **intraday long** entry *right now*. A row means the tape just confirmed a rebound. It drops off by itself once that setup is stale, the rebound low breaks, price runs too far above VWAP, or SPY/QQQ (or the sector ETF) is falling.
+
+This is **not financial advice**. Volume Pulse connects to Gateway with the **read-only** API socket and **never places orders**.
+
+The filter is deliberately selective. All of the gates live in one place: `ENTRY` in `app/entry.py`.
+
+A name has to pass every gate, then score at least `min_score` (70). Only the top `top_n` (8) are shown.
+
+1. **Pullback.** The dip from the session high down to the trough is measured in 5-minute ATR, not a fixed percent. It has to be meaningful (about 3.2–11 ATR, sweet spot near 6) and at least 0.7% so quiet noise does not count. The high must print *before* the trough.
+2. **Reversal.** At least two confirms after the trough: a higher low, a VWAP reclaim, a 9-EMA reclaim, RSI crossing up out of oversold, or a stochastic cross up from oversold. A reclaim that has already failed does not count.
+3. **Volume.** Up-bar volume on the bounce beats down-bar volume (or session RVOL is elevated). Chips such as `Up-volume 1.8×` and `RVOL 3.4×` show which one fired.
+4. **Quality.** Price at least $8, enough dollar volume for this point in the session, and — when bid/ask are present — a spread tighter than 18 bps. Missing quotes (common on delayed data) do not veto a setup; a wide spread does. Halted names are out.
+5. **Clock.** Live signals only use today's regular-session bars, and only from 9:45 to 15:45 ET. The open and the close are skipped. The demo tape ignores the wall clock so the layout is visible overnight; the live tape does not.
+6. **Do not chase.** No signal if price is back at the high or more than 1.6 ATR above VWAP.
+7. **Room.** Stop sits under the rebound low. The first target is back toward the session high, and only if reward-to-risk is at least 1.3 from a fill at the top of the entry zone.
+8. **Market.** If SPY or QQQ is falling over the last 30 minutes (or the stock's sector ETF is), new longs are hidden. Sector ETFs come from `app/sectors.py`.
+9. **Freshness.** The setup completes when the second confirm prints. It must be within the last 3 bars. Score decays with each bar, then the name expires. There is no memory of an old signal.
+
+Each card shows the score, reason chips, entry zone, stop, first target, reward-to-risk, and how long ago the trigger printed. Double-click a card for the existing 5-minute / 15-minute chart.
+
+The live universe is a capped liquid list plus SPY, QQQ, and the sector ETFs those names need (`watch_symbols()`, at most 40 market-data lines). Five-minute bars are refreshed two historical requests at a time, oldest first, so Gateway pacing stays intact. Delayed market data (type 3) is scored off those bars; freshness is counted in bars on that tape, not the wall clock, so a 15-minute delay does not instantly expire a setup. After the close, or before the open window, the list is empty on purpose.
+
+### Tests and replay
+
+```powershell
+python -m unittest tests.test_entry
+```
+
+The tests build synthetic 5-minute sequences: a clear rebound qualifies; a steady downtrend, an illiquid tape, a wide spread, and a stale trigger do not.
+
+To see how signals would have done over the next 15, 30, and 60 minutes, run this **on the PC that can see Gateway**. It only requests historical bars. It does not trade.
+
+```powershell
+python scripts/replay_entries.py --days 5
+python scripts/replay_entries.py --symbols NVDA,AMD,JPM --days 3
+```

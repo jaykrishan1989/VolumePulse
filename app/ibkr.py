@@ -25,6 +25,7 @@ except Exception:
 
     NY = timezone(timedelta(hours=-4), "EDT")
 
+from app.entry import DISCLAIMER, build_demo_board, screen_entries, watch_symbols
 from app.etfs import (
     ETF_DEMO,
     ETF_SYMBOLS,
@@ -48,6 +49,7 @@ SCAN_CODES = {
     "etfs": "HOT_BY_VOLUME",
     "overview": "HOT_BY_VOLUME",
     "mid_price": "HOT_BY_VOLUME",
+    "right_time": "HOT_BY_VOLUME",
     "hot_volume": "HOT_BY_VOLUME",
     "most_active": "MOST_ACTIVE",
     "top_percent_gain": "TOP_PERC_GAIN",
@@ -371,6 +373,7 @@ class VolumeFeed:
         self.ranks: dict[str, int] = {}
         self.bar_lists: dict[str, Any] = {}
         self.bar_stats: dict[str, dict[str, Any]] = {}
+        self.bar_fetched: dict[str, float] = {}
         self.prev_opens: dict[str, float] = {}
         self.daily_marks: dict[str, dict[str, Any]] = {}
         self._hist_keep_up = True
@@ -386,6 +389,7 @@ class VolumeFeed:
         self._stop = asyncio.Event()
 
         self._demo_state: dict[str, dict[str, float]] = {}
+        self._demo_entry_books: dict[str, list[dict[str, Any]]] = {}
         self._chart_bars: Any = None
         self._chart_key: tuple[str, int] | None = None
         self._chart_static: list[dict[str, Any]] | None = None
@@ -444,7 +448,9 @@ class VolumeFeed:
                 await self._refresh_universe()
                 await self._poll_daily_marks(8)
                 missing_bars = any(symbol not in self.bar_stats for symbol in self.tickers)
-                if not self._hist_keep_up or missing_bars:
+                # Right Time to Buy keeps a slow rotation of 5-minute bars (two
+                # requests per pass) so signals expire instead of freezing.
+                if self.scan_key == "right_time" or not self._hist_keep_up or missing_bars:
                     await self._poll_history()
                     await self._poll_history()
                 for i in range(20):
@@ -730,6 +736,10 @@ class VolumeFeed:
                 self.using_scanner = True
             elif self.scan_key == "mid_price":
                 symbols, ranks, self.using_scanner = await self._midprice_universe()
+            elif self.scan_key == "right_time":
+                symbols = watch_symbols()
+                ranks = {sym: index for index, sym in enumerate(symbols)}
+                self.using_scanner = True
             else:
                 sub = ScannerSubscription(
                     instrument="STK",
@@ -763,6 +773,8 @@ class VolumeFeed:
                 symbols = sector_stock_symbols(self.sector_id) if self.sector_id else overview_symbols()
             elif self.scan_key == "mid_price":
                 symbols = quality_mid_symbols()
+            elif self.scan_key == "right_time":
+                symbols = watch_symbols()
             elif self.scan_key == "sp500":
                 symbols = [ib_symbol(sym) for sym in LIQUID_SP500[: self.row_count]]
             else:
@@ -812,6 +824,7 @@ class VolumeFeed:
     def _drop_history(self, symbol: str) -> None:
         bars = self.bar_lists.pop(symbol, None)
         self.bar_stats.pop(symbol, None)
+        self.bar_fetched.pop(symbol, None)
         self.prev_opens.pop(symbol, None)
         self.daily_marks.pop(symbol, None)
         if bars is None or not self.ib:
@@ -827,6 +840,7 @@ class VolumeFeed:
             return False
         self.bar_lists[symbol] = bars
         self.bar_stats[symbol] = stats
+        self.bar_fetched[symbol] = time.time()
         return True
 
     async def _request_trade_bars(
@@ -870,8 +884,11 @@ class VolumeFeed:
         symbols = [symbol for symbol in self.tickers if symbol in self.contracts]
         if not symbols or not self.ib:
             return
-        symbol = symbols[self._hist_cursor % len(symbols)]
-        self._hist_cursor += 1
+        if self.scan_key == "right_time":
+            symbol = min(symbols, key=lambda name: self.bar_fetched.get(name, 0.0))
+        else:
+            symbol = symbols[self._hist_cursor % len(symbols)]
+            self._hist_cursor += 1
         if symbol in self._unknown_contracts:
             return
         contract = self.contracts[symbol]
@@ -964,6 +981,33 @@ class VolumeFeed:
                 }
             )
         return out
+
+    def _demo_entry_chart(self, symbol: str, minutes: int) -> list[dict[str, Any]] | None:
+        if not self._demo_entry_books:
+            self._demo_entry_books = build_demo_board()["books"]
+        bars = self._demo_entry_books.get(symbol) or self._demo_entry_books.get(ib_symbol(symbol))
+        if not bars:
+            return None
+        if minutes != 15:
+            return [dict(bar) for bar in bars]
+        folded = []
+        chunk: list[dict[str, Any]] = []
+        for bar in bars:
+            chunk.append(bar)
+            if len(chunk) < 3:
+                continue
+            folded.append(
+                {
+                    "t": chunk[-1]["t"],
+                    "open": chunk[0]["open"],
+                    "high": max(item["high"] for item in chunk),
+                    "low": min(item["low"] for item in chunk),
+                    "close": chunk[-1]["close"],
+                    "volume": sum(item["volume"] for item in chunk),
+                }
+            )
+            chunk = []
+        return folded or [dict(bar) for bar in bars]
 
     def _demo_chart_bars(self, symbol: str, minutes: int = 5) -> list[dict[str, Any]]:
         if not self._demo_state:
@@ -1064,9 +1108,11 @@ class VolumeFeed:
         if not self.is_connected():
             if not self._demo_state:
                 self._seed_demo()
+            entry_bars = self._demo_entry_chart(symbol, minutes)
+            bars = entry_bars if entry_bars else self._stamp_live_last(symbol, self._demo_chart_bars(symbol, minutes))
             return {
                 "symbol": symbol,
-                "bars": self._stamp_live_last(symbol, self._demo_chart_bars(symbol, minutes)),
+                "bars": bars,
                 "simulated": True,
                 "live": True,
                 **extra,
@@ -1188,6 +1234,9 @@ class VolumeFeed:
                 self.market_data_type = int(md_type)
 
         tickers.sort(key=lambda r: r.get("rank", 99))
+        entry_meta = self._empty_entry_meta()
+        if self.scan_key == "right_time":
+            tickers, entry_meta = self._live_entry(tickers, session)
         if self.scan_key == "mid_price":
             watched = set(self.extra_watches)
             tickers = [
@@ -1218,6 +1267,133 @@ class VolumeFeed:
             "industryStocks": industry_stocks(self.etf_industry) if self.scan_key == "etfs" else [],
             "sectors": sector_catalog() if self.scan_key == "overview" else [],
             "sector": self.sector_id,
+            **entry_meta,
+        }
+
+    def _empty_entry_meta(self) -> dict[str, Any]:
+        if self.scan_key != "right_time":
+            return {
+                "entryNote": None,
+                "entryDisclaimer": None,
+                "entryThreshold": None,
+                "entryTopN": None,
+            }
+        return {
+            "entryNote": None,
+            "entryDisclaimer": DISCLAIMER,
+            "entryThreshold": None,
+            "entryTopN": None,
+        }
+
+    def _quote_from_row(self, row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "symbol": row.get("symbol"),
+            "last": row.get("last"),
+            "bid": row.get("bid"),
+            "ask": row.get("ask"),
+            "dollarVolume": row.get("dollarVolume"),
+            "rvol": row.get("rvol"),
+            "halted": row.get("halted") or 0,
+        }
+
+    def _books(self) -> dict[str, list[dict[str, Any]]]:
+        books: dict[str, list[dict[str, Any]]] = {}
+        for symbol, bars in self.bar_lists.items():
+            payload = self._ohlc_payload(bars)
+            if payload:
+                books[symbol] = payload
+        return books
+
+    def _apply_signals(self, tickers: list[dict[str, Any]], screened: dict[str, Any]) -> list[dict[str, Any]]:
+        by_symbol = {row["symbol"]: row for row in tickers}
+        rows = []
+        for signal in screened["signals"]:
+            base = dict(by_symbol.get(signal.symbol) or {"symbol": signal.symbol})
+            base.update(signal.as_row())
+            if base.get("last") is None:
+                base["last"] = signal.last
+            rows.append(base)
+        return rows
+
+    def _entry_meta(self, screened: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "entryNote": screened["note"],
+            "entryDisclaimer": DISCLAIMER,
+            "entryThreshold": screened["threshold"],
+            "entryTopN": screened["topN"],
+        }
+
+    def _live_entry(
+        self, tickers: list[dict[str, Any]], session: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        if session.get("label") != "regular":
+            return [], {
+                "entryNote": "Setups only appear in the regular session, after the open and before the last 15 minutes.",
+                "entryDisclaimer": DISCLAIMER,
+                "entryThreshold": None,
+                "entryTopN": None,
+            }
+        books = self._books()
+        if not books:
+            return [], {
+                "entryNote": (
+                    "Reading 5-minute bars from IBKR, two names at a time so the historical "
+                    "feed stays inside pacing limits. A name shows up only after a fresh rebound scores."
+                ),
+                "entryDisclaimer": DISCLAIMER,
+                "entryThreshold": None,
+                "entryTopN": None,
+            }
+        quotes = {row["symbol"]: self._quote_from_row(row) for row in tickers}
+        screened = screen_entries(
+            books,
+            quotes,
+            now=datetime.now(NY),
+            session_fraction=float(session.get("fraction") or 0.5),
+            enforce_clock=True,
+        )
+        return self._apply_signals(tickers, screened), self._entry_meta(screened)
+
+    def _demo_entry_snapshot(self, session: dict[str, Any]) -> dict[str, Any]:
+        now = time.time()
+        board = build_demo_board()
+        self._demo_entry_books = board["books"]
+        tickers = []
+        for row in board["rows"]:
+            item = dict(row)
+            item["simulated"] = True
+            item["extended"] = bool(session.get("extended"))
+            item["updated"] = now
+            item.setdefault("spark", [])
+            item.setdefault("priceSpark", [])
+            tickers.append(item)
+        return {
+            "mode": "demo",
+            "connected": False,
+            "host": self.host,
+            "port": self.port,
+            "clientId": None,
+            "scan": self.scan_key,
+            "usingScanner": False,
+            "marketDataType": None,
+            "lastError": self.last_error
+            or "Waiting for IBKR Gateway… showing a simulated tape so you can learn the layout.",
+            "farms": [],
+            "lastScanAt": now,
+            "serverTime": now,
+            "session": session,
+            "tickers": tickers,
+            "prints": list(self.prints)[:40],
+            **self._print_payload(tickers),
+            "industries": [],
+            "etfIndustry": None,
+            "industryStocks": [],
+            "sectors": [],
+            "sector": None,
+            "entryNote": board["note"],
+            "entryDisclaimer": DISCLAIMER,
+            "entryThreshold": board["threshold"],
+            "entryTopN": board["topN"],
         }
 
     def _print_payload(self, tickers: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1253,6 +1429,8 @@ class VolumeFeed:
         vwap = clean_price(getattr(ticker, "vwap", None))
         high52 = clean_price(getattr(ticker, "high52week", None))
         low52 = clean_price(getattr(ticker, "low52week", None))
+        halted_raw = finite(getattr(ticker, "halted", None))
+        halted = int(halted_raw) if halted_raw is not None and halted_raw > 0 else 0
 
         ext = self.bar_stats.get(symbol) or {}
         marks = self.daily_marks.get(symbol) or {}
@@ -1347,6 +1525,7 @@ class VolumeFeed:
             "vwap": vwap,
             "high52": high52,
             "low52": low52,
+            "halted": halted,
             "dollarVolume": dollar_volume,
             "extended": extended,
             "updated": now,
@@ -1418,6 +1597,8 @@ class VolumeFeed:
         }
 
     def _demo_snapshot(self, session: dict[str, Any]) -> dict[str, Any]:
+        if self.scan_key == "right_time":
+            return self._demo_entry_snapshot(session)
         now = time.time()
         if not self._demo_state:
             self._seed_demo()
@@ -1532,6 +1713,10 @@ class VolumeFeed:
             "industryStocks": industry_stocks(self.etf_industry) if self.scan_key == "etfs" else [],
             "sectors": sector_catalog() if self.scan_key == "overview" else [],
             "sector": self.sector_id,
+            "entryNote": None,
+            "entryDisclaimer": None,
+            "entryThreshold": None,
+            "entryTopN": None,
         }
 
     def _seed_demo(self) -> None:

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=41" />
+  <link rel="stylesheet" href="styles.css?v=42" />
 </head>
 <body>
   <div class="app">
@@ -39,6 +39,7 @@
         <button class="scan" data-scan="etfs">ETFs</button>
         <button class="scan" data-scan="overview">Market Overview</button>
         <button class="scan" data-scan="mid_price">Stocks $10 – $50</button>
+        <button class="scan" data-scan="right_time">Right Time to Buy</button>
         <button class="scan" data-scan="hot_volume">Hot by volume</button>
         <button class="scan" data-scan="most_active">Most active</button>
         <button class="scan" data-scan="top_percent_gain">Top % gain</button>
@@ -84,6 +85,7 @@
         <div class="etf-board" id="etfBoard"></div>
         <div class="overview-board" id="overviewBoard"></div>
         <div class="mid-board" id="midBoard"></div>
+        <div class="entry-board" id="entryBoard"></div>
         <div class="prints-board" id="printsBoard">
           <form class="print-lookup" id="printLookupForm" autocomplete="off">
             <label for="printTicker">Ticker</label>
@@ -209,7 +211,7 @@
   </div>
 
   <script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
-  <script src="chart.js?v=41"></script>
-  <script src="app.js?v=41"></script>
+  <script src="chart.js?v=42"></script>
+  <script src="app.js?v=42"></script>
 </body>
 </html>
