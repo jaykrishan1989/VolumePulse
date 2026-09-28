@@ -33,3 +33,27 @@ These were measured and left off ACTIVE. The write-ups are `RESULTS.md` and `res
 - **60-minute bracket** (the score held to a stop, a target, or 60 minutes). Validation −9.4 bp. Holdout look 1 was −5.9 bp. Not a baseline the app can still run; the live engine is appear/disappear.
 - **The other 11 appear/disappear trials** (lag, score, VWAP, reward/risk, a wider stop). All lost on validation. The midmorning cell above was the least bad and is v0.1.
 - **Six research hypotheses** (SPY last half-hour, the same clock on the eight names, opening reversal, VWAP shortfall, opening-range break, down-gap hold). Walk-forward 2023 through March 2026, all rejected after costs. The promotion gate then rejected all six against v0.1. The down-gap rule was the only one ahead on pooled net and expectancy (−$183, −13.0 bp versus the champion's −$1,475, −16.8 bp) and it still won 7 of 12 windows, with severe losses on down days and low-vol days. Holdout was not opened. Look count remains 2.
+
+<!-- AREAS_CHANGELOG_BEGIN -->
+## Research areas — 2026-09-28 — no checkpoint
+
+Fifteen pre-registered overlays were scored on the promotion gate: position size and risk, time of day, liquidity, and market regime. Every one was rejected. `models/ACTIVE` stays `v0.1`. No v1 checkpoint was written and the `v0.1` tag was not moved. The write-up is the research-areas section of `research/RESEARCH_LOG.md`.
+
+| Id | Trades | Net | Windows | Decision |
+| --- | ---: | ---: | ---: | --- |
+| sz_risk_1pct | 1243 | $-1477 | 4/12 | rejected |
+| sz_risk_half_pct | 1342 | $-1480 | 0/12 | rejected |
+| sz_one_position | 1115 | $-1420 | 0/12 | rejected |
+| sz_daily_stop | 1057 | $-1339 | 3/12 | rejected |
+| sz_kelly_cap | 0 | $0 | 0/12 | rejected |
+| tod_open | 517 | $-657 | 4/12 | rejected |
+| tod_midday | 1876 | $-1999 | 0/12 | rejected |
+| tod_afternoon | 1719 | $-1859 | 0/12 | rejected |
+| tod_last_hour | 1095 | $-1280 | 6/12 | rejected |
+| liq_half_spread | 1056 | $-1901 | 0/12 | rejected |
+| liq_participation | 1207 | $-1518 | 0/12 | rejected |
+| liq_dvol | 1234 | $-1475 | 0/12 | rejected |
+| reg_spy_vwap | 751 | $-931 | 4/12 | rejected |
+| reg_high_range | 923 | $-1219 | 1/12 | rejected |
+| reg_falling_tape | 1025 | $-1257 | 4/12 | rejected |
+<!-- AREAS_CHANGELOG_END -->

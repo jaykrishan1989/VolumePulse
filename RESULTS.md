@@ -183,6 +183,36 @@ The live champion stays the 10:00–11:00 appear-to-disappear rule. A challenger
 
 On that pre-holdout sample the champion itself lost $1,475 on 1,234 trades (−$1.20 per trade, −16.8 bp). That is a longer window than the −$864 validation result and it is not the holdout. All six challengers were rejected. The down-gap rule was the only one ahead of the champion on all three pooled measures (−$183, −$0.26 per trade, −13.0 bp) and it still won only 7 of 12 windows, with severe regressions on down days, low-volatility days, and 2024H2. Its daily-gap p-values were about 0.02, which does not clear 0.00152. Dropping its five best days left the dollar total ahead and the per-trade edge behind. No live threshold moved.
 
+## Research areas
+
+Fifteen overlays were scored on the same promotion gate, on 2023-01-01 through 2026-03-31, with the holdout left shut. The Bonferroni line for this batch is 0.05/48. Sizing, liquidity, and regime keep the live 10:00–11:00 signals. Time of day keeps the same confirm, exit lag, and stop, and keeps a spell only when the on-list bar falls in that clock. The champion on this window is still 1,234 trades, −$1,475, −$1.20 per trade, −16.8 bp. Every overlay was rejected. No half-year was a profit. `models/ACTIVE` stays v0.1. No checkpoint was issued. The sources and the window tables are in `research/RESEARCH_LOG.md`.
+
+| Overlay | Trades | Net | Per trade | Windows |
+| --- | ---: | ---: | ---: | ---: |
+| 1% risk to the stop | 1,243 | −$1,477 | −$1.19, −16.5 bp | 4/12 |
+| 0.5% risk to the stop | 1,342 | −$1,480 | −$1.10, −18.1 bp | 0/12 |
+| One open position | 1,115 | −$1,420 | −$1.27, −11.5 bp | 0/12 |
+| Stop after a 1% day or two losses | 1,057 | −$1,339 | −$1.27, −16.9 bp | 3/12 |
+| Fractional Kelly, cap 25% | 0 | $0 | n/a | 0/12 |
+| Open, 9:45–10:30 | 517 | −$657 | −$1.27, −13.2 bp | 4/12 |
+| Midday, 11:00–13:00 | 1,876 | −$1,999 | −$1.07, −27.6 bp | 0/12 |
+| Afternoon, 13:00–14:30 | 1,719 | −$1,859 | −$1.08, −21.7 bp | 0/12 |
+| Last hour, 14:30–15:30 | 1,095 | −$1,280 | −$1.17, −15.7 bp | 6/12 |
+| Half-spread slippage | 1,056 | −$1,901 | −$1.80, −32.3 bp | 0/12 |
+| Square-root participation | 1,207 | −$1,518 | −$1.26, −17.7 bp | 0/12 |
+| $5M dollar-volume floor | 1,234 | −$1,475 | −$1.20, −16.8 bp | 0/12 |
+| SPY at or above VWAP | 751 | −$931 | −$1.24, −14.2 bp | 4/12 |
+| Stand aside after a wide SPY day | 923 | −$1,219 | −$1.32, −16.4 bp | 1/12 |
+| Stand aside when SPY is down 0.30% | 1,025 | −$1,257 | −$1.23, −14.0 bp | 4/12 |
+
+**Position sizing.** A 1% risk budget reduced the share count on 95 fills the full ticket also took. The rest were unchanged, because a stop tighter than about 1% of price asks for more shares than the cash can buy, and the cash cap wins. The book still lost $1,477. The 0.5% budget cut 486 of those fills and let extra names in with the leftover cash. That raised the trade count and made the per-trade loss worse, −18.1 bp, because the US$0.35 minimum is a larger fraction of a thinner ticket. One open position lost fewer dollars (−$1,420) and the daily-gap p-values cleared 0.00104 (bootstrap 0.0004, permutation 0.0002), but dollars per trade got worse (−$1.27) and no window won. The daily stop lost $1,339, which is a smaller hole, and still lost −$1.27 per trade on 3 of 12 windows. Kelly, estimated from earlier full-ticket champion returns and capped at 25%, was zero on all 1,799 spells: the past mean is negative, so the formula bets nothing. An empty book is not a promotion. Its tiny p-value is the champion's losses showing up as a positive daily gap against a book that did not trade. The gate rejects it because it has no trades.
+
+**Time of day.** The scorer already drops the first and last 15 minutes, so 9:30–9:45 is empty on purpose. The open window lost −$657 on 517 trades, −13.2 bp. Fewer trades make a smaller dollar hole, and the paired p-value is 0.0002, but dollars per trade (−$1.27) do not beat the champion and only 4 windows won. Midday was the worst clock, −$1,999 and −27.6 bp, with severe regressions in both directions and both volatility buckets. By 2025H2 the account was about $121, under one share of these names, so the later midday folds have no fills. Afternoon lost −$1,859 and −21.7 bp. The last hour was the only clock ahead of the champion on all three pooled measures, by about three cents a trade and 1.1 bp, and it won 6 of 12 windows. Every half-year was still a loss. Dropping the five best days removed the per-trade dollar edge, and the paired p-values were 0.12. The live list stays 10:00–11:00.
+
+**Liquidity.** These files are OHLC, not quotes. The Corwin-Schultz half-spread, applied to the entry bar and the bar before it, averaged 4.5 bp on top of the 2 bp already charged. The book then lost −32.3 bp per trade. That gap is wider than 4.5 bp because stops and leftover cash change which fills happen (1,056 trades against the champion's 1,234). Square-root impact of a US$2,120 ticket averaged 0.27 bp. The US$0.35 minimum is about 3.5 bp round trip on this account, so the commission binds and participation does not. Charging the 0.27 bp left the book at −17.7 bp, a bit worse than the champion. A US$5,000,000 dollar-volume floor kept all 1,799 spells. A filter that matches the champion is not an improvement.
+
+**Market regime.** Buying the dip only while SPY was at or above its session VWAP cut the loss to −$931 and −14.2 bp, stood aside on 786 spells, and won 4 of 12 windows. Dollars per trade were worse (−$1.24). Standing aside after a prior SPY day in the top quartile of the previous 60 ranges lost −$1,219 and won 1 window. Standing aside when SPY was already down 0.30% from the 9:30 open lost −$1,257 and −14.0 bp, on 4 windows. Those three lost fewer dollars than the champion, and their paired p-values cleared 0.00104, because skipping a negative-edge trade shrinks the hole. None of them improved dollars per trade, and none won 9 windows. They were not adopted, and the direction of each filter was not flipped after the run.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.

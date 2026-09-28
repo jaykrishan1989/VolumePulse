@@ -349,3 +349,510 @@ Rules are in `research/GATE.md`. A window win needs at least 20 challenger trade
 | high_beta | $150, 442 trades, -14.1 bp | $-538, 526 trades, -20.9 bp | yes |
 
 <!-- GATE_END -->
+
+<!-- AREAS_BEGIN -->
+## Research areas
+
+Four areas, fifteen pre-registered overlays. Sizing, liquidity, and regime keep the live 10:00–11:00 signals. Time-of-day keeps the same confirm, exit lag, and stop, and keeps a spell only when the on-list bar is inside that clock. The 10:00–11:00 clock is the champion and is not retested. Costs: US$2,120, tiered commissions, hard stop, flat by 15:55. Slippage is 2 bp except where a liquidity rule adds a spread or an impact. Bonferroni denominator, including these fifteen ids: 48. The holdout from 2026-04-01 was not opened. Look count remains 2. `models/ACTIVE` stays `v0.1`. No checkpoint was issued.
+
+Rules are in `research/GATE.md`. A window win needs at least 20 challenger trades and a better net, a better dollar expectancy, and a better per-trade basis-point expectancy than the champion. 2026Q1 is inside the pooled sample and is not its own vote. An empty book does not beat a loss, so a Kelly fraction of zero is a rejection, not a live rule that trades nothing.
+
+| Candidate | Area | Pooled challenger | Windows | Bootstrap p | Permutation p | Decision |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| sz_risk_1pct | position_sizing | $-1477 on 1243 trades, -16.5 bp | 4/12 | 0.5271 | 0.5483 | REJECTED |
+| sz_risk_half_pct | position_sizing | $-1480 on 1342 trades, -18.1 bp | 0/12 | 0.5379 | 0.5365 | REJECTED |
+| sz_one_position | position_sizing | $-1420 on 1115 trades, -11.5 bp | 0/12 | 0.0004 | 0.0002 | REJECTED |
+| sz_daily_stop | position_sizing | $-1339 on 1057 trades, -16.9 bp | 3/12 | 0.0056 | 0.0068 | REJECTED |
+| sz_kelly_cap | position_sizing | $0 on 0 trades, n/a | 0/12 | 0.0002 | 0.0002 | REJECTED |
+| tod_open | time_of_day | $-657 on 517 trades, -13.2 bp | 4/12 | 0.0002 | 0.0002 | REJECTED |
+| tod_midday | time_of_day | $-1999 on 1876 trades, -27.6 bp | 0/12 | 0.9992 | 0.9988 | REJECTED |
+| tod_afternoon | time_of_day | $-1859 on 1719 trades, -21.7 bp | 0/12 | 0.9836 | 0.9786 | REJECTED |
+| tod_last_hour | time_of_day | $-1280 on 1095 trades, -15.7 bp | 6/12 | 0.1236 | 0.1208 | REJECTED |
+| liq_half_spread | liquidity | $-1901 on 1056 trades, -32.3 bp | 0/12 | 1.0000 | 1.0000 | REJECTED |
+| liq_participation | liquidity | $-1518 on 1207 trades, -17.7 bp | 0/12 | 0.9974 | 0.9982 | REJECTED |
+| liq_dvol | liquidity | $-1475 on 1234 trades, -16.8 bp | 0/12 | 1.0000 | 1.0000 | REJECTED |
+| reg_spy_vwap | market_regime | $-931 on 751 trades, -14.2 bp | 4/12 | 0.0002 | 0.0002 | REJECTED |
+| reg_high_range | market_regime | $-1219 on 923 trades, -16.4 bp | 1/12 | 0.0004 | 0.0002 | REJECTED |
+| reg_falling_tape | market_regime | $-1257 on 1025 trades, -14.0 bp | 4/12 | 0.0002 | 0.0004 | REJECTED |
+
+### sz_risk_1pct
+
+**Area.** position_sizing.
+
+**Source.** Kelly (1956), Bell System Technical Journal; Thorp, fractional Kelly. Fixed-fractional risk is the retail cap used here, not a fitted Kelly fraction. Vince optimal-f is the aggressive cousin and is not searched.
+
+**Hypothesis.** Risking 1% of current equity to the stop, in whole shares, loses less to a single gap than a full US$2,120 ticket and still clears the minimum commission.
+
+**Economic rationale.** On a US$2,120 account one full ticket is often the whole account. A stop a few dollars under a US$100 name can remove several percent of equity, and the US$0.35 minimum is already a few basis points on a two-share fill. Capping the loss at 1% of equity (cash plus open cost) keeps a gap from dominating the book. The other side of a too-small fill is the minimum commission, which the whole-share round-down does not waive.
+
+**Test setup.** Same midmorning spells. risk_fraction=0.01. Shares = floor(equity × 0.01 / (slipped entry − stop)), then reduced until notional plus the buy commission fits cash. Skip when that is under one share.
+
+**Sample note.** Same midmorning signals. Only the size or the daily stop changes.
+
+**Walk-forward.** Challenger $-1477 on 1243 trades, -16.5 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 172 | $-257 | -18.0 bp | yes |
+| 2023H2 | 214 | $-306 | -19.2 bp | yes |
+| 2024H1 | 211 | $-259 | -14.3 bp | yes |
+| 2024H2 | 170 | $-140 | -9.8 bp | yes |
+| 2025H1 | 165 | $-188 | -16.8 bp | yes |
+| 2025H2 | 221 | $-237 | -18.1 bp | yes |
+| 2026Q1 | 90 | $-91 | -20.4 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1477 on 1243 trades, $-1.19/trade, -16.5 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, low_vol). Does not beat the champion in every ticker group (megacap). Beats the champion in 1 half-year; need at least 2. Improves in 4 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-03-10, 2024-08-14, 2026-02-06, 2025-04-11, 2026-02-10), the challenger is behind on net, dollars per trade (challenger $-1483 on 1230 trades, $-1.21/trade, -16.6 bp; champion $-1459 on 1220 trades, $-1.20/trade, -16.7 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.5271, permutation p=0.5483, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### sz_risk_half_pct
+
+**Area.** position_sizing.
+
+**Source.** Same as sz_risk_1pct. The live stop is already about one ATR, so 0.5% of equity per stop distance is the volatility-scaled cousin of the 1% rule. Both fractions were written down together. Neither is chosen because it lost less.
+
+**Hypothesis.** Risking 0.5% of equity to the same stop is small enough that one loss cannot move the account, and large enough that the US$0.35 minimum does not take the whole edge on a typical mega-cap print.
+
+**Economic rationale.** Half a percent is the pre-registered tighter cap. It is not a second look at the 1% result. If the champion's edge is negative, a smaller bet loses fewer dollars and can still lose on a per-trade basis once the minimum commission binds. The gate requires a better dollar total and a better per-trade expectancy, so shrinking a losing book is not by itself an improvement.
+
+**Test setup.** Same midmorning spells. risk_fraction=0.005. Same whole-share and cash cap as the 1% rule.
+
+**Sample note.** Same midmorning signals. Only the size or the daily stop changes.
+
+**Walk-forward.** Challenger $-1480 on 1342 trades, -18.1 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 205 | $-271 | -21.1 bp | yes |
+| 2023H2 | 237 | $-313 | -16.4 bp | yes |
+| 2024H1 | 241 | $-271 | -16.2 bp | yes |
+| 2024H2 | 184 | $-136 | -12.4 bp | yes |
+| 2025H1 | 169 | $-182 | -18.9 bp | yes |
+| 2025H2 | 216 | $-214 | -20.0 bp | yes |
+| 2026Q1 | 90 | $-94 | -26.2 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1480 on 1342 trades, $-1.10/trade, -18.1 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-03-20, 2023-01-26, 2024-08-14, 2024-07-01, 2023-08-07), the challenger is behind on net, basis points per trade (challenger $-1451 on 1325 trades, $-1.10/trade, -17.9 bp; champion $-1394 on 1223 trades, $-1.14/trade, -16.6 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.5379, permutation p=0.5365, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### sz_one_position
+
+**Area.** position_sizing.
+
+**Source.** Concentration and gap risk on a cash account that cannot borrow. One open long is the tightest concurrent-position cap.
+
+**Hypothesis.** Allowing only one open position removes the case where several names gap through their stops together and the cash account cannot fund the later, better signal.
+
+**Economic rationale.** The champion spends remaining cash on every new name. Two or three mega-caps can each gap through a stop in the same bar. A one-position book gives up later signals in exchange for a smaller overnight-style intraday gap. Alphabetical order still breaks ties, matching the champion.
+
+**Test setup.** Same midmorning spells and full-ticket size. max_concurrent=1. A name is skipped while another fill is still open.
+
+**Sample note.** Same midmorning signals. Only the size or the daily stop changes.
+
+**Walk-forward.** Challenger $-1420 on 1115 trades, -11.5 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 149 | $-239 | -8.3 bp | yes |
+| 2023H2 | 186 | $-284 | -9.3 bp | yes |
+| 2024H1 | 184 | $-248 | -10.0 bp | yes |
+| 2024H2 | 157 | $-150 | -8.2 bp | yes |
+| 2025H1 | 146 | $-182 | -12.7 bp | yes |
+| 2025H2 | 201 | $-215 | -15.1 bp | yes |
+| 2026Q1 | 92 | $-103 | -20.0 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1420 on 1115 trades, $-1.27/trade, -11.5 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2024-02-06, 2025-01-29, 2024-03-13, 2025-11-12, 2024-06-04), the challenger is behind on dollars per trade (challenger $-1425 on 1101 trades, $-1.29/trade, -11.6 bp; champion $-1466 on 1207 trades, $-1.21/trade, -16.6 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### sz_daily_stop
+
+**Area.** position_sizing.
+
+**Source.** A daily loss limit is a hard risk budget, not a signal. The consecutive-loss stop is the same idea in trade counts. Both reset the next session and were fixed before the run.
+
+**Hypothesis.** Stopping for the day after a 1% realized loss, or after two consecutive losing fills, avoids a session where the tape has already gone against every dip.
+
+**Economic rationale.** If the morning is a one-way offer, later dip buys are the same informed seller. A 1% equity stop and a two-loss stop are crude ways to stand aside without fitting a new indicator. Realized losses count; an open trade does not trip the stop until it closes. A winner resets the consecutive-loss count. Neither threshold is moved after the run.
+
+**Test setup.** Same midmorning spells and full-ticket size. daily_loss_fraction=0.01 of that session's starting equity, or max_consecutive_losses=2. Both reset the next session.
+
+**Sample note.** Same midmorning signals. Only the size or the daily stop changes.
+
+**Walk-forward.** Challenger $-1339 on 1057 trades, -16.9 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 145 | $-291 | -24.2 bp | yes |
+| 2023H2 | 179 | $-219 | -19.1 bp | yes |
+| 2024H1 | 171 | $-228 | -14.7 bp | yes |
+| 2024H2 | 149 | $-134 | -10.4 bp | yes |
+| 2025H1 | 145 | $-190 | -16.7 bp | yes |
+| 2025H2 | 184 | $-175 | -15.3 bp | yes |
+| 2026Q1 | 84 | $-102 | -19.6 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1339 on 1057 trades, $-1.27/trade, -16.9 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol). Does not beat the champion in every ticker group (megacap, high_beta). Improves in 3 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-08-07, 2023-03-01, 2024-11-14, 2023-11-30, 2023-04-11), the challenger is behind on dollars per trade, basis points per trade (challenger $-1300 on 1046 trades, $-1.24/trade, -16.6 bp; champion $-1382 on 1216 trades, $-1.14/trade, -16.3 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.0056, permutation p=0.0068, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### sz_kelly_cap
+
+**Area.** position_sizing.
+
+**Source.** Kelly (1956); Thorp on fractional Kelly. The cap at one quarter is the pre-registered fractional-Kelly limit. It is not estimated from the holdout.
+
+**Hypothesis.** A fractional Kelly fraction, estimated only from earlier full-ticket champion trades and capped at 25% of equity, bets more only when that past sample has a positive mean.
+
+**Economic rationale.** Kelly's fraction is mean over variance. A negative mean is a zero bet: the formula says the game is not worth playing. That is the economic content. An empty book does not beat a losing champion on the gate, because an empty book has no trades. Standing aside is reported as a rejection, not adopted as a live rule that trades nothing. The estimator uses full-ticket returns so the US$0.35 minimum is in the same units as the live book. Fewer than 80 prior trades also bets nothing.
+
+**Test setup.** invest_fraction = min(0.25, mean/variance) from champion trades whose session is strictly before the new entry day. f* <= 0 or fewer than 80 prior trades sets invest_fraction to 0 and the spell is skipped. Whole shares, cash cap unchanged.
+
+**Sample note.** Kelly uses full-ticket champion returns from earlier sessions only, needs 80 of them, and caps f* at 25%. 0 of 1799 spells had f* > 0.
+
+**Walk-forward.** Challenger $0 on 0 trades, n/a. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 0 | $0 | n/a | yes |
+| 2023H2 | 0 | $0 | n/a | yes |
+| 2024H1 | 0 | $0 | n/a | yes |
+| 2024H2 | 0 | $0 | n/a | yes |
+| 2025H1 | 0 | $0 | n/a | yes |
+| 2025H2 | 0 | $0 | n/a | yes |
+| 2026Q1 | 0 | $0 | n/a | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $0 on 0 trades, n/a, n/a; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-01-26, 2023-04-11, 2023-02-09, 2023-08-07, 2023-07-21), the challenger is behind on net, dollars per trade, and basis points per trade (challenger $0 on 0 trades, n/a, n/a; champion $-1350 on 1220 trades, $-1.11/trade, -16.5 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### tod_open
+
+**Area.** time_of_day.
+
+**Source.** Admati and Pfleiderer (1988), Review of Financial Studies, volume and informed flow at the open and the close; Gao, Han, Li and Zhou, Journal of Financial Economics 2018, DOI 10.1016/j.jfineco.2018.05.009; Heston, Korajczyk and Sadka, Journal of Finance 2010, DOI 10.1111/j.1540-6261.2010.01573.x.
+
+**Hypothesis.** Appearances from 9:45 to 10:30 have a different cost-inclusive edge from the rest of the day because the open concentrates volume.
+
+**Economic rationale.** The open is when overnight inventory is unwound. Gao's first-half-hour pattern was already tested as its own trade and rejected; this overlay only asks whether the existing list is less bad in that window. The scorer drops the first 15 minutes, so 9:30–9:45 is empty on purpose and is not a missing file. The live 10:00–11:00 window is the champion and is not a challenger.
+
+**Test setup.** Same confirm, exit lag, and stop as the live rule. Keep a spell only when the on-list bar is in [9:45, 10:30). The fill is still the next bar's open, which can fall a bar outside the window. Exit is still disappearance or 15:55.
+
+**Sample note.** On-list bar in [585, 630) minutes from midnight. 712 of 11116 appearances.
+
+**Walk-forward.** Challenger $-657 on 517 trades, -13.2 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 74 | $-100 | -19.2 bp | yes |
+| 2023H2 | 84 | $-98 | -15.3 bp | yes |
+| 2024H1 | 89 | $-114 | -13.5 bp | yes |
+| 2024H2 | 65 | $-88 | -8.8 bp | yes |
+| 2025H1 | 68 | $-77 | -13.9 bp | yes |
+| 2025H2 | 99 | $-126 | -8.8 bp | yes |
+| 2026Q1 | 38 | $-55 | -13.9 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-657 on 517 trades, $-1.27/trade, -13.2 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol). Does not beat the champion in every ticker group (high_beta). Improves in 4 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-02-10, 2023-03-01, 2023-01-26, 2023-03-21, 2025-02-07), the challenger is behind on dollars per trade (challenger $-644 on 515 trades, $-1.25/trade, -13.1 bp; champion $-1375 on 1220 trades, $-1.13/trade, -16.4 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### tod_midday
+
+**Area.** time_of_day.
+
+**Source.** Heston, Korajczyk and Sadka (2010), same-clock half-hour patterns; Admati and Pfleiderer (1988) on the midday lull in volume.
+
+**Hypothesis.** Appearances from 11:00 to 13:00 are the quiet-tape book, and either pay after costs or are no better than the champion.
+
+**Economic rationale.** Midday volume is thinner, so a listed dip is more likely a lack of bids than an informed buyer. If that is the case the window should not be adopted. The comparison is the champion's 10:00–11:00 book, not a search for the least-negative clock.
+
+**Test setup.** On-list bar in [11:00, 13:00). Same confirm, exit lag, stop, and disappearance exit.
+
+**Sample note.** On-list bar in [660, 780) minutes from midnight. 4844 of 11116 appearances.
+
+**Walk-forward.** Challenger $-1999 on 1876 trades, -27.6 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 451 | $-631 | -23.5 bp | yes |
+| 2023H2 | 454 | $-470 | -19.4 bp | yes |
+| 2024H1 | 489 | $-510 | -22.9 bp | yes |
+| 2024H2 | 366 | $-305 | -37.9 bp | yes |
+| 2025H1 | 116 | $-83 | -62.3 bp | yes |
+| 2025H2 | 0 | $0 | n/a | yes |
+| 2026Q1 | 0 | $0 | n/a | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1999 on 1876 trades, $-1.07/trade, -27.6 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). Severe regression in 2023H1: net is $379 worse than the champion, past the $212 limit. Severe regression in 2024H1: net is $250 worse than the champion, past the $212 limit. Severe regression in 2024H2: expectancy is 27.5 bp worse than the champion, past the 15 bp limit. Severe regression in 2025H1: expectancy is 47.0 bp worse than the champion, past the 15 bp limit. Severe regression in up: net is $233 worse than the champion, past the $212 limit. Severe regression in down: net is $291 worse than the champion, past the $212 limit. Severe regression in high_vol: net is $257 worse than the champion, past the $212 limit. Severe regression in low_vol: net is $267 worse than the champion, past the $212 limit. Severe regression in high_beta: net is $432 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2023-01-26, 2023-03-01, 2023-02-09, 2023-08-07, 2024-08-06), the challenger is behind on net, basis points per trade (challenger $-1985 on 1857 trades, $-1.07/trade, -27.6 bp; champion $-1360 on 1219 trades, $-1.12/trade, -16.4 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.9992, permutation p=0.9988, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### tod_afternoon
+
+**Area.** time_of_day.
+
+**Source.** Heston, Korajczyk and Sadka (2010). Afternoon half-hours are a different clock from the open and from the last hour.
+
+**Hypothesis.** Appearances from 13:00 to 14:30 carry the same list edge without the open's inventory shock or the close's hedging flow.
+
+**Economic rationale.** A window that is merely less negative than another losing window is not a promotion. It has to beat the champion on net and on expectancy in the gate's windows. This clock was written down with the others and is not a fallback if the open fails.
+
+**Test setup.** On-list bar in [13:00, 14:30). Same confirm, exit lag, stop, and disappearance exit.
+
+**Sample note.** On-list bar in [780, 870) minutes from midnight. 2896 of 11116 appearances.
+
+**Walk-forward.** Challenger $-1859 on 1719 trades, -21.7 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 275 | $-340 | -23.6 bp | yes |
+| 2023H2 | 274 | $-350 | -18.7 bp | yes |
+| 2024H1 | 322 | $-341 | -16.0 bp | yes |
+| 2024H2 | 283 | $-326 | -19.0 bp | yes |
+| 2025H1 | 246 | $-229 | -21.3 bp | yes |
+| 2025H2 | 225 | $-199 | -29.4 bp | yes |
+| 2026Q1 | 94 | $-74 | -36.0 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1859 on 1719 trades, $-1.08/trade, -21.7 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). Severe regression in down: net is $303 worse than the champion, past the $212 limit. Severe regression in low_vol: net is $260 worse than the champion, past the $212 limit. Severe regression in high_beta: net is $215 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2023-01-26, 2023-04-11, 2023-07-21, 2023-07-10, 2023-08-07), the challenger is behind on net, basis points per trade (challenger $-1884 on 1702 trades, $-1.11/trade, -21.9 bp; champion $-1360 on 1218 trades, $-1.12/trade, -16.3 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.9836, permutation p=0.9786, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### tod_last_hour
+
+**Area.** time_of_day.
+
+**Source.** Gao, Han, Li and Zhou (2018), last-half-hour return; Admati and Pfleiderer (1988), volume at the close. The live book is flat by 15:55 and does not trade the closing auction.
+
+**Hypothesis.** Appearances from 14:30 to 15:30 still have time to exit on a disappearance or the 15:55 flat, and the close's volume is enough to pay the ticket.
+
+**Economic rationale.** The published last-half-hour effect is a long into the auction. This book is flat before the auction, so the economic claim is weaker: only that a late appearance of the same dip is a better or worse trade than a midmorning one. The scorer also drops the last 15 minutes, so the window stops at 15:30.
+
+**Test setup.** On-list bar in [14:30, 15:30). Same confirm, exit lag, stop, and disappearance or 15:55 flat.
+
+**Sample note.** On-list bar in [870, 930) minutes from midnight. 1577 of 11116 appearances.
+
+**Walk-forward.** Challenger $-1280 on 1095 trades, -15.7 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 157 | $-278 | -26.7 bp | yes |
+| 2023H2 | 175 | $-193 | -17.3 bp | yes |
+| 2024H1 | 172 | $-167 | -11.9 bp | yes |
+| 2024H2 | 149 | $-204 | -13.5 bp | yes |
+| 2025H1 | 162 | $-166 | -12.6 bp | yes |
+| 2025H2 | 186 | $-176 | -12.8 bp | yes |
+| 2026Q1 | 94 | $-95 | -15.8 bp | no |
+
+**Decision.** Rejected. Does not beat the champion in every market regime (up, down, high_vol). Does not beat the champion in every ticker group (high_beta). Improves in 6 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-01-26, 2023-02-09, 2023-04-11, 2023-10-25, 2023-03-01), the challenger is behind on dollars per trade (challenger $-1279 on 1085 trades, $-1.18/trade, -15.4 bp; champion $-1355 on 1218 trades, $-1.11/trade, -16.4 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.1236, permutation p=0.1208, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### liq_half_spread
+
+**Area.** liquidity.
+
+**Source.** Corwin and Schultz, Journal of Finance 2012, DOI 10.1111/j.1540-6261.2011.01694.x. These files are OHLC, not quotes, so the two-bar high-low estimator stands in for the spread.
+
+**Hypothesis.** Adding half the estimated spread to the 2 bp slippage removes trades whose edge was only an ignored bid-ask bounce, or shows that the spread is too small to matter next to the commission.
+
+**Economic rationale.** A marketable buy pays the half-spread on top of any delay. If the expected rebound is a few basis points and the spread is wider than that, the fill erases it. The estimator returns zero when alpha is non-positive, and zero when the entry bar has no previous bar. It is not a quote, and a zero is not evidence that the spread was zero.
+
+**Test setup.** slip_bps = 2 + half the Corwin-Schultz spread in basis points, from the entry bar and the previous bar. Same midmorning signals and full-ticket size.
+
+**Sample note.** Mean extra slippage 4.494 bp. 0 spells had no previous bar and kept a zero spread.
+
+**Walk-forward.** Challenger $-1901 on 1056 trades, -32.3 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 165 | $-530 | -31.7 bp | yes |
+| 2023H2 | 205 | $-480 | -26.6 bp | yes |
+| 2024H1 | 216 | $-353 | -29.4 bp | yes |
+| 2024H2 | 166 | $-220 | -27.5 bp | yes |
+| 2025H1 | 145 | $-176 | -38.9 bp | yes |
+| 2025H2 | 122 | $-109 | -42.8 bp | yes |
+| 2026Q1 | 37 | $-34 | -45.6 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1901 on 1056 trades, $-1.80/trade, -32.3 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). Severe regression in 2023H1: net is $278 worse than the champion, past the $212 limit. Severe regression in 2024H2: expectancy is 17.1 bp worse than the champion, past the 15 bp limit. Severe regression in 2025H1: expectancy is 23.6 bp worse than the champion, past the 15 bp limit. Severe regression in 2025H2: expectancy is 25.5 bp worse than the champion, past the 15 bp limit. Severe regression in up: net is $322 worse than the champion, past the $212 limit. Severe regression in down: expectancy is 15.3 bp worse than the champion, past the 15 bp limit. Severe regression in high_vol: net is $281 worse than the champion, past the $212 limit. Severe regression in low_vol: expectancy is 15.5 bp worse than the champion, past the 15 bp limit. Severe regression in high_beta: net is $354 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2026-01-02, 2025-12-04, 2024-11-14, 2025-02-25, 2025-02-07), the challenger is behind on net, dollars per trade, basis points per trade (challenger $-1881 on 1047 trades, $-1.80/trade, -32.1 bp; champion $-1416 on 1218 trades, $-1.16/trade, -16.4 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=1.0000, permutation p=1.0000, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### liq_participation
+
+**Area.** liquidity.
+
+**Source.** Kyle, Econometrica 1985; Almgren, Thum, Hauptmann and Li, Risk 2005, square-root impact.
+
+**Hypothesis.** Impact of a US$2,120 ticket in a mega-cap 5-minute bar is a fraction of a basis point, so the US$0.35 minimum, not participation, is the binding friction.
+
+**Economic rationale.** Temporary impact in the square-root model scales with volatility times the square root of order size over volume. A two-thousand-dollar order against tens of millions of dollars in a 5-minute bar is invisible. Charging it anyway is the test. If the mean impact is far below the minimum commission, a participation filter will not create an edge.
+
+**Test setup.** impact_bps = 10000 × ((open − stop) / open) × sqrt(notional / entry-bar dollar volume), notional = floor(2120 / price) × price. slip_bps = 2 + impact. Missing volume skips the spell.
+
+**Sample note.** Skipped 0 of 1799 spells with no dollar volume. Mean square-root impact 0.266 bp.
+
+**Walk-forward.** Challenger $-1518 on 1207 trades, -17.7 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 169 | $-273 | -21.3 bp | yes |
+| 2023H2 | 208 | $-314 | -19.8 bp | yes |
+| 2024H1 | 213 | $-273 | -17.1 bp | yes |
+| 2024H2 | 163 | $-159 | -10.4 bp | yes |
+| 2025H1 | 157 | $-185 | -16.6 bp | yes |
+| 2025H2 | 213 | $-221 | -17.4 bp | yes |
+| 2026Q1 | 84 | $-92 | -23.4 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1518 on 1207 trades, $-1.26/trade, -17.7 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2026-02-10, 2026-02-06, 2026-02-09, 2025-11-12, 2025-01-29), the challenger is behind on net, dollars per trade, basis points per trade (challenger $-1514 on 1200 trades, $-1.26/trade, -17.7 bp; champion $-1454 on 1218 trades, $-1.19/trade, -16.6 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=0.9974, permutation p=0.9982, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### liq_dvol
+
+**Area.** liquidity.
+
+**Source.** Kyle (1985). A dollar-volume floor is a crude participation limit when the spread itself is not observed.
+
+**Hypothesis.** Skipping an entry bar under US$5,000,000 of dollar volume drops names where a small ticket could still move the print, and does nothing on bars that already trade far more than that.
+
+**Economic rationale.** These eight names often print tens of millions of dollars in a 5-minute bar. A US$5,000,000 floor was frozen as a level that can bind on a quiet bar without being fit to the result. A filter that drops nothing matches the champion and is not an improvement. Missing volume skips the spell.
+
+**Test setup.** Keep the spell only when entry-bar volume × close is at least US$5,000,000. Same size and 2 bp slippage otherwise.
+
+**Sample note.** Entry-bar dollar volume at least $5,000,000. Kept 1799 of 1799.
+
+**Walk-forward.** Challenger $-1475 on 1234 trades, -16.8 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 168 | $-251 | -19.1 bp | yes |
+| 2023H2 | 212 | $-303 | -20.5 bp | yes |
+| 2024H1 | 214 | $-261 | -15.0 bp | yes |
+| 2024H2 | 168 | $-150 | -10.4 bp | yes |
+| 2025H1 | 161 | $-186 | -15.2 bp | yes |
+| 2025H2 | 217 | $-222 | -17.3 bp | yes |
+| 2026Q1 | 94 | $-102 | -21.6 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1475 on 1234 trades, $-1.20/trade, -16.8 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-01-03, 2023-01-04, 2023-01-05, 2023-01-06, 2023-01-09), the challenger is behind on net, dollars per trade, basis points per trade (challenger $-1498 on 1228 trades, $-1.22/trade, -17.0 bp; champion $-1498 on 1228 trades, $-1.22/trade, -17.0 bp). Paired tests do not clear the Bonferroni line for 48 ideas tried (bootstrap p=1.0000, permutation p=1.0000, alpha=0.00104). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### reg_spy_vwap
+
+**Area.** market_regime.
+
+**Source.** Berkowitz, Logue and Noser, Journal of Finance 1988, VWAP as the execution benchmark. The list is a dip in a single name.
+
+**Hypothesis.** A long dip while SPY itself is offered under its session VWAP is a bid into a market that is already being sold, and should be skipped.
+
+**Economic rationale.** The other side of a name trading under VWAP, while the index is also under VWAP, is more likely an index seller than a buyer of that name. Taking the dip only when SPY has reclaimed VWAP asks for the index bid to be present. The comparison uses the SPY bar at or before the on-list minute, so the fill one bar later is not in the signal. A missing SPY day skips the spell.
+
+**Test setup.** Take the long only when the SPY close at or before the on-list bar is at or above the session VWAP of typical price × volume from 9:30 through that bar.
+
+**Sample note.** Took 1013. Stood aside 786 under VWAP. Skipped 0 with no SPY bar.
+
+**Walk-forward.** Challenger $-931 on 751 trades, -14.2 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 110 | $-165 | -24.4 bp | yes |
+| 2023H2 | 122 | $-169 | -16.9 bp | yes |
+| 2024H1 | 124 | $-179 | -12.8 bp | yes |
+| 2024H2 | 112 | $-85 | -8.0 bp | yes |
+| 2025H1 | 97 | $-126 | -11.8 bp | yes |
+| 2025H2 | 120 | $-132 | -10.8 bp | yes |
+| 2026Q1 | 66 | $-76 | -14.7 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-931 on 751 trades, $-1.24/trade, -14.2 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, low_vol). Does not beat the champion in every ticker group (megacap). Improves in 4 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-02-09, 2023-01-26, 2023-03-21, 2025-02-07, 2024-09-10), the challenger is behind on dollars per trade (challenger $-911 on 750 trades, $-1.21/trade, -14.1 bp; champion $-1367 on 1222 trades, $-1.12/trade, -16.4 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### reg_high_range
+
+**Area.** market_regime.
+
+**Source.** Grossman and Miller, Journal of Finance 1988, inventory risk after a large move. Wilder (1978) ADX is the practitioner cousin and is not used: the smoothing length would be another search.
+
+**Hypothesis.** After a prior SPY day in the top quartile of recent ranges, the next open is a gap risk the US$2,120 account should not take.
+
+**Economic rationale.** A wide prior day leaves dealers with inventory and leaves stops closer to the open. Standing aside is the pre-registered response. The 75th percentile of the previous 60 sessions is one frozen split. It is not refit inside a half-year, and it is not flipped to 'only trade wide days' if this direction loses. Fewer than 60 prior sessions means do not trade.
+
+**Test setup.** Stand aside when yesterday's SPY (high − low) / close is at or above the 75th percentile of the previous 60 sessions, or when those 60 sessions do not exist yet.
+
+**Sample note.** Stood aside 415 of 1799 after a wide prior SPY day, or before 60 prior sessions existed.
+
+**Walk-forward.** Challenger $-1219 on 923 trades, -16.4 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 146 | $-271 | -22.5 bp | yes |
+| 2023H2 | 169 | $-224 | -20.6 bp | yes |
+| 2024H1 | 152 | $-209 | -15.9 bp | yes |
+| 2024H2 | 116 | $-81 | -5.7 bp | yes |
+| 2025H1 | 115 | $-144 | -14.1 bp | yes |
+| 2025H2 | 166 | $-195 | -14.3 bp | yes |
+| 2026Q1 | 59 | $-95 | -21.6 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1219 on 923 trades, $-1.32/trade, -16.4 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 1 half-year; need at least 2. Improves in 1 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-08-07, 2024-08-06, 2024-04-19, 2023-09-27, 2024-07-01), the challenger is behind on dollars per trade (challenger $-1219 on 923 trades, $-1.32/trade, -16.4 bp; champion $-1397 on 1217 trades, $-1.15/trade, -16.5 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+### reg_falling_tape
+
+**Area.** market_regime.
+
+**Source.** Kyle (1985): an informed seller makes the bid toxic. The −0.30% open-to-signal drop is frozen and is not the live scorer's −0.22% six-bar gate.
+
+**Hypothesis.** Skipping the list when SPY is already down 0.30% from the 9:30 open to the on-list bar avoids buying a dip while the index seller is still active.
+
+**Economic rationale.** A single-name pullback in a falling index is often the same trade as the index. The threshold is −0.30% from today's open, known at the on-list bar and before the next-bar fill. It was not chosen by looking at which side of zero lost less. The rule stands aside in that state and does not flip to short. A missing SPY day skips the spell.
+
+**Test setup.** Stand aside when SPY close at the on-list bar / SPY 9:30 open − 1 is at or below −0.003. Otherwise the champion spell is unchanged.
+
+**Sample note.** Took 1476. Stood aside 323 when SPY was down 0.30% or more from the open. Skipped 0 with no SPY bar.
+
+**Walk-forward.** Challenger $-1257 on 1025 trades, -14.0 bp. Champion $-1475 on 1234 trades, -16.8 bp ($-1.20/trade).
+
+Half-years are votes. 2026Q1 is reported and is not a vote.
+
+| Fold | Trades | Net | Avg | Vote |
+| --- | ---: | ---: | ---: | --- |
+| 2023H1 | 130 | $-195 | -14.4 bp | yes |
+| 2023H2 | 182 | $-243 | -18.7 bp | yes |
+| 2024H1 | 181 | $-249 | -13.5 bp | yes |
+| 2024H2 | 142 | $-144 | -8.4 bp | yes |
+| 2025H1 | 129 | $-128 | -11.3 bp | yes |
+| 2025H2 | 188 | $-208 | -14.1 bp | yes |
+| 2026Q1 | 73 | $-89 | -18.4 bp | no |
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1257 on 1025 trades, $-1.23/trade, -14.0 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, high_vol, low_vol). Does not beat the champion in every ticker group (megacap). Improves in 4 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2025-02-07, 2023-08-02, 2023-05-12, 2024-04-17, 2023-08-08), the challenger is behind on dollars per trade (challenger $-1257 on 1025 trades, $-1.23/trade, -14.0 bp; champion $-1405 on 1217 trades, $-1.15/trade, -16.1 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+**Holdout.** Not checked in this batch.
+
+<!-- AREAS_END -->
