@@ -56,11 +56,21 @@ Tests last run: `python -m unittest discover -s tests -q` — 87 tests, OK. UI w
 
 ## What's in progress
 
-Owner goal shift, 2026-09-28: a rule that signals on essentially every session, using only the stored 5-minute bars. Five frozen rules are in `backtest/daily.py` (`d_rs_leader`, `d_vwap_stretch`, `d_orb`, `d_pullback`, `d_vwap_reclaim`). The runner is `python -m backtest.run_daily`. It has not been scored on the market file yet if this section still says so.
+Nothing. The daily-frequency batch is scored, committed with this file, and not deployed.
 
-Selection, written before any holdout load: on 2024-07-01..2026-03-31, coverage of SPY sessions at least 95 percent, then the highest tiered net. One holdout read for that finalist only, look 3, appended to `research/holdout_looks.csv`. If none clears 95 percent, do not open the holdout. Do not edit `app/signal_rule.json` or `models/ACTIVE`. Do not mint v1.0. Do not place orders.
+The live midmorning book filled on 563 of 813 SPY sessions (69.2%) from 2023-01-01 through 2026-03-31. Five frozen rules in `backtest/daily.py` were built to signal more often. Finalist rule, chosen on validation coverage (≥95%) and then validation net, before the holdout load: `d_rs_leader`. Look 3 is that one read. `models/ACTIVE` is still `v0.1`. `app/signal_rule.json` was not edited.
 
-Measured baseline, already computed, not a new trial: the frozen midmorning list has a membership bar on 565 of 813 SPY sessions in 2023-01-01..2026-03-31 (69.5%), not one day in seven. The runner also prints champion fill-day coverage.
+| Rule | Signal days | Trades/day | Win | Net | $/trade | $/day | Max DD | Gate |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| d_rs_leader | 100% | 1.00 | 25.6% | −$318 | −$0.39 | −$0.39 | $812 | rejected, 8/12 |
+| d_vwap_stretch | 100% | 1.00 | 46.0% | −$1,143 | −$1.41 | −$1.41 | $1,160 | rejected, 4/12 |
+| d_orb | 94.2% | 0.94 | 43.5% | −$773 | −$1.01 | −$0.95 | $1,386 | rejected, 6/12 |
+| d_pullback | 99.9% | 1.00 | 21.7% | −$853 | −$1.05 | −$1.05 | $932 | rejected, 8/12 |
+| d_vwap_reclaim | 99.8% | 1.00 | 22.8% | −$992 | −$1.22 | −$1.22 | $1,576 | rejected, 5/12 |
+
+`d_rs_leader` validation net −$367. Holdout look 3: 123 trades, every session, win 26.8%, +$90, +3.2 bp, max DD $243. Fixed US$1 minimum on that same slice: −$134. Pooled tiered result −$318, −1.8 bp. Down days were $1,680 worse than the champion. Paired p 0.047 and 0.056 versus alpha 0.00094. No cost-inclusive edge. Do not trade it and do not retune it off the holdout print.
+
+Look count is 3. Do not append look 4. `record_look` will reuse look 3 if `run_daily` is repeated for `d_rs_leader`.
 
 Not started, and not authorized as a silent next search:
 
@@ -72,15 +82,9 @@ Not started, and not authorized as a silent next search:
 
 ## Exact next steps
 
-Finish the daily-frequency batch if `research/daily_summary.json` does not exist yet:
+Stop. The daily-frequency batch is finished and it lost money after costs. Do not deploy `d_rs_leader`. Do not open the holdout again. Do not move the 95% coverage bar or the clocks after seeing the +$90 holdout.
 
-1. `python -m backtest.run_daily`
-2. Read `research/daily.csv` and the daily section of `research/RESEARCH_LOG.md`.
-3. Write the same numbers into `RESULTS.md` and a short paragraph in `README.md`. Do not deploy the finalist.
-4. Update this file with the measured table, the finalist id, and whether the holdout was read.
-5. Commit, push `cursor/right-time-to-buy-79f9`, and update PR #1. No agent metadata in the PR body.
-
-The Bonferroni denominator is now 53 (the old 48 plus these five ids). Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
+The Bonferroni denominator is 53. Do not rewrite `research/gate_results.csv` (scored at 33) or `research/areas.csv` (scored at 48).
 
 Only if the owner adds a further pre-registered idea:
 

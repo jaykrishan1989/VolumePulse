@@ -57,3 +57,19 @@ Fifteen pre-registered overlays were scored on the promotion gate: position size
 | reg_high_range | 923 | $-1219 | 1/12 | rejected |
 | reg_falling_tape | 1025 | $-1257 | 4/12 | rejected |
 <!-- AREAS_CHANGELOG_END -->
+
+<!-- DAILY_CHANGELOG_BEGIN -->
+## Daily frequency — 2026-09-28 — no checkpoint
+
+Five pre-registered daily-frequency rules were scored. None replaced v0.1. The live list was not edited and no order was placed. The validation finalist was `d_rs_leader`.
+
+| Id | Signal days | Trades | Net | $/trade | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| d_rs_leader | 100.0% | 813 | −$318 | −$0.39 | rejected |
+| d_vwap_stretch | 100.0% | 813 | −$1143 | −$1.41 | rejected |
+| d_orb | 94.2% | 766 | −$773 | −$1.01 | rejected |
+| d_pullback | 99.9% | 812 | −$853 | −$1.05 | rejected |
+| d_vwap_reclaim | 99.8% | 811 | −$991 | −$1.22 | rejected |
+
+Holdout of `d_rs_leader`, one read: 123 trades, 26.8% wins, $90 net, $0.73/trade, $0.73/session, 3.2 bp, max DD $243. Signal days 100.0%. Not deployed.
+<!-- DAILY_CHANGELOG_END -->

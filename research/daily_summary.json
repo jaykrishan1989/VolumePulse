@@ -1,0 +1,86 @@
+{
+  "activeUnchanged": true,
+  "checkpointIssued": false,
+  "finalist": "d_rs_leader",
+  "holdoutRead": true,
+  "ideasTried": 53,
+  "rules": [
+    {
+      "id": "d_rs_leader",
+      "decision": "rejected",
+      "signalDayFrac": 1.0,
+      "trades": 813,
+      "net": -317.73629352967083,
+      "perTrade": -0.3908195492369875,
+      "perDay": -0.3908195492369875,
+      "bps": -1.7948090914711567,
+      "maxDrawdown": 812.3662517618418,
+      "winRate": 0.25584255842558423
+    },
+    {
+      "id": "d_vwap_stretch",
+      "decision": "rejected",
+      "signalDayFrac": 1.0,
+      "trades": 813,
+      "net": -1143.1207488288849,
+      "perTrade": -1.4060525815853442,
+      "perDay": -1.4060525815853442,
+      "bps": -10.408827124201716,
+      "maxDrawdown": 1159.7573540909434,
+      "winRate": 0.46002460024600245
+    },
+    {
+      "id": "d_orb",
+      "decision": "rejected",
+      "signalDayFrac": 0.942189421894219,
+      "trades": 766,
+      "net": -772.6865049281063,
+      "perTrade": -1.0087291187050995,
+      "perDay": -0.9504139052006227,
+      "bps": -5.609401023985665,
+      "maxDrawdown": 1385.5339843915383,
+      "winRate": 0.4347258485639687
+    },
+    {
+      "id": "d_pullback",
+      "decision": "rejected",
+      "signalDayFrac": 0.998769987699877,
+      "trades": 812,
+      "net": -852.5622154116558,
+      "perTrade": -1.0499534672557338,
+      "perDay": -1.0486620115764524,
+      "bps": -6.678426952599856,
+      "maxDrawdown": 931.8144246657453,
+      "winRate": 0.21674876847290642
+    },
+    {
+      "id": "d_vwap_reclaim",
+      "decision": "rejected",
+      "signalDayFrac": 0.997539975399754,
+      "trades": 811,
+      "net": -991.495592565675,
+      "perTrade": -1.2225593003275894,
+      "perDay": -1.219551774373524,
+      "bps": -8.521099566691536,
+      "maxDrawdown": 1575.5000177930503,
+      "winRate": 0.2281134401972873
+    }
+  ],
+  "holdout": {
+    "trades": 123,
+    "win_rate": 0.2682926829268293,
+    "net": 90.1337716777797,
+    "per_trade": 0.7327948916892659,
+    "bps": 3.1952003740640387,
+    "per_day": 0.7327948916892659,
+    "trades_per_day": 1.0,
+    "signal_days": 123,
+    "fill_days": 123,
+    "sessions": 123,
+    "signal_day_frac": 1.0,
+    "fill_day_frac": 1.0,
+    "max_drawdown": 242.9735255851383,
+    "fixed_net": -133.60195490401975,
+    "id": "d_rs_leader"
+  }
+}

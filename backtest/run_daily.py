@@ -334,6 +334,10 @@ def daily_markdown(
                 f"Signal on {holdout['signal_day_frac'] * 100:.1f}% of {holdout['sessions']} sessions. "
                 f"Fixed US$1 minimum: {_money0(holdout['fixed_net'])}.",
                 "",
+                "The promotion-gate paragraph for this rule says the fresh slice was not read. "
+                "That sentence means the gate was not given the slice, so it cannot promote. "
+                "This paragraph is the one look. A profit here does not undo a loss on the validation window.",
+                "",
             ]
         )
     else:

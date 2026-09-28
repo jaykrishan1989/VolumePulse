@@ -213,6 +213,24 @@ Fifteen overlays were scored on the same promotion gate, on 2023-01-01 through 2
 
 **Market regime.** Buying the dip only while SPY was at or above its session VWAP cut the loss to −$931 and −14.2 bp, stood aside on 786 spells, and won 4 of 12 windows. Dollars per trade were worse (−$1.24). Standing aside after a prior SPY day in the top quartile of the previous 60 ranges lost −$1,219 and won 1 window. Standing aside when SPY was already down 0.30% from the 9:30 open lost −$1,257 and −14.0 bp, on 4 windows. Those three lost fewer dollars than the champion, and their paired p-values cleared 0.00104, because skipping a negative-edge trade shrinks the hole. None of them improved dollars per trade, and none won 9 windows. They were not adopted, and the direction of each filter was not flipped after the run.
 
+## Every session
+
+The live midmorning book does not wait for a rare day. On 2023-01-01 through 2026-03-31 it filled on 563 of 813 SPY sessions (69%). The request was a book that signals on essentially every session, still intraday, still flat by 15:55, still on the eight stored stocks, still at US$2,120 with tiered and fixed commissions and 2 bp of slippage. Five rules were frozen in `backtest/daily.py` and scored with `python -m backtest.run_daily`. The finalist had to cover at least 95% of validation sessions and then have the highest validation net. The holdout was read once for that rule (look 3) and was not used to pick it. Nothing was deployed.
+
+| Rule | Sessions with a signal | Trades/day | Win | Net | Per trade | Per day | Max DD | Gate |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Morning leader vs SPY, hold to the close | 100% | 1.00 | 25.6% | −$318 | −$0.39 | −$0.39 | $812 | 8/12, rejected |
+| Furthest under VWAP at 10:30 | 100% | 1.00 | 46.0% | −$1,143 | −$1.41 | −$1.41 | $1,160 | 4/12, rejected |
+| First opening-range break | 94.2% | 0.94 | 43.5% | −$773 | −$1.01 | −$0.95 | $1,386 | 6/12, rejected |
+| First pullback after the open | 99.9% | 1.00 | 21.7% | −$853 | −$1.05 | −$1.05 | $932 | 8/12, rejected |
+| First VWAP reclaim | 99.8% | 1.00 | 22.8% | −$992 | −$1.22 | −$1.22 | $1,576 | 5/12, rejected |
+
+None of them shows a cost-inclusive edge. Every pooled net is negative. The fixed US$1 minimum makes each one worse (the morning leader falls from −$318 to −$1,338).
+
+The morning leader is the validation finalist because it signals every session and its validation loss (−$367) was the smallest among the rules that cleared 95% coverage. It is still a loss: −1.8 bp per trade, a $812 drawdown, and a 25.6% win rate, which means the one-ATR stop is the usual exit. Three of the six half-years made money and three lost, including −$387 in 2025H2. Against the champion it won 8 of 12 windows, short of 9. Down days were a severe regression, $1,680 worse. The paired p-values were 0.047 and 0.056, against a Bonferroni line of 0.00094. Dropping the five best days left it behind on dollars per trade.
+
+Its holdout, look 3, was a signal every session: 123 trades, 26.8% winners, +$90, +3.2 bp, $243 max drawdown. The same trades lose $134 under the fixed US$1 minimum. The validation window had already lost $367. One green slice after that loss is not an edge, and the live rule was left at v0.1.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.

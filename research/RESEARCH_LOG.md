@@ -856,3 +856,178 @@ Half-years are votes. 2026Q1 is reported and is not a vote.
 **Holdout.** Not checked in this batch.
 
 <!-- AREAS_END -->
+
+<!-- DAILY_BEGIN -->
+## Daily frequency
+
+The owner asked for a buy and a sell on essentially every session. The frozen midmorning list, measured on this file, has a fill on 69.2% of SPY sessions from 2023-01-01 through 2026-03-31. That is the baseline these five rules are compared with. Two rules pick a name at a fixed clock, so a session with a 9:30 open gets a signal. Three rules wait for a setup and can miss a day. Thresholds were not moved after the run.
+
+Costs: US$2,120, whole shares, tiered commissions, 2 bp slippage, hard stop, flat by 15:55. Bonferroni denominator, including these five ids: 53. The finalist is chosen on the validation window only: at least 95% of SPY sessions have a signal, then the highest tiered net. That finalist is `d_rs_leader`. The holdout was read once for it (look 3). The live rule was not changed. `models/ACTIVE` stays `v0.1`. No order was placed.
+
+| Rule | Signal days | Round trips/day | Win | Net | $/trade | $/day | Max DD | Windows | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| d_rs_leader | 100.0% | 1.00 | 25.6% | −$318 | −$0.39 | −$0.39 | $812 | 8/12 | REJECTED |
+| d_vwap_stretch | 100.0% | 1.00 | 46.0% | −$1143 | −$1.41 | −$1.41 | $1160 | 4/12 | REJECTED |
+| d_orb | 94.2% | 0.94 | 43.5% | −$773 | −$1.01 | −$0.95 | $1386 | 6/12 | REJECTED |
+| d_pullback | 99.9% | 1.00 | 21.7% | −$853 | −$1.05 | −$1.05 | $932 | 8/12 | REJECTED |
+| d_vwap_reclaim | 99.8% | 1.00 | 22.8% | −$991 | −$1.22 | −$1.22 | $1576 | 5/12 | REJECTED |
+
+Validation window 2024-07-01 to 2026-03-31, the selection sample. Finalist: `d_rs_leader`.
+
+| Rule | Validation signal days | Validation net | Eligible |
+| --- | ---: | ---: | --- |
+| d_rs_leader | 100.0% | −$367 | yes |
+| d_vwap_stretch | 100.0% | −$761 | yes |
+| d_orb | 93.8% | −$1013 | no |
+| d_pullback | 100.0% | −$478 | yes |
+| d_vwap_reclaim | 99.8% | −$989 | yes |
+
+### d_rs_leader
+
+**Source.** Jegadeesh, Journal of Finance 1990, short-horizon reversal, is the risk on the other side. The rule still buys the morning leader. Gao, Han, Li and Zhou, Journal of Financial Economics 2018, is the index-clock cousin and was already rejected as its own trade.
+
+**Hypothesis.** The stock that beat SPY the most between 9:30 and 9:55 keeps leading into the close often enough to pay a US$2,120 ticket every session.
+
+**Economic rationale.** A book that waits for a rare dip is idle on quiet days. Ranking forces one long every session the open printed. The other side of a morning leader is either a momentum buyer who is late or a short-horizon reversal: Jegadeesh found the recent winner tends to give the gain back. This is that bet, taken in the continuation direction, once a day, with a hard stop and a 15:55 flat.
+
+**Test setup.** Signal is the 9:55 close. Fill is the 10:00 open, 2 bp worse. Stop is one ATR under that open. Exit is the close of the 15:50 bar. One name. SPY is the benchmark and is not bought.
+
+**Pooled, tiered.** 813 trades, 25.6% wins, −$318 net, −$0.39/trade, −$0.39/session, -1.8 bp, max DD $812. Signal on 100.0% of 813 sessions. A fill on 100.0%. Fixed US$1 minimum: −$1338.
+
+**Validation.** 439 trades, 25.3% wins, −$367 net, −$0.83/trade, −$0.83/session, -4.5 bp, max DD $676. Signal days 100.0%.
+
+Half-years are votes. 2026Q1 is reported and is not a vote. Each fold is its own US$2,120 account.
+
+| Fold | Signal days | Trades | Win | Net | $/trade | $/day | Max DD | Vote |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 2023H1 | 100.0% | 124 | 25.8% | $113 | $0.91 | $0.91 | $424 | yes |
+| 2023H2 | 100.0% | 126 | 20.6% | −$248 | −$1.97 | −$1.97 | $354 | yes |
+| 2024H1 | 100.0% | 124 | 31.5% | $240 | $1.93 | $1.93 | $274 | yes |
+| 2024H2 | 100.0% | 128 | 27.3% | −$91 | −$0.71 | −$0.71 | $347 | yes |
+| 2025H1 | 100.0% | 122 | 27.0% | $152 | $1.24 | $1.24 | $227 | yes |
+| 2025H2 | 100.0% | 128 | 21.9% | −$387 | −$3.02 | −$3.02 | $387 | yes |
+| 2026Q1 | 100.0% | 61 | 24.6% | −$39 | −$0.64 | −$0.64 | $158 | no |
+
+**Promotion gate.** Rejected. Does not beat the champion in every market regime (down). Does not beat the champion in every ticker group (megacap). Improves in 8 of 12 windows; need at least 9 (75%). Severe regression in down: net is $1680 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2025-04-09, 2025-04-02, 2023-01-06, 2024-02-29, 2025-06-09), the challenger is behind on dollars per trade (challenger $-1071 on 808 trades, $-1.33/trade, -6.5 bp; champion $-1487 on 1229 trades, $-1.21/trade, -16.9 bp). Paired tests do not clear the Bonferroni line for 53 ideas tried (bootstrap p=0.0472, permutation p=0.0562, alpha=0.00094). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+### d_vwap_stretch
+
+**Source.** Berkowitz, Logue and Noser, Journal of Finance 1988, VWAP as the benchmark. Kyle, Econometrica 1985, is why a name far under VWAP may be informed selling rather than a discount.
+
+**Hypothesis.** Buying the name furthest under its own VWAP at 10:30, every session, reverts enough after costs to beat doing nothing.
+
+**Economic rationale.** The stretch is the distance a seller has already pushed the print. A market maker who is long that inventory wants it back toward VWAP. If the seller is informed, the print keeps falling and the stop pays them. Forcing a trade when every name is above VWAP buys the least extended name, which is a weaker version of the same idea and is included so the book is not allowed to skip the day.
+
+**Test setup.** Signal is the 10:25 close. Fill is the 10:30 open. Rank is (VWAP − close) / ATR. Exit is the next open after a later close at or above VWAP, or the 15:55 flat. Stop is one ATR.
+
+**Pooled, tiered.** 813 trades, 46.0% wins, −$1143 net, −$1.41/trade, −$1.41/session, -10.4 bp, max DD $1160. Signal on 100.0% of 813 sessions. A fill on 100.0%. Fixed US$1 minimum: −$1845.
+
+**Validation.** 439 trades, 46.7% wins, −$761 net, −$1.73/trade, −$1.73/session, -11.1 bp, max DD $818. Signal days 100.0%.
+
+Half-years are votes. 2026Q1 is reported and is not a vote. Each fold is its own US$2,120 account.
+
+| Fold | Signal days | Trades | Win | Net | $/trade | $/day | Max DD | Vote |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 2023H1 | 100.0% | 124 | 49.2% | $6 | $0.05 | $0.05 | $217 | yes |
+| 2023H2 | 100.0% | 126 | 41.3% | −$343 | −$2.72 | −$2.72 | $343 | yes |
+| 2024H1 | 100.0% | 124 | 47.6% | −$164 | −$1.32 | −$1.32 | $222 | yes |
+| 2024H2 | 100.0% | 128 | 48.4% | −$181 | −$1.42 | −$1.42 | $267 | yes |
+| 2025H1 | 100.0% | 122 | 48.4% | −$252 | −$2.06 | −$2.06 | $324 | yes |
+| 2025H2 | 100.0% | 128 | 45.3% | −$332 | −$2.59 | −$2.59 | $377 | yes |
+| 2026Q1 | 100.0% | 61 | 44.3% | −$75 | −$1.22 | −$1.22 | $92 | no |
+
+**Promotion gate.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1143 on 813 trades, $-1.41/trade, -10.4 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (down, low_vol). Does not beat the champion in every ticker group (megacap). Beats the champion in 1 half-year; need at least 2. Improves in 4 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-07-21, 2024-04-29, 2023-06-13, 2024-03-19, 2023-01-24), the challenger is behind on dollars per trade (challenger $-1272 on 808 trades, $-1.57/trade, -11.4 bp; champion $-1426 on 1219 trades, $-1.17/trade, -16.7 bp). Paired tests do not clear the Bonferroni line for 53 ideas tried (bootstrap p=0.1068, permutation p=0.1110, alpha=0.00094). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+### d_orb
+
+**Source.** Holmberg, Lönnbark and Lundström, Finance Research Letters 2013; Crabel, Day Trading with Short Term Price Patterns and Opening Range Breakout (1990). An earlier all-names opening-range rule on this same history was rejected.
+
+**Hypothesis.** Taking only the first stock that closes above its 9:30–9:40 range, instead of every break, is frequent enough and selective enough to pay the ticket.
+
+**Economic rationale.** The opening range is the price that absorbed the overnight inventory. A close above it is a bid that got through that inventory. The earlier test bought every such break and lost. This version buys one name, the first and the largest extension, and stands aside when nothing breaks by 11:55. Standing aside will miss days. That is reported, not patched.
+
+**Test setup.** Range is the high and low of the 9:30, 9:35, and 9:40 bars. Signal is the first later close above that high, through the 11:55 bar. Fill is the next open. Stop is the range low. Exit is the 15:55 flat.
+
+**Pooled, tiered.** 766 trades, 43.5% wins, −$773 net, −$1.01/trade, −$0.95/session, -5.6 bp, max DD $1386. Signal on 94.2% of 813 sessions. A fill on 94.2%. Fixed US$1 minimum: −$1498.
+
+**Validation.** 412 trades, 38.8% wins, −$1013 net, −$2.46/trade, −$2.31/session, -16.9 bp, max DD $1177. Signal days 93.8%.
+
+Half-years are votes. 2026Q1 is reported and is not a vote. Each fold is its own US$2,120 account.
+
+| Fold | Signal days | Trades | Win | Net | $/trade | $/day | Max DD | Vote |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 2023H1 | 93.5% | 116 | 50.9% | $407 | $3.51 | $3.28 | $305 | yes |
+| 2023H2 | 92.9% | 117 | 43.6% | −$185 | −$1.58 | −$1.47 | $449 | yes |
+| 2024H1 | 97.6% | 121 | 49.6% | $176 | $1.45 | $1.42 | $317 | yes |
+| 2024H2 | 91.4% | 117 | 42.7% | −$386 | −$3.30 | −$3.02 | $657 | yes |
+| 2025H1 | 91.8% | 112 | 41.1% | −$108 | −$0.96 | −$0.88 | $502 | yes |
+| 2025H2 | 96.9% | 124 | 35.5% | −$567 | −$4.57 | −$4.43 | $567 | yes |
+| 2026Q1 | 96.7% | 59 | 39.0% | −$159 | −$2.70 | −$2.61 | $257 | no |
+
+**Promotion gate.** Rejected. Does not beat the champion in every market regime (down, high_vol). Does not beat the champion in every ticker group (megacap). Improves in 6 of 12 windows; need at least 9 (75%). Severe regression in 2024H2: net is $312 worse than the champion, past the $212 limit. Severe regression in 2025H2: net is $293 worse than the champion, past the $212 limit. Severe regression in down: net is $3474 worse than the champion, past the $212 limit. Severe regression in megacap: net is $453 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2025-04-09, 2023-08-29, 2023-02-01, 2023-08-14, 2025-04-02), the challenger is behind on net, dollars per trade (challenger $-1622 on 761 trades, $-2.13/trade, -11.4 bp; champion $-1468 on 1233 trades, $-1.19/trade, -16.8 bp). Paired tests do not clear the Bonferroni line for 53 ideas tried (bootstrap p=0.2266, permutation p=0.2280, alpha=0.00094). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+### d_pullback
+
+**Source.** The live Right Time to Buy card is a pullback. This is the same shape with the score gate removed and a limit of one fill a day, so frequency is a property of the open rather than of a score threshold.
+
+**Hypothesis.** The first pullback after an opening drive, one name a day, pays after costs more often than waiting for the scored list.
+
+**Economic rationale.** The opening buyer who chased the first push is the inventory on the other side of the dip. A bounce is that inventory being taken back. If the drive was the informed order, the pullback does not bounce and the stop is the loss. The rule does not fire on a day with no drive and no dip.
+
+**Test setup.** From 10:00 to 11:30, the session high before the bar has to be at least 0.3 ATR above the 9:30 open, and the bar's low at least 0.4 ATR under that high, with an up close. Fill is the next open. Stop is the pullback low. Exit is the 15:55 flat. Earliest signal wins.
+
+**Pooled, tiered.** 812 trades, 21.7% wins, −$853 net, −$1.05/trade, −$1.05/session, -6.7 bp, max DD $932. Signal on 99.9% of 813 sessions. A fill on 99.9%. Fixed US$1 minimum: −$1758.
+
+**Validation.** 439 trades, 22.8% wins, −$478 net, −$1.09/trade, −$1.09/session, -6.0 bp, max DD $554. Signal days 100.0%.
+
+Half-years are votes. 2026Q1 is reported and is not a vote. Each fold is its own US$2,120 account.
+
+| Fold | Signal days | Trades | Win | Net | $/trade | $/day | Max DD | Vote |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 2023H1 | 99.2% | 123 | 17.1% | −$89 | −$0.72 | −$0.72 | $369 | yes |
+| 2023H2 | 100.0% | 126 | 23.8% | −$52 | −$0.42 | −$0.42 | $171 | yes |
+| 2024H1 | 100.0% | 124 | 20.2% | −$291 | −$2.34 | −$2.34 | $424 | yes |
+| 2024H2 | 100.0% | 128 | 24.2% | $13 | $0.10 | $0.10 | $247 | yes |
+| 2025H1 | 100.0% | 122 | 19.7% | −$299 | −$2.45 | −$2.45 | $327 | yes |
+| 2025H2 | 100.0% | 128 | 25.0% | −$89 | −$0.70 | −$0.70 | $115 | yes |
+| 2026Q1 | 100.0% | 61 | 21.3% | −$79 | −$1.30 | −$1.30 | $101 | no |
+
+**Promotion gate.** Rejected. Does not beat the champion in every market regime (down, high_vol). Improves in 8 of 12 windows; need at least 9 (75%). Severe regression in down: net is $757 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2023-05-08, 2023-07-17, 2023-02-01, 2023-01-12, 2025-02-28), the challenger is behind on dollars per trade (challenger $-1263 on 807 trades, $-1.57/trade, -9.5 bp; champion $-1474 on 1225 trades, $-1.20/trade, -16.9 bp). Paired tests do not clear the Bonferroni line for 53 ideas tried (bootstrap p=0.0590, permutation p=0.0582, alpha=0.00094). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+### d_vwap_reclaim
+
+**Source.** Berkowitz, Logue and Noser (1988). A reclaim is a print that was offered under VWAP and then trades back through the benchmark.
+
+**Hypothesis.** The first VWAP reclaim of the day, after a dip of at least 0.3 ATR, is a daily long that pays the commission.
+
+**Economic rationale.** Under VWAP the seller has the benchmark against him. A close back through VWAP says that offer was absorbed. The failure mode is a second break, which is why the exit is the next open after a close back under VWAP. Days with no dip, or no reclaim by 14:00, produce no signal.
+
+**Test setup.** Arm when a bar closes at least 0.3 ATR under session VWAP. Signal is a later close at or above VWAP, through 14:00. Fill is the next open. Stop is one ATR. Exit is the next open after a close back under VWAP, or the 15:55 flat.
+
+**Pooled, tiered.** 811 trades, 22.8% wins, −$991 net, −$1.22/trade, −$1.22/session, -8.5 bp, max DD $1576. Signal on 99.8% of 813 sessions. A fill on 99.8%. Fixed US$1 minimum: −$1668.
+
+**Validation.** 438 trades, 20.3% wins, −$989 net, −$2.26/trade, −$2.25/session, -16.0 bp, max DD $1012. Signal days 99.8%.
+
+Half-years are votes. 2026Q1 is reported and is not a vote. Each fold is its own US$2,120 account.
+
+| Fold | Signal days | Trades | Win | Net | $/trade | $/day | Max DD | Vote |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 2023H1 | 99.2% | 123 | 26.8% | $355 | $2.88 | $2.86 | $230 | yes |
+| 2023H2 | 100.0% | 126 | 25.4% | −$19 | −$0.15 | −$0.15 | $167 | yes |
+| 2024H1 | 100.0% | 124 | 25.0% | −$320 | −$2.58 | −$2.58 | $330 | yes |
+| 2024H2 | 99.2% | 127 | 22.8% | −$306 | −$2.41 | −$2.39 | $364 | yes |
+| 2025H1 | 100.0% | 122 | 23.0% | −$287 | −$2.35 | −$2.35 | $297 | yes |
+| 2025H2 | 100.0% | 128 | 16.4% | −$317 | −$2.47 | −$2.47 | $417 | yes |
+| 2026Q1 | 100.0% | 61 | 21.3% | −$280 | −$4.58 | −$4.58 | $280 | no |
+
+**Promotion gate.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-991 on 811 trades, $-1.22/trade, -8.5 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (down, low_vol). Does not beat the champion in every ticker group (megacap). Improves in 5 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-03-16, 2023-02-01, 2023-01-06, 2023-01-23, 2023-10-23), the challenger is behind on net, dollars per trade (challenger $-1669 on 806 trades, $-2.07/trade, -12.3 bp; champion $-1499 on 1229 trades, $-1.22/trade, -17.0 bp). Paired tests do not clear the Bonferroni line for 53 ideas tried (bootstrap p=0.1534, permutation p=0.1538, alpha=0.00094). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+### Holdout, one read
+
+**Rule.** `d_rs_leader`. Look 3. Chosen on the validation window before this slice was loaded. The number below did not change the pick and did not change the live rule.
+
+**Holdout, tiered.** 123 trades, 26.8% wins, $90 net, $0.73/trade, $0.73/session, 3.2 bp, max DD $243. Signal on 100.0% of 123 sessions. Fixed US$1 minimum: −$134.
+
+The promotion-gate paragraph for this rule says the fresh slice was not read. That sentence means the gate was not given the slice, so it cannot promote. This paragraph is the one look. A profit here does not undo a loss on the validation window.
+
+<!-- DAILY_END -->
