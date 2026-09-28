@@ -6,23 +6,19 @@ module never places an order. The owner confirms every trade.
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from backtest.periods import FLAT_MINUTE
 
-_PATH = Path(__file__).resolve().parent / "signal_rule.json"
-
 
 @lru_cache(maxsize=1)
 def load_rule() -> dict[str, Any]:
-    try:
-        return json.loads(_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {"id": "confirm1_lag1", "confirm": 1, "exit_lag": 1, "use_stop": True}
+    """The live rule is the checkpoint named by models/ACTIVE."""
+    from models.registry import default_store
+
+    return default_store().signal_rule()
 
 
 def describe_rule(rule: dict[str, Any] | None = None) -> str:
@@ -44,6 +40,9 @@ def describe_rule(rule: dict[str, Any] | None = None) -> str:
         parts.append("VWAP reclaim required.")
     if rule.get("min_rr") is not None:
         parts.append(f"Reward/risk at least {rule['min_rr']}.")
+    if rule.get("version"):
+        kind = "passing checkpoint" if rule.get("passedGate") else "baseline, no cost-inclusive edge"
+        parts.append(f"Active model {rule['version']} ({kind}).")
     parts.append("Confirm each trade yourself. Volume Pulse does not place orders.")
     return " ".join(parts)
 

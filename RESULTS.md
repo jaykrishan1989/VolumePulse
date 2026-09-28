@@ -183,10 +183,16 @@ The live champion stays the 10:00–11:00 appear-to-disappear rule. A challenger
 
 On that pre-holdout sample the champion itself lost $1,475 on 1,234 trades (−$1.20 per trade, −16.8 bp). That is a longer window than the −$864 validation result and it is not the holdout. All six challengers were rejected. The down-gap rule was the only one ahead of the champion on all three pooled measures (−$183, −$0.26 per trade, −13.0 bp) and it still won only 7 of 12 windows, with severe regressions on down days, low-volatility days, and 2024H2. Its daily-gap p-values were about 0.02, which does not clear 0.00152. Dropping its five best days left the dollar total ahead and the per-trade edge behind. No live threshold moved.
 
+## Versions
+
+There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
+
+The monitor trips when the last 30 closed paper trades average at least 10 bp worse than this checkpoint's −8.4 bp expectancy and a binomial test of that shortfall is under 5 percent. With no passing checkpoint on file, ACTIVE stays at v0.1 and the screen shows a held rollback. `python -m models.cli list` shows the pointer.
+
 ## How to reproduce
 
 ```powershell
-python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals tests.test_hypotheses tests.test_gate
+python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals tests.test_hypotheses tests.test_gate tests.test_models
 python -m backtest.scan
 python -m backtest.run_search
 python -c "from backtest.scan import scan_membership; scan_membership()"

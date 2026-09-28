@@ -4,6 +4,8 @@ const detailEl = document.getElementById("detail");
 const tapeEl = document.getElementById("tape");
 const alertBar = document.getElementById("alertBar");
 const delayBanner = document.getElementById("delayBanner");
+const rollbackBanner = document.getElementById("rollbackBanner");
+const modelVersion = document.getElementById("modelVersion");
 const metaLine = document.getElementById("metaLine");
 const sessionChip = document.getElementById("sessionChip");
 const sessionLabel = document.getElementById("sessionLabel");
@@ -528,7 +530,12 @@ function researchPanel(snap) {
   const sigWin = sig.winRate == null ? "—" : `${(Number(sig.winRate) * 100).toFixed(0)}% wins`;
   const ret = hold.returnPct == null ? "—" : `${Number(hold.returnPct) > 0 ? "+" : ""}${Number(hold.returnPct).toFixed(1)}%`;
   const dd = hold.maxDrawdown == null ? "—" : fmtSignedMoney(-Math.abs(Number(hold.maxDrawdown)));
+  const model = snap.model || {};
+  const versionLine = model.label
+    ? `<p class="entry-rule">Model ${esc(model.label)}. ${model.passedGate ? "Passed the costs-and-random bar." : "Baseline only. It did not pass the costs-and-random bar."}</p>`
+    : "";
   return `<section class="entry-research">
+    ${versionLine}
     <p class="entry-verdict">${esc(verdict)}</p>
     <div class="entry-stats">
       <div><span>Holdout win</span><b>${win}</b></div>
@@ -1153,6 +1160,16 @@ function render(snap) {
   if (delayBanner) {
     delayBanner.hidden = !delay.active;
     delayBanner.textContent = delay.active ? delay.message || "" : "";
+  }
+  const model = snap.model || {};
+  if (modelVersion) {
+    modelVersion.textContent = model.label ? `model ${model.label}` : "model …";
+    modelVersion.className = model.passedGate ? "model-version passing" : "model-version";
+  }
+  const rollback = model.rollback || {};
+  if (rollbackBanner) {
+    rollbackBanner.hidden = !rollback.active;
+    rollbackBanner.textContent = rollback.active ? rollback.message || "" : "";
   }
 
   if (snap.mode === "demo") {

@@ -1,0 +1,66 @@
+{
+  "version": "v0.1",
+  "status": "baseline",
+  "passedGate": false,
+  "liveCapable": true,
+  "kind": "appear_disappear",
+  "created": "2026-09-28",
+  "tag": "v0.1",
+  "parentCommit": "d6aeaf68c4c4c64fc71167038dac25f904aa88b0",
+  "signalRule": {
+    "id": "midmorning",
+    "confirm": 1,
+    "exit_lag": 1,
+    "min_score": null,
+    "min_rr": null,
+    "min_rvol": null,
+    "require_vwap_reclaim": false,
+    "minute_from": 600,
+    "minute_to": 660,
+    "stop_scale": 1.0,
+    "use_stop": true,
+    "note": "Frozen on the validation window. The holdout was not used to pick this."
+  },
+  "costs": {
+    "accountUsd": 2120.0,
+    "slipBps": 2.0,
+    "schedule": "tiered",
+    "flat": "15:55 ET"
+  },
+  "windows": {
+    "train": ["2022-01-01", "2024-06-30"],
+    "validate": ["2024-07-01", "2026-03-31"],
+    "holdout": ["2026-04-01", "2026-12-31"],
+    "gateComparison": ["2023-01-01", "2026-03-31"]
+  },
+  "hysteresis": {
+    "confirmBars": 1,
+    "exitLagBars": 1,
+    "entry": "next bar open",
+    "exit": "next bar open",
+    "flatMinute": 950,
+    "useStop": true,
+    "stopScale": 1.0
+  },
+  "thresholds": {
+    "minScore": null,
+    "minRr": null,
+    "minRvol": null,
+    "requireVwapReclaim": false,
+    "minuteFrom": 600,
+    "minuteTo": 660
+  },
+  "expected": {
+    "source": "holdout read once, look 2",
+    "trades": 191,
+    "winRate": 0.3717277486910995,
+    "net": -268.365512488125,
+    "returnPct": -12.658750589062498,
+    "avgNetDollars": -1.4050550392048429,
+    "avgNetBps": -8.434117953234715,
+    "maxDrawdown": 320.72548873106257,
+    "tradesPerDay": 1.5528455284552845,
+    "bootstrapP": 0.9995,
+    "randomP": 0.225
+  }
+}

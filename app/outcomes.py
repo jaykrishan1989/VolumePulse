@@ -314,3 +314,14 @@ class OutcomeLog:
             "avgNetBps": (sum(row[2] or 0 for row in closed) / len(closed)) if closed else None,
             "note": "Signals only. Confirm every trade. Volume Pulse never places orders.",
         }
+
+    def closed_signal_bps(self) -> list[float]:
+        """Net basis points of closed BUY signals, oldest first. Paper only."""
+        rows = self._conn.execute(
+            """
+            SELECT net_bps FROM signals
+            WHERE action = 'BUY' AND status IN ('sell', 'stop', 'flat')
+            ORDER BY id
+            """
+        ).fetchall()
+        return [float(row[0] or 0.0) for row in rows]

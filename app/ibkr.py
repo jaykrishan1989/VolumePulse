@@ -1291,6 +1291,7 @@ class VolumeFeed:
             "sector": self.sector_id,
             "quoteDelay": entry_meta.get("quoteDelay") or self._quote_delay(tickers),
             **entry_meta,
+            **self._model_fields(),
         }
 
     def _empty_entry_meta(self) -> dict[str, Any]:
@@ -1340,6 +1341,26 @@ class VolumeFeed:
         except Exception:
             paper = {"open": 0, "closed": 0, "note": "Paper log only. Volume Pulse never places orders."}
         return {"entryResearch": load_research(), "entryPaper": paper}
+
+    def _model_fields(self) -> dict[str, Any]:
+        """Active checkpoint, plus a rollback flag when the paper log falls short."""
+        try:
+            from app.signals import SignalBook, load_rule
+            from models.monitor import live_status
+
+            payload = live_status(self._outcome_log().closed_signal_bps())
+            if payload.get("rollback", {}).get("kind") == "rollback":
+                load_rule.cache_clear()
+                self._signal_book = SignalBook(load_rule())
+        except Exception:
+            payload = {
+                "version": None,
+                "status": "unknown",
+                "passedGate": False,
+                "label": "model unavailable",
+                "rollback": {"active": False, "kind": None, "message": ""},
+            }
+        return {"model": payload}
 
     def _stamp_research(self, row: dict[str, Any]) -> dict[str, Any]:
         hold = (load_research().get("holdout") or {}) if load_research() else {}
@@ -1537,6 +1558,7 @@ class VolumeFeed:
             "entryWithheld": withheld,
             "quoteDelay": quote_delay,
             "entryRule": describe_rule(),
+            **self._model_fields(),
             "entrySignals": [
                 {
                     "action": "BUY",
@@ -1875,6 +1897,7 @@ class VolumeFeed:
             "entryDisclaimer": None,
             "entryThreshold": None,
             "entryTopN": None,
+            **self._model_fields(),
         }
 
     def _seed_demo(self) -> None:
