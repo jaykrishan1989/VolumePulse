@@ -417,8 +417,10 @@ def _day_bootstrap(trades: list[dict[str, Any]], draws: int = 2000, seed: int = 
     if not days:
         return {"draws": 0, "pValue": None, "days": 0}
     rng = np.random.default_rng(seed)
-    totals = np.array([days[index] for index in rng.integers(0, len(days), size=(draws, len(days)))]).sum(axis=1)
-    return {"draws": draws, "pValue": float(np.mean(totals <= 0)), "days": len(days)}
+    values = np.asarray(days, dtype=np.float64)
+    picks = rng.integers(0, len(values), size=(draws, len(values)))
+    totals = values[picks].sum(axis=1)
+    return {"draws": draws, "pValue": float(np.mean(totals <= 0)), "days": len(values)}
 
 
 def _random_p(

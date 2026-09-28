@@ -14,7 +14,7 @@ import pandas as pd
 from backtest.ml_panel import build_frame
 from backtest.ml_registry import FEATURE_COLUMNS
 from backtest.periods import HOLDOUT_START
-from backtest.run_ml import choose_threshold, train_cut, walk_forward
+from backtest.run_ml import _day_bootstrap, choose_threshold, train_cut, walk_forward
 
 
 def _weekdays(start: date, count: int) -> list[date]:
@@ -119,6 +119,19 @@ class LeakageTests(unittest.TestCase):
         days = [date(2026, 3, 30), date(2026, 3, 31), HOLDOUT_START]
         trainable = [day for day in days if day < cut]
         self.assertEqual(trainable, [date(2026, 3, 30)])
+
+    def test_day_bootstrap_resamples_whole_days(self) -> None:
+        trades = [
+            {"day": date(2026, 4, 1), "net": 10.0},
+            {"day": date(2026, 4, 1), "net": -4.0},
+            {"day": date(2026, 4, 2), "net": -3.0},
+        ]
+        out = _day_bootstrap(trades, draws=40, seed=1)
+        self.assertEqual(out["days"], 2)
+        self.assertEqual(out["draws"], 40)
+        self.assertGreaterEqual(out["pValue"], 0.0)
+        self.assertLessEqual(out["pValue"], 1.0)
+        self.assertEqual(_day_bootstrap([], draws=10)["pValue"], None)
 
     def test_threshold_and_walk_forward_reject_holdout(self) -> None:
         frame = pd.DataFrame({"day": [HOLDOUT_START], "pred_ret": [0.01]})
