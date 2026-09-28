@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backtest.costs import apply_slip, commission, share_count
+from backtest.costs import PRIMARY_SCHEDULE, apply_slip, commission, share_count
 from backtest.periods import FLAT_MINUTE
 
 
@@ -38,7 +38,7 @@ def simulate_long(
     atr: float | None = None,
     atr_mult: float = 1.0,
     slip_bps: float = 2.0,
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
     equity: float = 2160.0,
     flat_minute: int = FLAT_MINUTE,
 ) -> dict[str, Any] | None:

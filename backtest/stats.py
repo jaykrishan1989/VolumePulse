@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Any
 
+from backtest.costs import PRIMARY_SCHEDULE
 from backtest.periods import HOLDOUT_START, VALIDATE_END, VALIDATE_START
 from backtest.simulate import simulate_long
 
@@ -49,7 +50,7 @@ def simulate_signal(
     spec: dict[str, Any],
     *,
     slip_bps: float = 2.0,
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
     equity: float = 2160.0,
 ) -> dict[str, Any] | None:
     """Fill one stored signal. Stop and target may be rescaled for a random entry."""
@@ -84,7 +85,7 @@ def apply_spec(
     spec: dict[str, Any],
     *,
     slip_bps: float = 2.0,
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
     equity: float = 2160.0,
 ) -> list[dict[str, Any]]:
     trades = []

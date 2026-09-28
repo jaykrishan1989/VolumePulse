@@ -2,8 +2,8 @@
 
 A row is written when a setup first appears. Later marks use the last traded
 price already on the tape: stop if last is at or through the stop, otherwise
-target, otherwise a time exit at 15:55 ET. Dollars use the same US$2,160
-tiered cost model as the backtest.
+target, otherwise a time exit at 15:55 ET. Dollars use the live cost model:
+no commission, 2 bp of slippage on the fill.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from backtest.costs import apply_slip, commission, share_count
+from backtest.costs import PRIMARY_SCHEDULE, apply_slip, commission, share_count
 from backtest.periods import ACCOUNT_USD, FLAT_MINUTE, SLIP_BPS
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -171,7 +171,9 @@ class OutcomeLog:
                 bps = 0.0
             else:
                 gross = (exit_px - entry) * shares
-                fees = commission(shares, entry, "buy", "tiered") + commission(shares, exit_px, "sell", "tiered")
+                fees = commission(shares, entry, "buy", PRIMARY_SCHEDULE) + commission(
+                    shares, exit_px, "sell", PRIMARY_SCHEDULE
+                )
                 net = gross - fees
                 bps = net / (entry * shares) * 10_000.0
             self._conn.execute(
@@ -258,7 +260,9 @@ class OutcomeLog:
             bps = 0.0
         else:
             gross = (exit_px - entry) * shares
-            fees = commission(shares, entry, "buy", "tiered") + commission(shares, exit_px, "sell", "tiered")
+            fees = commission(shares, entry, "buy", PRIMARY_SCHEDULE) + commission(
+                shares, exit_px, "sell", PRIMARY_SCHEDULE
+            )
             net = gross - fees
             bps = net / (entry * shares) * 10_000.0
         self._conn.execute(

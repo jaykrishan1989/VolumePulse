@@ -3,6 +3,11 @@
 ``python -m backtest.run_daily`` uses the stored 5-minute bars. It does not
 open a Gateway socket and it does not change the live rule.
 
+This command reproduces the earlier IBKR-assumption table (tiered commissions,
+with the fixed schedule beside it). The live cost model is ``app/cost_model.json``:
+no commission, 2 bp slippage. ``python -m backtest.run_costs`` is the ranking
+under that model and does not report an IBKR commission column.
+
 The finalist is the validation rule whose signals cover at least 95 percent
 of SPY sessions and whose tiered net is the highest. If none clears 95 percent,
 the holdout stays shut. A gate pass does not deploy a live model.
@@ -40,6 +45,7 @@ from backtest.gate import (
 from backtest.periods import HOLDOUT_END, HOLDOUT_START, VALIDATE_END, VALIDATE_START
 from backtest.run_gate import _calendar, _spy_closes, champion_trades
 from backtest.run_hypotheses import load_book
+from backtest.costs import PRIMARY_SCHEDULE
 from backtest.spells import ACCOUNT_USD, SLIP_BPS, portfolio
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,7 +72,7 @@ def refuse_holdout(rows: list[dict[str, Any]], label: str) -> None:
         raise RuntimeError(f"{label} includes holdout day {min(leaked)}")
 
 
-def run_book(spells: list[dict[str, Any]], *, schedule: str = "tiered") -> dict[str, Any]:
+def run_book(spells: list[dict[str, Any]], *, schedule: str = PRIMARY_SCHEDULE) -> dict[str, Any]:
     return portfolio(spells, use_stop=True, schedule=schedule, equity=ACCOUNT_USD, slip_bps=SLIP_BPS)
 
 
@@ -106,15 +112,15 @@ def evaluate_rule(
     refuse_holdout(spells, rule.id)
     pooled_days = [day for day in days if POOLED_START <= day <= POOLED_END]
     pooled_spells = _window_spells(spells, POOLED_START, POOLED_END)
-    result = run_book(pooled_spells)
+    result = run_book(pooled_spells, schedule="tiered")
     fixed = run_book(pooled_spells, schedule="fixed")
     validation_days = [day for day in days if VALIDATE_START <= day <= VALIDATE_END]
     validation_spells = _window_spells(spells, VALIDATE_START, VALIDATE_END)
-    validation = run_book(validation_spells)
+    validation = run_book(validation_spells, schedule="tiered")
     folds = []
     for name, start, end in REPORT_FOLDS:
         fold_spells = _window_spells(spells, start, end)
-        fold_result = run_book(fold_spells)
+        fold_result = run_book(fold_spells, schedule="tiered")
         folds.append(
             {
                 "fold": name,
@@ -203,7 +209,7 @@ def holdout_for(rule_id: str) -> dict[str, Any]:
     early = [spell["day"] for spell in spells if spell["day"] < HOLDOUT_START]
     if early:
         raise RuntimeError(f"holdout builder returned a pre-holdout day {min(early)}")
-    result = run_book(spells)
+    result = run_book(spells, schedule="tiered")
     fixed = run_book(spells, schedule="fixed")
     packed = pack(result["trades"], spells, len(days), result["maxDrawdown"])
     packed["fixed_net"] = fixed["net"]

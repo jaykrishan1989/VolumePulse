@@ -1,26 +1,24 @@
-"""IBKR-style commissions and slippage for a small US stock ticket.
+"""Execution costs for the owner's account.
 
-Assumptions, stated so the backtest can be audited:
+IBKR is the market-data source. It is not the broker. Fills are assumed on a
+zero-commission platform. The only cost in the default model is slippage of at
+least 2 bp per side, charged by worsening the next bar's open.
 
-- Regulatory (primary for the owner's account): US$0 broker commission.
-  The owner reports a commission-free brokerage. Slippage is still charged
-  by worsening the fill, and sells still pay the regulatory fees below.
-- Tiered: max(US$0.35, US$0.0035 per share), capped at 1% of notional.
-- Fixed (IBKR Pro sensitivity): max(US$1.00, US$0.005 per share), capped at
-  1% of notional.
-- Sells add an SEC fee of US$27.80 per US$1M and FINRA TAF of US$0.000166
-  per share (capped at US$8.30). These rates move; they are the schedule used
-  in the 2026 research notes. They apply on every schedule, including
-  ``regulatory``.
-- Slippage is charged by worsening the fill price, not as a second fee.
+``app/cost_model.json`` is the config. ``schedule`` there is ``zero``, which
+charges no broker commission and no regulatory fee. Slippage is applied by
+``apply_slip``, not inside ``commission``.
+
+``tiered`` and ``fixed`` remain as explicit historical schedules from the
+earlier IBKR-assumption notes. They are not the default and they are not a
+reported column.
 """
 
 from __future__ import annotations
 
-# Primary cost for the owner's commission-free account. See ``commission``.
-PRIMARY_SCHEDULE = "regulatory"
-# IBKR Pro fixed: US$0.005 per share, US$1 minimum. Sensitivity column only.
-SENSITIVITY_SCHEDULE = "fixed"
+import json
+from pathlib import Path
+
+CONFIG_PATH = Path(__file__).resolve().parents[1] / "app" / "cost_model.json"
 
 COSTS_BEGIN = "<!-- COSTS_BEGIN -->"
 COSTS_END = "<!-- COSTS_END -->"
@@ -28,15 +26,26 @@ COSTS_CHANGELOG_BEGIN = "<!-- COSTS_CHANGELOG_BEGIN -->"
 COSTS_CHANGELOG_END = "<!-- COSTS_CHANGELOG_END -->"
 
 
-def commission(shares: float, price: float, side: str, schedule: str = "tiered") -> float:
+def load_cost_model() -> dict:
+    return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+_MODEL = load_cost_model()
+PRIMARY_SCHEDULE = str(_MODEL["schedule"])
+SLIP_BPS_MIN = float(_MODEL["slipBpsPerSide"])
+
+
+def commission(shares: float, price: float, side: str, schedule: str | None = None) -> float:
     shares = float(shares)
     price = float(price)
     if shares <= 0 or price <= 0:
         return 0.0
+    if schedule is None:
+        schedule = PRIMARY_SCHEDULE
+    if schedule == "zero":
+        return 0.0
     notional = shares * price
-    if schedule == "regulatory":
-        fee = 0.0
-    elif schedule == "tiered":
+    if schedule == "tiered":
         fee = max(0.35, 0.0035 * shares)
     elif schedule == "fixed":
         fee = max(1.0, 0.005 * shares)
@@ -49,12 +58,21 @@ def commission(shares: float, price: float, side: str, schedule: str = "tiered")
     return fee
 
 
-def round_trip_commission(shares: float, entry: float, exit_px: float, schedule: str = "tiered") -> float:
+def round_trip_commission(
+    shares: float,
+    entry: float,
+    exit_px: float,
+    schedule: str | None = None,
+) -> float:
     return commission(shares, entry, "buy", schedule) + commission(shares, exit_px, "sell", schedule)
 
 
 def apply_slip(price: float, side: str, slip_bps: float) -> float:
-    """Buy fills higher. Sell fills lower."""
+    """Buy fills higher. Sell fills lower.
+
+    Evaluations use at least ``SLIP_BPS_MIN`` from the cost config. A caller
+    can still pass a smaller number when a test is isolating something else.
+    """
     slip = slip_bps / 10_000.0
     if side == "buy":
         return price * (1.0 + slip)

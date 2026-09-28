@@ -1,13 +1,12 @@
-"""Re-score frozen rules on the owner's commission-free account.
+"""Re-score frozen rules on the owner's execution cost.
 
-Primary schedule is ``regulatory``: US$0 broker commission, 2 bp slippage on
-the next bar's open, and the SEC and FINRA fees on sells. Secondary schedule
-is ``fixed``: IBKR Pro at US$0.005 per share with a US$1 minimum, plus the
-same slippage and regulatory fees.
+IBKR is the data source only. The default model in ``app/cost_model.json``
+charges no commission and no regulatory fee. Slippage is 2 bp per side on the
+next bar's open. There is no IBKR commission column.
 
 The daily-frequency ranking uses the validation window only. This command
 does not append ``research/holdout_looks.csv``. Numbers for looks 2 and 3 are
-the same already-opened trades, restated under the new fees, and are not used
+the same already-opened trades, restated under slippage only, and are not used
 to pick a winner. No threshold is moved. No order is placed.
 """
 
@@ -25,7 +24,7 @@ from backtest.costs import (
     COSTS_CHANGELOG_END,
     COSTS_END,
     PRIMARY_SCHEDULE,
-    SENSITIVITY_SCHEDULE,
+    SLIP_BPS_MIN,
 )
 from backtest.daily import DAILY_REGISTRY, build_sessions, choose_finalist
 from backtest.gate import (
@@ -60,9 +59,9 @@ SUMMARY_PATH = RESEARCH / "cost_summary.json"
 SELECTION_PATH = RESEARCH / "cost_selection.json"
 TABLE_PATH = RESEARCH / "cost_rerank.csv"
 
-# Published tiered loss per trade was smaller than a US$1 round trip, so the
-# broker minimum could have been the whole result. The runner still scores
-# every frozen hypothesis and the live book. This set is a label, not a filter.
+# Published tiered loss per trade was smaller than a US$1 round trip. The
+# runner still scores every frozen hypothesis and the live book. This set is
+# a label, not a filter.
 MARGINAL_IDS = frozenset({"h4_opening_range", "h5_gap_down", "d_rs_leader"})
 
 
@@ -70,8 +69,8 @@ def _window(spells: list[dict[str, Any]], start: date, end: date) -> list[dict[s
     return [spell for spell in spells if start <= spell["day"] <= end]
 
 
-def _score(spells: list[dict[str, Any]], sessions: int, schedule: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    result = run_book(spells, schedule=schedule)
+def _score(spells: list[dict[str, Any]], sessions: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    result = run_book(spells, schedule=PRIMARY_SCHEDULE)
     packed = pack(result["trades"], spells, sessions, result["maxDrawdown"])
     return packed, list(result["trades"])
 
@@ -108,27 +107,17 @@ def _evaluate(
     refuse_holdout(spells, rule_id)
     pooled_days = [day for day in days if POOLED_START <= day <= POOLED_END]
     validation_days = [day for day in days if VALIDATE_START <= day <= VALIDATE_END]
-    pooled_spells = _window(spells, POOLED_START, POOLED_END)
-    validation_spells = _window(spells, VALIDATE_START, VALIDATE_END)
-    regulatory, trades = _score(pooled_spells, len(pooled_days), PRIMARY_SCHEDULE)
-    fixed, _fixed_trades = _score(pooled_spells, len(pooled_days), SENSITIVITY_SCHEDULE)
-    validation_regulatory, _validation_trades = _score(
-        validation_spells, len(validation_days), PRIMARY_SCHEDULE
+    primary, trades = _score(_window(spells, POOLED_START, POOLED_END), len(pooled_days))
+    validation, _validation_trades = _score(
+        _window(spells, VALIDATE_START, VALIDATE_END), len(validation_days)
     )
-    validation_fixed, _ = _score(validation_spells, len(validation_days), SENSITIVITY_SCHEDULE)
-    print(
-        f"{rule_id} regulatory {_money0(regulatory['net'])} "
-        f"fixed {_money0(fixed['net'])} trades {regulatory['trades']}",
-        flush=True,
-    )
+    print(f"{rule_id} {_money0(primary['net'])} trades {primary['trades']}", flush=True)
     return {
         "id": rule_id,
         "family": family,
         "marginal": rule_id in MARGINAL_IDS,
-        "regulatory": regulatory,
-        "fixed": fixed,
-        "validation_regulatory": validation_regulatory,
-        "validation_fixed": validation_fixed,
+        "primary": primary,
+        "validation": validation,
         "trades": trades,
     }
 
@@ -180,36 +169,35 @@ def _selection_payload(rows: list[dict[str, Any]], finalist: str | None) -> dict
     daily = [row for row in rows if row["family"] == "daily"]
     return {
         "cost_model": PRIMARY_SCHEDULE,
-        "sensitivity": SENSITIVITY_SCHEDULE,
-        "chosen_on": "validation signal coverage >= 95%, then validation regulatory net",
+        "slip_bps_per_side": SLIP_BPS_MIN,
+        "commission_usd": 0,
+        "chosen_on": "validation signal coverage >= 95%, then validation net",
         "holdout_used": False,
         "finalist": finalist,
         "rows": [
             {
                 "id": row["id"],
-                "signal_day_frac": row["validation_regulatory"]["signal_day_frac"],
-                "net": row["validation_regulatory"]["net"],
-                "bps": row["validation_regulatory"]["bps"] or 0.0,
-                "fixed_net": row["validation_fixed"]["net"],
+                "signal_day_frac": row["validation"]["signal_day_frac"],
+                "net": row["validation"]["net"],
+                "bps": row["validation"]["bps"] or 0.0,
             }
             for row in daily
         ],
     }
 
 
-def _restatement(rule_id: str, packed: dict[str, Any], fixed_net: float, look: int) -> dict[str, Any]:
+def _restatement(rule_id: str, packed: dict[str, Any], look: int) -> dict[str, Any]:
     return {
         "look": look,
         "id": rule_id,
         "used_to_rank": False,
-        "regulatory_net": packed["net"],
-        "regulatory_bps": packed["bps"],
-        "regulatory_per_trade": packed["per_trade"],
+        "net": packed["net"],
+        "bps": packed["bps"],
+        "per_trade": packed["per_trade"],
         "trades": packed["trades"],
         "win_rate": packed["win_rate"],
         "max_drawdown": packed["max_drawdown"],
         "signal_day_frac": packed["signal_day_frac"],
-        "fixed_net": fixed_net,
     }
 
 
@@ -220,9 +208,8 @@ def _holdout_champion() -> dict[str, Any]:
     early = [spell["day"] for spell in spells if spell["day"] < HOLDOUT_START]
     if early:
         raise RuntimeError(f"champion holdout spell on {min(early)}")
-    packed, _trades = _score(spells, len(days), PRIMARY_SCHEDULE)
-    fixed, _ = _score(spells, len(days), SENSITIVITY_SCHEDULE)
-    return _restatement("appear_disappear_midmorning", packed, fixed["net"], 2)
+    packed, _trades = _score(spells, len(days))
+    return _restatement("appear_disappear_midmorning", packed, 2)
 
 
 def _holdout_daily(rule_id: str) -> dict[str, Any]:
@@ -234,9 +221,8 @@ def _holdout_daily(rule_id: str) -> dict[str, Any]:
     early = [spell["day"] for spell in spells if spell["day"] < HOLDOUT_START]
     if early:
         raise RuntimeError(f"{rule_id} holdout spell on {min(early)}")
-    packed, _trades = _score(spells, len(days), PRIMARY_SCHEDULE)
-    fixed, _ = _score(spells, len(days), SENSITIVITY_SCHEDULE)
-    return _restatement(rule_id, packed, fixed["net"], 3)
+    packed, _trades = _score(spells, len(days))
+    return _restatement(rule_id, packed, 3)
 
 
 def _look_count() -> int:
@@ -246,18 +232,22 @@ def _look_count() -> int:
 def _ranking_note(rows: list[dict[str, Any]]) -> str:
     daily = sorted(
         (row for row in rows if row["family"] == "daily"),
-        key=lambda row: -float(row["validation_regulatory"]["net"]),
+        key=lambda row: -float(row["validation"]["net"]),
     )
-    order = ", ".join(
-        f"`{row['id']}` {_money0(row['validation_regulatory']['net'])}" for row in daily
-    )
+    order = ", ".join(f"`{row['id']}` {_money0(row['validation']['net'])}" for row in daily)
+    above = [row["id"] for row in daily if float(row["validation"]["net"]) > 0]
+    if above:
+        tail = "Validation nets above zero: " + ", ".join(f"`{item}`" for item in above) + ". "
+    else:
+        tail = (
+            "Every validation net in that list is below zero, so the finalist is the smallest loss "
+            "among rules that signaled on at least 95% of sessions. "
+        )
     return (
-        "Daily-frequency rank on the validation window under commission-free costs, "
-        f"highest net first: {order}. "
-        "Every validation net in that list is below zero, so the finalist is the smallest loss "
-        "among rules that signaled on at least 95% of sessions. "
+        "Daily-frequency rank on the validation window, highest net first: "
+        f"{order}. {tail}"
         "A pooled gain that the validation window does not confirm was not treated as a pass. "
-        "The two pooled gains still failed the promotion gate, and the fresh slice stayed shut."
+        "The fresh slice stayed shut."
     )
 
 
@@ -268,47 +258,41 @@ def markdown(
     tried: int,
     restatements: list[dict[str, Any]],
 ) -> str:
-    primary_positive = _positive(rows, "regulatory")
-    fixed_positive = _positive(rows, "fixed")
-    validation_positive = _positive(rows, "validation_regulatory")
+    primary_positive = _positive(rows, "primary")
+    validation_positive = _positive(rows, "validation")
     lines = [
         COSTS_BEGIN,
-        "## Commission-free primary",
+        "## Slippage-only cost",
         "",
-        "The owner reports zero broker commissions. The primary book is "
-        "US$2,120, whole shares, US$0 broker commission, 2 bp slippage on the "
-        "next bar's open, and the SEC fee plus FINRA TAF on sells. "
-        "The secondary column is IBKR Pro fixed: US$0.005 per share with a "
-        "US$1 minimum, plus the same slippage and regulatory fees. "
-        "Thresholds were not moved. The Bonferroni denominator stays "
-        f"{tried}, because these are the same ideas under a corrected fee, not a new search. "
-        "The daily finalist below was chosen on validation coverage and validation "
-        "regulatory net, before either holdout restatement was loaded. "
+        "IBKR supplies the 5-minute bars and is not the broker. Execution is assumed "
+        "on a zero-commission platform. The book is US$2,120, whole shares, no broker "
+        f"commission, no regulatory fee, and {SLIP_BPS_MIN:.0f} bp slippage on the next bar's open. "
+        "There is no IBKR commission column. Thresholds were not moved. The Bonferroni "
+        f"denominator stays {tried}, because these are the same ideas under the corrected "
+        "cost, not a new search. The daily finalist below was chosen on validation coverage "
+        "and validation net, before either holdout restatement was loaded. "
         f"That finalist is `{finalist}`. "
-        "Looks 2 and 3 were already on file. Their dollar results are restated "
-        "under the new fees and were not used to rank. No new look was appended. "
+        "Looks 2 and 3 were already on file. Their dollar results are restated under "
+        "slippage only and were not used to rank. No new look was appended. "
         "`models/ACTIVE` stays `v0.1`. No order was placed.",
         "",
-        "Pooled window 2023-01-01 through 2026-03-31. "
-        "Positive means the portfolio net is above zero.",
+        "Pooled window 2023-01-01 through 2026-03-31. Positive means the portfolio net is above zero.",
         "",
         (
-            "Positive under commission-free costs: "
+            "Positive after slippage: "
             + (", ".join(f"`{item}`" for item in primary_positive) if primary_positive else "none")
-            + ". Positive under IBKR Pro fixed commissions: "
-            + (", ".join(f"`{item}`" for item in fixed_positive) if fixed_positive else "none")
-            + ". Positive on the validation window under commission-free costs: "
+            + ". Positive on the validation window: "
             + (", ".join(f"`{item}`" for item in validation_positive) if validation_positive else "none")
             + "."
         ),
         "",
         _ranking_note(rows),
         "",
-        "| Rule | Family | Trades | Win | Commission-free net | $/trade | bp | Fixed net | Windows | Decision |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Rule | Family | Trades | Win | Net | $/trade | bp | Windows | Decision |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in rows:
-        stats = row["regulatory"]
+        stats = row["primary"]
         verdict = verdicts.get(row["id"])
         if verdict is None:
             windows = "champion"
@@ -320,44 +304,41 @@ def markdown(
         lines.append(
             f"| {row['id']} | {row['family']} | {stats['trades']} | {_pct(stats['win_rate'])} | "
             f"{_money0(stats['net'])} | {_money(stats['per_trade'])} | {_bps(stats['bps'])} | "
-            f"{_money0(row['fixed']['net'])} | {windows} | {decision} |"
+            f"{windows} | {decision} |"
         )
     lines.append("")
     lines.append(
         "Validation window 2024-07-01 to 2026-03-31, daily rules only, the selection sample. "
-        f"Finalist under commission-free costs: `{finalist}`."
+        f"Finalist: `{finalist}`."
     )
     lines.append("")
-    lines.append("| Rule | Signal days | Commission-free net | Fixed net |")
+    lines.append("| Rule | Signal days | Net | bp |")
     lines.append("| --- | ---: | ---: | ---: |")
     for row in rows:
         if row["family"] != "daily":
             continue
-        validation = row["validation_regulatory"]
+        validation = row["validation"]
         lines.append(
             f"| {row['id']} | {validation['signal_day_frac'] * 100:.1f}% | "
-            f"{_money0(validation['net'])} | {_money0(row['validation_fixed']['net'])} |"
+            f"{_money0(validation['net'])} | {_bps(validation['bps'])} |"
         )
     lines.append("")
     lines.append(
-        "Marginal after the old tiered commissions, from the already published "
-        "loss per trade being smaller than US$1: `h4_opening_range`, `h5_gap_down`, "
-        "and `d_rs_leader`. The other hypotheses and the live book were re-scored "
-        "on the same run so a near-miss was not dropped after seeing the new fees."
+        "Re-ranked with the daily rules: the six frozen hypotheses and the live midmorning book. "
+        "The three that were inside a dollar per trade under the old tiered commissions are "
+        "`h4_opening_range`, `h5_gap_down`, and `d_rs_leader`. The others were scored on the "
+        "same run so a near-miss was not dropped after the cost change."
     )
     if restatements:
         lines.append("")
-        lines.append(
-            "Holdout restatements of looks already recorded. Not used to choose the finalist."
-        )
+        lines.append("Holdout restatements of looks already recorded. Not used to choose the finalist.")
         lines.append("")
-        lines.append("| Look | Rule | Trades | Commission-free net | bp | Fixed net |")
-        lines.append("| ---: | --- | ---: | ---: | ---: | ---: |")
+        lines.append("| Look | Rule | Trades | Net | bp |")
+        lines.append("| ---: | --- | ---: | ---: | ---: |")
         for item in restatements:
             lines.append(
                 f"| {item['look']} | {item['id']} | {item['trades']} | "
-                f"{_money0(item['regulatory_net'])} | {_bps(item['regulatory_bps'])} | "
-                f"{_money0(item['fixed_net'])} |"
+                f"{_money0(item['net'])} | {_bps(item['bps'])} |"
             )
     lines.append(COSTS_END)
     return "\n".join(lines) + "\n"
@@ -366,20 +347,18 @@ def markdown(
 def changelog_note(rows: list[dict[str, Any]], finalist: str | None) -> str:
     lines = [
         COSTS_CHANGELOG_BEGIN,
-        "## Commission-free costs — 2026-09-28 — no checkpoint",
+        "## Slippage-only cost — 2026-09-28 — no checkpoint",
         "",
-        "The same frozen rules were re-scored with US$0 broker commission as the "
-        "primary cost and IBKR Pro fixed commissions as a sensitivity column. "
+        "IBKR is data only. The same frozen rules were re-scored with no commission "
+        f"and {SLIP_BPS_MIN:.0f} bp slippage per side. No IBKR commission column. "
         f"The daily finalist on validation was `{finalist}`. None replaced v0.1. "
         "The live list was not edited and no order was placed.",
         "",
-        "| Id | Commission-free net | Fixed net |",
-        "| --- | ---: | ---: |",
+        "| Id | Net |",
+        "| --- | ---: |",
     ]
     for row in rows:
-        lines.append(
-            f"| {row['id']} | {_money0(row['regulatory']['net'])} | {_money0(row['fixed']['net'])} |"
-        )
+        lines.append(f"| {row['id']} | {_money0(row['primary']['net'])} |")
     lines.append(COSTS_CHANGELOG_END)
     return "\n".join(lines) + "\n"
 
@@ -389,12 +368,10 @@ def _public_row(row: dict[str, Any], verdict: GateVerdict | None) -> dict[str, A
         "id": row["id"],
         "family": row["family"],
         "marginal": row["marginal"],
-        "regulatory": row["regulatory"],
-        "fixed": row["fixed"],
-        "validation_regulatory": row["validation_regulatory"],
-        "validation_fixed": row["validation_fixed"],
-        "positive_regulatory": row["regulatory"]["net"] > 0,
-        "positive_fixed": row["fixed"]["net"] > 0,
+        "primary": row["primary"],
+        "validation": row["validation"],
+        "positive": row["primary"]["net"] > 0,
+        "positive_validation": row["validation"]["net"] > 0,
     }
     if verdict is not None:
         out["decision"] = verdict.decision
@@ -419,25 +396,22 @@ def _write_table(rows: list[dict[str, Any]], verdicts: dict[str, GateVerdict]) -
                 "trades",
                 "win_rate",
                 "signal_day_frac",
-                "regulatory_net",
-                "regulatory_per_trade",
-                "regulatory_bps",
-                "regulatory_per_day",
-                "regulatory_max_dd",
-                "fixed_net",
-                "fixed_per_trade",
-                "fixed_bps",
-                "validation_regulatory_net",
-                "validation_fixed_net",
-                "positive_regulatory",
-                "positive_fixed",
+                "net",
+                "per_trade",
+                "bps",
+                "per_day",
+                "max_dd",
+                "validation_net",
+                "validation_bps",
+                "positive",
+                "positive_validation",
                 "windows_won",
                 "decision",
             ],
         )
         writer.writeheader()
         for row in rows:
-            stats = row["regulatory"]
+            stats = row["primary"]
             verdict = verdicts.get(row["id"])
             writer.writerow(
                 {
@@ -447,18 +421,15 @@ def _write_table(rows: list[dict[str, Any]], verdicts: dict[str, GateVerdict]) -
                     "trades": stats["trades"],
                     "win_rate": stats["win_rate"],
                     "signal_day_frac": stats["signal_day_frac"],
-                    "regulatory_net": stats["net"],
-                    "regulatory_per_trade": stats["per_trade"],
-                    "regulatory_bps": stats["bps"],
-                    "regulatory_per_day": stats["per_day"],
-                    "regulatory_max_dd": stats["max_drawdown"],
-                    "fixed_net": row["fixed"]["net"],
-                    "fixed_per_trade": row["fixed"]["per_trade"],
-                    "fixed_bps": row["fixed"]["bps"],
-                    "validation_regulatory_net": row["validation_regulatory"]["net"],
-                    "validation_fixed_net": row["validation_fixed"]["net"],
-                    "positive_regulatory": stats["net"] > 0,
-                    "positive_fixed": row["fixed"]["net"] > 0,
+                    "net": stats["net"],
+                    "per_trade": stats["per_trade"],
+                    "bps": stats["bps"],
+                    "per_day": stats["per_day"],
+                    "max_dd": stats["max_drawdown"],
+                    "validation_net": row["validation"]["net"],
+                    "validation_bps": row["validation"]["bps"],
+                    "positive": stats["net"] > 0,
+                    "positive_validation": row["validation"]["net"] > 0,
                     "windows_won": "" if verdict is None else sum(1 for window in verdict.windows if window.win),
                     "decision": "reference" if verdict is None else verdict.decision,
                 }
@@ -470,6 +441,8 @@ def main() -> None:
     rule_before = RULE_PATH.read_bytes()
     if ACTIVE_PATH.read_text(encoding="utf-8").strip() != "v0.1":
         raise SystemExit("refusing to score costs while ACTIVE is not v0.1")
+    if PRIMARY_SCHEDULE != "zero":
+        raise SystemExit("refusing to score while the cost config is not the zero schedule")
     book = load_book()
     days = spy_days(book, date(2023, 1, 1), POOLED_END)
     print("building champion spells", flush=True)
@@ -487,9 +460,9 @@ def main() -> None:
         [
             {
                 "id": row["id"],
-                "signal_day_frac": row["validation_regulatory"]["signal_day_frac"],
-                "net": row["validation_regulatory"]["net"],
-                "bps": row["validation_regulatory"]["bps"] or 0.0,
+                "signal_day_frac": row["validation"]["signal_day_frac"],
+                "net": row["validation"]["net"],
+                "bps": row["validation"]["bps"] or 0.0,
             }
             for row in rows
             if row["family"] == "daily"
@@ -535,14 +508,14 @@ def main() -> None:
 
     summary = {
         "primary": PRIMARY_SCHEDULE,
-        "sensitivity": SENSITIVITY_SCHEDULE,
-        "slip_bps": 2,
+        "commission_usd": 0,
+        "regulatory_fees": False,
+        "slip_bps_per_side": SLIP_BPS_MIN,
         "ideas_tried": tried,
         "finalist": finalist,
         "holdout_used_to_rank": False,
-        "positive_regulatory": _positive(rows, "regulatory"),
-        "positive_fixed": _positive(rows, "fixed"),
-        "positive_validation_regulatory": _positive(rows, "validation_regulatory"),
+        "positive": _positive(rows, "primary"),
+        "positive_validation": _positive(rows, "validation"),
         "rows": [_public_row(row, verdicts.get(row["id"])) for row in rows],
         "holdout_restatements": restatements,
     }

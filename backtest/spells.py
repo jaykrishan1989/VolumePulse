@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from backtest.costs import apply_slip, commission
+from backtest.costs import PRIMARY_SCHEDULE, apply_slip, commission
 from backtest.periods import FLAT_MINUTE, HOLDOUT_START
 
 ACCOUNT_USD = 2120.0
@@ -222,7 +222,7 @@ def simulate_spell(
     *,
     use_stop: bool = True,
     slip_bps: float = SLIP_BPS,
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
     equity: float = ACCOUNT_USD,
     shares: int | None = None,
 ) -> dict[str, Any] | None:
@@ -305,7 +305,7 @@ def portfolio(
     *,
     use_stop: bool = True,
     slip_bps: float = SLIP_BPS,
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
     equity: float = ACCOUNT_USD,
     risk_fraction: float | None = None,
     max_concurrent: int | None = None,

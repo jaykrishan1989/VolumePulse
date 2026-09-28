@@ -32,6 +32,7 @@ from backtest.hypotheses import REGISTRY
 from backtest.periods import HOLDOUT_START
 from backtest.run_hypotheses import load_book
 from backtest.scan import load_membership
+from backtest.costs import PRIMARY_SCHEDULE
 from backtest.spells import ACCOUNT_USD, SLIP_BPS, build_spells, portfolio, selection_hits
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,7 +74,7 @@ def _calendar(book: dict[tuple[str, date], list[dict[str, Any]]]) -> list[date]:
     return sorted(set(days))
 
 
-def _trades(spells: list[dict[str, Any]], schedule: str = "tiered") -> list[dict[str, Any]]:
+def _trades(spells: list[dict[str, Any]], schedule: str = PRIMARY_SCHEDULE) -> list[dict[str, Any]]:
     kept = [spell for spell in spells if POOLED_START <= spell["day"] <= POOLED_END]
     if any(spell["day"] >= HOLDOUT_START for spell in kept):
         raise RuntimeError("gate received a holdout spell")
@@ -83,7 +84,7 @@ def _trades(spells: list[dict[str, Any]], schedule: str = "tiered") -> list[dict
 
 def champion_trades(
     book: dict[tuple[str, date], list[dict[str, Any]]],
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
 ) -> list[dict[str, Any]]:
     spec = json.loads(RULE_PATH.read_text(encoding="utf-8"))
     hits = [

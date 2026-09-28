@@ -4,7 +4,7 @@
 holdout is a separate command and is refused unless that one id already passed
 the walk-forward gate. Looks are appended to ``research/holdout_looks.csv``.
 
-Adopt only when all of these are true on tiered commissions, 2 bp slippage,
+Adopt only when all of these are true on the live cost model (no commission, 2 bp slippage),
 the hard stop, and a US$2,120 account:
 
 - pooled net from 2023-01-01 through 2026-03-31 is positive
@@ -25,6 +25,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from backtest.costs import PRIMARY_SCHEDULE
 from backtest.data import CANDIDATES, bars_from_frame, load_symbol, sessions
 from backtest.hypotheses import REGISTRY, Hypothesis
 from backtest.gate import preserve_gate_section
@@ -135,7 +136,7 @@ def _run(
     days: int,
     *,
     use_stop: bool = True,
-    schedule: str = "tiered",
+    schedule: str = PRIMARY_SCHEDULE,
 ) -> dict[str, Any]:
     if any(spell["day"] >= HOLDOUT_START for spell in spells):
         raise RuntimeError("walk-forward run received a holdout spell")

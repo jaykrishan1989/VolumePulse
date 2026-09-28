@@ -67,7 +67,7 @@ class SpellTests(unittest.TestCase):
         self.assertEqual(trade["reason"], "sell")
         self.assertAlmostEqual(trade["entry"], apply_slip(100, "buy", 2))
         self.assertAlmostEqual(trade["exit"], apply_slip(100, "sell", 2))
-        self.assertGreater(trade["fees"], 0.7)
+        self.assertEqual(trade["fees"], 0.0)
 
     def test_exit_lag_ignores_one_off_bar(self) -> None:
         bars = _bars(600, [(100, 101, 99.5, 100.2)] * 6)
@@ -142,10 +142,13 @@ class SpellTests(unittest.TestCase):
         self.assertAlmostEqual(result["net"], result["trades"][0]["net"])
         trade = result["trades"][0]
         self.assertGreater(trade["shares"], 1)
-        round_trip = commission(trade["shares"], trade["entry"], "buy", "tiered") + commission(
-            trade["shares"], trade["exit"], "sell", "tiered"
+        self.assertEqual(trade["fees"], 0.0)
+        tiered = portfolio(cheap, equity=ACCOUNT_USD, schedule="tiered")
+        tiered_trade = tiered["trades"][0]
+        round_trip = commission(tiered_trade["shares"], tiered_trade["entry"], "buy", "tiered") + commission(
+            tiered_trade["shares"], tiered_trade["exit"], "sell", "tiered"
         )
-        self.assertAlmostEqual(trade["fees"], round_trip)
+        self.assertAlmostEqual(tiered_trade["fees"], round_trip)
 
         first = _manual("AAA", 1_000, 2_000, 2000.0, 2010.0, low=1990.0)
         second = _manual("BBB", 1_000, 2_000, 2000.0, 2010.0, low=1990.0)
