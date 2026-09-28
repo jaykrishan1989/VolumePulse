@@ -574,17 +574,17 @@ def main() -> None:
         print(f"  {name} net {stats['net']:.0f}", flush=True)
     boot = _day_bootstrap(holdout_trades)
     random_vs = _random_p(holdout_frame, book, float(holdout["net"]), int(holdout["trades"]))
-    print(
-        f"holdout look {look} net {holdout['net']:.0f} trades {holdout['trades']} "
-        f"bootstrap {boot.get('pValue')} random {random_vs.get('pValue')}",
-        flush=True,
-    )
     look = record_look(
         MODEL_ID,
         "One read after the validation threshold was frozen. Not used to pick the threshold.",
     )
     if _look_for(MODEL_ID) != look or (prior_look is None and _look_count() != looks_before + 1):
         raise SystemExit("holdout look was not the single new row")
+    print(
+        f"holdout look {look} net {holdout['net']:.0f} trades {holdout['trades']} "
+        f"bootstrap {boot.get('pValue')} random {random_vs.get('pValue')}",
+        flush=True,
+    )
     version_results = {"holdout": holdout, "bootstrap": boot, "random": random_vs}
     costs_ok, cost_reasons = passes_costs_and_random(version_results)
     checkpoint = None
