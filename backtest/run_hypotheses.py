@@ -27,6 +27,7 @@ from typing import Any
 
 from backtest.data import CANDIDATES, bars_from_frame, load_symbol, sessions
 from backtest.hypotheses import REGISTRY, Hypothesis
+from backtest.gate import preserve_gate_section
 from backtest.periods import HOLDOUT_START, VALIDATE_END, VALIDATE_START
 from backtest.spells import ACCOUNT_USD, SLIP_BPS, portfolio, summarize_portfolio
 
@@ -445,7 +446,9 @@ def _write_outputs(rows: list[dict[str, Any]]) -> None:
                         "trades_per_day": "" if fold["tradesPerDay"] is None else f"{fold['tradesPerDay']:.2f}",
                     }
                 )
-    (RESEARCH / "RESEARCH_LOG.md").write_text(_markdown(rows), encoding="utf-8")
+    log_path = RESEARCH / "RESEARCH_LOG.md"
+    previous = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
+    log_path.write_text(preserve_gate_section(_markdown(rows), previous), encoding="utf-8")
     summary = {
         "holdoutLooksBeforeThisBatch": 2,
         "holdoutReadThisBatch": False,

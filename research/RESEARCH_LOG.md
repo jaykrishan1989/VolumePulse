@@ -217,3 +217,135 @@ These stay queued because the bars on hand cannot support them, or because this 
 - Same clock-time continuation from Heston, Korajczyk, and Sadka: yesterday's return at a given half hour predicts today's return at that half hour. Needs a wider cross-section than eight names to match their sort.
 - Order-flow imbalance and signed volume. These files are five-minute OHLC, not aggressor prints, so a flow hypothesis would be invented rather than measured.
 - A short book. The account is a small Canadian cash account and the prior brief kept it long-only.
+
+<!-- GATE_BEGIN -->
+## Promotion gate
+
+Champion: `appear_disappear_midmorning` (live rule `midmorning` in `app/signal_rule.json`). Costs: US$2,120, tiered commissions, 2 bp slippage, hard stop, flat by 15:55. Ideas already tried, and therefore the Bonferroni denominator: 33. The holdout from 2026-04-01 was not opened. Look count remains 2. The champion file was not changed.
+
+Rules are in `research/GATE.md`. A window win needs at least 20 challenger trades and a better net, a better dollar expectancy, and a better per-trade basis-point expectancy than the champion. Voting windows are six half-years, four SPY regimes (up, down, high vol, low vol), and two ticker groups (megacap, high_beta). 2026Q1 is inside the pooled sample and is not its own vote.
+
+| Candidate | Pooled challenger | Pooled champion | Windows | Bootstrap p | Permutation p | Decision |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| h1_spy | $-619 / -8.8 bp | $-1475 / -16.8 bp | 3/12 | 0.0002 | 0.0002 | REJECTED |
+| h1_stocks | $-1187 / -25.0 bp | $-1475 / -16.8 bp | 1/12 | 0.0772 | 0.0804 | REJECTED |
+| h2_opening_reversal | $-734 / -17.2 bp | $-1475 / -16.8 bp | 7/12 | 0.0094 | 0.0118 | REJECTED |
+| h3_vwap_shortfall | $-1943 / -25.5 bp | $-1475 / -16.8 bp | 0/12 | 0.9752 | 0.9758 | REJECTED |
+| h4_opening_range | $-789 / -21.5 bp | $-1475 / -16.8 bp | 2/12 | 0.2356 | 0.2304 | REJECTED |
+| h5_gap_down | $-183 / -13.0 bp | $-1475 / -16.8 bp | 7/12 | 0.0216 | 0.0260 | REJECTED |
+
+### h1_spy
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-619 on 466 trades, $-1.33/trade, -8.8 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Improves in 3 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2023-01-26, 2023-08-07, 2023-04-11, 2023-11-30, 2023-03-21), the challenger is behind on dollars per trade (challenger $-624 on 461 trades, $-1.35/trade, -9.0 bp; champion $-1363 on 1220 trades, $-1.12/trade, -16.4 bp). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+| Window | Challenger | Champion | Win |
+| --- | --- | --- | --- |
+| 2023H1 | $-85, 71 trades, -6.3 bp | $-251, 168 trades, -19.1 bp | yes |
+| 2023H2 | $-152, 79 trades, -11.1 bp | $-303, 212 trades, -20.5 bp | no |
+| 2024H1 | $-66, 73 trades, -6.0 bp | $-261, 214 trades, -15.0 bp | yes |
+| 2024H2 | $-119, 79 trades, -10.1 bp | $-150, 168 trades, -10.4 bp | no |
+| 2025H1 | $-70, 63 trades, -9.4 bp | $-186, 161 trades, -15.2 bp | yes |
+| 2025H2 | $-98, 71 trades, -10.5 bp | $-222, 217 trades, -17.3 bp | no |
+| up | $-361, 338 trades, -7.2 bp | $-718, 677 trades, -13.9 bp | no |
+| down | $-258, 128 trades, -12.9 bp | $-757, 557 trades, -20.3 bp | no |
+| high_vol | $-303, 228 trades, -8.9 bp | $-739, 596 trades, -16.8 bp | no |
+| low_vol | $-315, 238 trades, -8.7 bp | $-736, 638 trades, -16.8 bp | no |
+| megacap | $0, 0 trades, n/a | $-937, 708 trades, -13.7 bp | no |
+| high_beta | $0, 0 trades, n/a | $-538, 526 trades, -20.9 bp | no |
+
+### h1_stocks
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1187 on 961 trades, $-1.24/trade, -25.0 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 1 half-year; need at least 2. Improves in 1 of 12 windows; need at least 9 (75%). Severe regression in 2023H1: expectancy is 22.6 bp worse than the champion, past the 15 bp limit. Severe regression in 2023H2: expectancy is 19.9 bp worse than the champion, past the 15 bp limit. After removing the top 5 days by daily gap (2023-01-26, 2023-08-07, 2024-04-29, 2024-05-23, 2023-03-21), the challenger is behind on dollars per trade, basis points per trade (challenger $-1248 on 956 trades, $-1.31/trade, -25.5 bp; champion $-1384 on 1217 trades, $-1.14/trade, -16.6 bp). Paired tests do not clear the Bonferroni line for 33 ideas tried (bootstrap p=0.0772, permutation p=0.0804, alpha=0.00152). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+| Window | Challenger | Champion | Win |
+| --- | --- | --- | --- |
+| 2023H1 | $-339, 161 trades, -41.6 bp | $-251, 168 trades, -19.1 bp | severe |
+| 2023H2 | $-257, 158 trades, -40.3 bp | $-303, 212 trades, -20.5 bp | severe |
+| 2024H1 | $-114, 153 trades, -20.0 bp | $-261, 214 trades, -15.0 bp | no |
+| 2024H2 | $-159, 149 trades, -17.8 bp | $-150, 168 trades, -10.4 bp | no |
+| 2025H1 | $-153, 137 trades, -20.4 bp | $-186, 161 trades, -15.2 bp | no |
+| 2025H2 | $-102, 138 trades, -11.6 bp | $-222, 217 trades, -17.3 bp | yes |
+| up | $-448, 571 trades, -22.0 bp | $-718, 677 trades, -13.9 bp | no |
+| down | $-739, 390 trades, -29.4 bp | $-757, 557 trades, -20.3 bp | no |
+| high_vol | $-740, 471 trades, -27.2 bp | $-739, 596 trades, -16.8 bp | no |
+| low_vol | $-447, 490 trades, -22.9 bp | $-736, 638 trades, -16.8 bp | no |
+| megacap | $-665, 372 trades, -21.0 bp | $-937, 708 trades, -13.7 bp | no |
+| high_beta | $-522, 589 trades, -27.5 bp | $-538, 526 trades, -20.9 bp | no |
+
+### h2_opening_reversal
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-734 on 766 trades, $-0.96/trade, -17.2 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (down, high_vol). Improves in 7 of 12 windows; need at least 9 (75%). Severe regression in 2023H1: expectancy is 24.7 bp worse than the champion, past the 15 bp limit. Severe regression in down: net is $300 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2023-01-31, 2024-06-10, 2025-04-23, 2024-05-28, 2023-10-23), the challenger is behind on dollars per trade, basis points per trade (challenger $-994 on 761 trades, $-1.31/trade, -19.5 bp; champion $-1473 on 1225 trades, $-1.20/trade, -16.8 bp). Paired tests do not clear the Bonferroni line for 33 ideas tried (bootstrap p=0.0094, permutation p=0.0118, alpha=0.00152). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+| Window | Challenger | Champion | Win |
+| --- | --- | --- | --- |
+| 2023H1 | $-255, 120 trades, -43.8 bp | $-251, 168 trades, -19.1 bp | severe |
+| 2023H2 | $-137, 115 trades, -28.1 bp | $-303, 212 trades, -20.5 bp | no |
+| 2024H1 | $-8, 121 trades, -4.3 bp | $-261, 214 trades, -15.0 bp | yes |
+| 2024H2 | $-229, 108 trades, -19.3 bp | $-150, 168 trades, -10.4 bp | no |
+| 2025H1 | $-114, 117 trades, -11.8 bp | $-186, 161 trades, -15.2 bp | yes |
+| 2025H2 | $22, 125 trades, -2.5 bp | $-222, 217 trades, -17.3 bp | yes |
+| up | $323, 411 trades, -1.4 bp | $-718, 677 trades, -13.9 bp | yes |
+| down | $-1057, 355 trades, -35.6 bp | $-757, 557 trades, -20.3 bp | severe |
+| high_vol | $-371, 384 trades, -19.3 bp | $-739, 596 trades, -16.8 bp | no |
+| low_vol | $-363, 382 trades, -15.2 bp | $-736, 638 trades, -16.8 bp | yes |
+| megacap | $-223, 242 trades, -10.0 bp | $-937, 708 trades, -13.7 bp | yes |
+| high_beta | $-511, 524 trades, -20.6 bp | $-538, 526 trades, -20.9 bp | yes |
+
+### h3_vwap_shortfall
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-1943 on 2044 trades, $-0.95/trade, -25.5 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (up, down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 0 of 12 windows; need at least 9 (75%). Severe regression in 2025H2: expectancy is 24.6 bp worse than the champion, past the 15 bp limit. Severe regression in down: net is $503 worse than the champion, past the $212 limit. Severe regression in low_vol: net is $277 worse than the champion, past the $212 limit. Severe regression in high_beta: net is $341 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2023-07-21, 2023-01-04, 2023-01-26, 2023-04-11, 2023-05-25), the challenger is behind on net, basis points per trade (challenger $-2028 on 2031 trades, $-1.00/trade, -25.6 bp; champion $-1398 on 1220 trades, $-1.15/trade, -16.7 bp). Paired tests do not clear the Bonferroni line for 33 ideas tried (bootstrap p=0.9752, permutation p=0.9758, alpha=0.00152). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+| Window | Challenger | Champion | Win |
+| --- | --- | --- | --- |
+| 2023H1 | $-394, 377 trades, -31.3 bp | $-251, 168 trades, -19.1 bp | no |
+| 2023H2 | $-415, 391 trades, -26.1 bp | $-303, 212 trades, -20.5 bp | no |
+| 2024H1 | $-421, 385 trades, -16.2 bp | $-261, 214 trades, -15.0 bp | no |
+| 2024H2 | $-267, 367 trades, -17.3 bp | $-150, 168 trades, -10.4 bp | no |
+| 2025H1 | $-282, 321 trades, -28.8 bp | $-186, 161 trades, -15.2 bp | no |
+| 2025H2 | $-154, 186 trades, -41.9 bp | $-222, 217 trades, -17.3 bp | severe |
+| up | $-683, 1116 trades, -19.6 bp | $-718, 677 trades, -13.9 bp | no |
+| down | $-1260, 928 trades, -32.7 bp | $-757, 557 trades, -20.3 bp | severe |
+| high_vol | $-930, 1020 trades, -26.9 bp | $-739, 596 trades, -16.8 bp | no |
+| low_vol | $-1013, 1024 trades, -24.2 bp | $-736, 638 trades, -16.8 bp | severe |
+| megacap | $-1063, 1084 trades, -18.2 bp | $-937, 708 trades, -13.7 bp | no |
+| high_beta | $-880, 960 trades, -33.8 bp | $-538, 526 trades, -20.9 bp | severe |
+
+### h4_opening_range
+
+**Decision.** Rejected. Pooled sample does not beat the champion on net and expectancy (challenger $-789 on 1174 trades, $-0.67/trade, -21.5 bp; champion $-1475 on 1234 trades, $-1.20/trade, -16.8 bp). Does not beat the champion in every market regime (down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 1 half-year; need at least 2. Improves in 2 of 12 windows; need at least 9 (75%). Severe regression in 2025H2: net is $292 worse than the champion, past the $212 limit. Severe regression in down: net is $3786 worse than the champion, past the $212 limit. Severe regression in megacap: net is $574 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2025-04-09, 2023-02-01, 2023-08-14, 2025-10-08, 2023-01-06), the challenger is behind on net, dollars per trade, basis points per trade (challenger $-1641 on 1168 trades, $-1.40/trade, -25.5 bp; champion $-1488 on 1230 trades, $-1.21/trade, -16.9 bp). Paired tests do not clear the Bonferroni line for 33 ideas tried (bootstrap p=0.2356, permutation p=0.2304, alpha=0.00152). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+| Window | Challenger | Champion | Win |
+| --- | --- | --- | --- |
+| 2023H1 | $459, 201 trades, -22.6 bp | $-251, 168 trades, -19.1 bp | no |
+| 2023H2 | $-285, 195 trades, -30.4 bp | $-303, 212 trades, -20.5 bp | no |
+| 2024H1 | $207, 182 trades, -8.7 bp | $-261, 214 trades, -15.0 bp | yes |
+| 2024H2 | $-328, 174 trades, -17.1 bp | $-150, 168 trades, -10.4 bp | no |
+| 2025H1 | $-186, 164 trades, -21.3 bp | $-186, 161 trades, -15.2 bp | no |
+| 2025H2 | $-514, 180 trades, -28.2 bp | $-222, 217 trades, -17.3 bp | severe |
+| up | $3755, 692 trades, 16.8 bp | $-718, 677 trades, -13.9 bp | yes |
+| down | $-4543, 482 trades, -76.5 bp | $-757, 557 trades, -20.3 bp | severe |
+| high_vol | $-550, 585 trades, -23.7 bp | $-739, 596 trades, -16.8 bp | no |
+| low_vol | $-238, 589 trades, -19.4 bp | $-736, 638 trades, -16.8 bp | no |
+| megacap | $-1511, 598 trades, -22.1 bp | $-937, 708 trades, -13.7 bp | severe |
+| high_beta | $723, 576 trades, -21.0 bp | $-538, 526 trades, -20.9 bp | no |
+
+### h5_gap_down
+
+**Decision.** Rejected. Does not beat the champion in every market regime (down, low_vol). Improves in 7 of 12 windows; need at least 9 (75%). Severe regression in 2024H2: net is $322 worse than the champion, past the $212 limit. Severe regression in down: net is $737 worse than the champion, past the $212 limit. Severe regression in low_vol: net is $255 worse than the champion, past the $212 limit. After removing the top 5 days by daily gap (2025-04-07, 2023-01-06, 2023-02-14, 2025-04-09, 2023-03-13), the challenger is behind on dollars per trade, basis points per trade (challenger $-919 on 697 trades, $-1.32/trade, -20.1 bp; champion $-1500 on 1230 trades, $-1.22/trade, -16.9 bp). Paired tests do not clear the Bonferroni line for 33 ideas tried (bootstrap p=0.0216, permutation p=0.0260, alpha=0.00152). Fresh out-of-sample slice was not read. It opens only when this challenger is the only one that has already passed the walk-forward and consistency bars. The holdout was not read.
+
+| Window | Challenger | Champion | Win |
+| --- | --- | --- | --- |
+| 2023H1 | $339, 140 trades, -21.3 bp | $-251, 168 trades, -19.1 bp | no |
+| 2023H2 | $-15, 104 trades, -18.5 bp | $-303, 212 trades, -20.5 bp | yes |
+| 2024H1 | $-366, 110 trades, -23.7 bp | $-261, 214 trades, -15.0 bp | no |
+| 2024H2 | $-471, 96 trades, -33.1 bp | $-150, 168 trades, -10.4 bp | severe |
+| 2025H1 | $243, 111 trades, 9.4 bp | $-186, 161 trades, -15.2 bp | yes |
+| 2025H2 | $172, 90 trades, 10.6 bp | $-222, 217 trades, -17.3 bp | yes |
+| up | $1312, 333 trades, 19.0 bp | $-718, 677 trades, -13.9 bp | yes |
+| down | $-1495, 372 trades, -41.6 bp | $-757, 557 trades, -20.3 bp | severe |
+| high_vol | $808, 358 trades, -1.1 bp | $-739, 596 trades, -16.8 bp | yes |
+| low_vol | $-991, 347 trades, -25.3 bp | $-736, 638 trades, -16.8 bp | severe |
+| megacap | $-332, 263 trades, -11.1 bp | $-937, 708 trades, -13.7 bp | yes |
+| high_beta | $150, 442 trades, -14.1 bp | $-538, 526 trades, -20.9 bp | yes |
+
+<!-- GATE_END -->

@@ -1,0 +1,101 @@
+{
+  "champion": "appear_disappear_midmorning",
+  "championUntouched": true,
+  "holdoutReadThisBatch": false,
+  "ideasTried": 33,
+  "alpha": 0.0015151515151515152,
+  "halfYears": [
+    "2023H1",
+    "2023H2",
+    "2024H1",
+    "2024H2",
+    "2025H1",
+    "2025H2"
+  ],
+  "verdicts": [
+    {
+      "id": "h1_spy",
+      "decision": "rejected",
+      "bars": {
+        "walk_forward": false,
+        "fresh_slice": false,
+        "consistency": false
+      },
+      "challengerNet": -618.5260113972466,
+      "championNet": -1475.1003167297051,
+      "windowsWon": 3,
+      "bootstrapP": 0.0001999600079984003,
+      "permutationP": 0.0001999600079984003
+    },
+    {
+      "id": "h1_stocks",
+      "decision": "rejected",
+      "bars": {
+        "walk_forward": false,
+        "fresh_slice": false,
+        "consistency": false
+      },
+      "challengerNet": -1187.038299892651,
+      "championNet": -1475.1003167297051,
+      "windowsWon": 1,
+      "bootstrapP": 0.07718456308738253,
+      "permutationP": 0.08038392321535692
+    },
+    {
+      "id": "h2_opening_reversal",
+      "decision": "rejected",
+      "bars": {
+        "walk_forward": false,
+        "fresh_slice": false,
+        "consistency": false
+      },
+      "challengerNet": -734.2732452385983,
+      "championNet": -1475.1003167297051,
+      "windowsWon": 7,
+      "bootstrapP": 0.009398120375924815,
+      "permutationP": 0.011797640471905619
+    },
+    {
+      "id": "h3_vwap_shortfall",
+      "decision": "rejected",
+      "bars": {
+        "walk_forward": false,
+        "fresh_slice": false,
+        "consistency": false
+      },
+      "challengerNet": -1943.1090267265458,
+      "championNet": -1475.1003167297051,
+      "windowsWon": 0,
+      "bootstrapP": 0.9752049590081984,
+      "permutationP": 0.9758048390321936
+    },
+    {
+      "id": "h4_opening_range",
+      "decision": "rejected",
+      "bars": {
+        "walk_forward": false,
+        "fresh_slice": false,
+        "consistency": false
+      },
+      "challengerNet": -788.5181090717277,
+      "championNet": -1475.1003167297051,
+      "windowsWon": 2,
+      "bootstrapP": 0.23555288942211558,
+      "permutationP": 0.23035392921415718
+    },
+    {
+      "id": "h5_gap_down",
+      "decision": "rejected",
+      "bars": {
+        "walk_forward": false,
+        "fresh_slice": false,
+        "consistency": false
+      },
+      "challengerNet": -182.7267803902109,
+      "championNet": -1475.1003167297051,
+      "windowsWon": 7,
+      "bootstrapP": 0.021595680863827234,
+      "permutationP": 0.025994801039792043
+    }
+  ]
+}

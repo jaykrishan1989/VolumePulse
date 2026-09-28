@@ -1,0 +1,7 @@
+{
+  "id": "appear_disappear_midmorning",
+  "signalRule": "app/signal_rule.json",
+  "signalRuleId": "midmorning",
+  "replaced": false,
+  "note": "Live list. Replaced only when backtest.gate.promote accepts a verdict."
+}

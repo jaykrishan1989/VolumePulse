@@ -175,18 +175,25 @@ The earlier LightGBM ensemble (5 models, 60-minute return, 51 features) is not i
 
 ## Research log
 
-Six further ideas, taken from the intraday-momentum, liquidity-reversal, VWAP, opening-range, and overnight/intraday papers cited in `research/RESEARCH_LOG.md`, were walk-forward tested on 2023 through March 2026 and rejected. None cleared a pre-registered gate that requires a positive pooled net, a positive validation window, a positive most-recent slice, at least 80 trades, and at least four of six semi-annual folds in the black, all after tiered commissions and 2 bp. The least-bad pooled result was buying a down open and holding to 15:55 (−$183, −8.6%). Three of its six folds made money, which is short of the gate, and the threshold was not moved after seeing that. The holdout was not opened. Look count remains 2. `research/holdout_looks.csv` is the tally.
+Six further ideas, taken from the intraday-momentum, liquidity-reversal, VWAP, opening-range, and overnight/intraday papers cited in `research/RESEARCH_LOG.md`, were walk-forward tested on 2023 through March 2026 and rejected. None cleared a pre-registered screen that requires a positive pooled net, a positive validation window, a positive most-recent slice, at least 80 trades, and at least four of six semi-annual folds in the black, all after tiered commissions and 2 bp. The least-bad pooled result was buying a down open and holding to 15:55 (−$183, −8.6%). Three of its six folds made money, which is short of that screen, and the threshold was not moved after seeing that. The holdout was not opened. Look count remains 2. `research/holdout_looks.csv` is the tally.
+
+## Promotion gate
+
+The live champion stays the 10:00–11:00 appear-to-disappear rule. A challenger replaces it only by passing `research/GATE.md`: better net, dollars per trade, and basis points per trade on the pooled 2023-01-01 to 2026-03-31 sample; the same improvement in up and down markets, high and low volatility, and both ticker groups; wins in at least 9 of 12 windows; no window more than $212 or 15 bp worse; the per-trade edge still ahead after the five best days are removed; and paired bootstrap and sign-flip p-values under 0.05/33. The fresh slice is the locked holdout, and this batch did not open it.
+
+On that pre-holdout sample the champion itself lost $1,475 on 1,234 trades (−$1.20 per trade, −16.8 bp). That is a longer window than the −$864 validation result and it is not the holdout. All six challengers were rejected. The down-gap rule was the only one ahead of the champion on all three pooled measures (−$183, −$0.26 per trade, −13.0 bp) and it still won only 7 of 12 windows, with severe regressions on down days, low-volatility days, and 2024H2. Its daily-gap p-values were about 0.02, which does not clear 0.00152. Dropping its five best days left the dollar total ahead and the per-trade edge behind. No live threshold moved.
 
 ## How to reproduce
 
 ```powershell
-python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals
+python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals tests.test_hypotheses tests.test_gate
 python -m backtest.scan
 python -m backtest.run_search
 python -c "from backtest.scan import scan_membership; scan_membership()"
 python -m backtest.run_roundtrip select
 python -m backtest.run_roundtrip holdout
 python -m backtest.run_hypotheses
+python -m backtest.run_gate
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry and does not open the holdout.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`.
