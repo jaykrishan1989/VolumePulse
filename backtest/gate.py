@@ -553,4 +553,7 @@ def preserve_gate_section(new_log: str, old_log: str) -> str:
     kept = preserve_marked_section(kept, old_log, AREAS_BEGIN, AREAS_END)
     kept = preserve_marked_section(kept, old_log, DAILY_BEGIN, DAILY_END)
     kept = preserve_marked_section(kept, old_log, COSTS_BEGIN, COSTS_END)
-    return preserve_marked_section(kept, old_log, ML_BEGIN, ML_END)
+    from backtest.profit_grid import PROFIT_BEGIN, PROFIT_END
+
+    kept = preserve_marked_section(kept, old_log, ML_BEGIN, ML_END)
+    return preserve_marked_section(kept, old_log, PROFIT_BEGIN, PROFIT_END)

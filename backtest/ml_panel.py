@@ -206,6 +206,15 @@ def _signal_rows(
         if entry_open <= 0 or exit_px <= 0 or exit_index <= entry_index:
             continue
         fwd = exit_px / entry_open - 1.0
+        fwd_flat = float(bars[flat_index]["close"]) / entry_open - 1.0
+        fwd_by_h = {}
+        for horizon in (3, 6, 12):
+            horizon_i = entry_index + horizon
+            if horizon_i >= len(bars) or int(bars[horizon_i]["minute"]) >= FLAT_MINUTE:
+                horizon_px = float(bars[flat_index]["close"])
+            else:
+                horizon_px = float(bars[horizon_i]["open"])
+            fwd_by_h[horizon] = horizon_px / entry_open - 1.0 if horizon_px > 0 else np.nan
         vwap = cum_pv / cum_v if cum_v > 0 else np.nan
         span = session_high - session_low
         history = volume_history.get(minute) or []
@@ -220,6 +229,10 @@ def _signal_rows(
                 "exit_t": int(bars[exit_index]["t"]),
                 "exit_kind": exit_kind,
                 "fwd_ret": fwd,
+                "fwd_3": fwd_by_h[3],
+                "fwd_6": fwd_by_h[6],
+                "fwd_12": fwd_by_h[12],
+                "fwd_flat": fwd_flat,
                 "vol": vol,
                 "y_scaled": fwd / vol,
                 "atr": this_atr,

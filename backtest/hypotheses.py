@@ -9,9 +9,11 @@ Nothing here places an order.
 
 from __future__ import annotations
 
+import contextvars
 from collections import deque
+from contextlib import contextmanager
 from datetime import date
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 from backtest.data import CANDIDATES
 from backtest.periods import FLAT_MINUTE, HOLDOUT_START
@@ -39,6 +41,23 @@ def assert_preholdout(day: date) -> None:
         raise RuntimeError(f"holdout day {day} leaked into a hypothesis")
 
 
+_ALLOW_HOLDOUT: contextvars.ContextVar[bool] = contextvars.ContextVar("rttb_allow_holdout", default=False)
+
+
+@contextmanager
+def allow_holdout_days() -> Iterator[None]:
+    """Let ``walk_symbol`` see holdout sessions. Selection code must not use this.
+
+    The profit study calls it once, after the validation choice is on disk, to
+    fill the single comparison rule. The default stays closed.
+    """
+    token = _ALLOW_HOLDOUT.set(True)
+    try:
+        yield
+    finally:
+        _ALLOW_HOLDOUT.reset(token)
+
+
 def _rth(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [bar for bar in bars if OPEN_MINUTE <= int(bar["minute"]) <= FLAT_MINUTE]
 
@@ -59,7 +78,8 @@ def walk_symbol(
     prev_close: float | None = None
     days = sorted(day for (sym, day) in book if sym == symbol)
     for day in days:
-        assert_preholdout(day)
+        if not _ALLOW_HOLDOUT.get():
+            assert_preholdout(day)
         bars = _rth(book[(symbol, day)])
         if not bars:
             continue
