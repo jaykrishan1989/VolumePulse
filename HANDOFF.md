@@ -2,14 +2,14 @@
 
 Branch: `cursor/right-time-to-buy-79f9`
 PR: https://github.com/jaykrishan1989/VolumePulse/pull/1 (base `main`, draft)
-Last research result on this branch: the commission-free rerank. The owner's account pays US$0 broker commission. Slippage and regulatory fees stay. IBKR Pro fixed commissions are the sensitivity column.
+Last research result on this branch: slippage is the only execution cost. IBKR is the data source. The owner does not trade through IBKR.
 Working tree at the start of this handoff was clean and matched `origin/cursor/right-time-to-buy-79f9`.
 Live pointer: `models/ACTIVE` is `v0.1`. Git tag `v0.1` is commit `1b720b2`. Do not move the tag.
 The app never places orders.
 
 ## What's done
 
-Right Time to Buy is a read-only IBKR dashboard. The live rule buys when a name appears on the list between 10:00 and 11:00 ET and sells when it leaves. Confirm 1, exit lag 1, hard stop on, flat by 15:55. Account US$2,120 (CA$3,000 at 1.4165), tiered commissions with a US$0.35 minimum, 2 bp slippage, whole shares.
+Right Time to Buy is a read-only IBKR dashboard. IBKR is the market-data API, not the broker. The live rule buys when a name appears on the list between 10:00 and 11:00 ET and sells when it leaves. Confirm 1, exit lag 1, hard stop on, flat by 15:55. Account US$2,120 (CA$3,000 at 1.4165). The live cost model in `app/cost_model.json` is no commission and 2 bp slippage per side.
 
 That rule is baseline **v0.1**, not v1.0. It failed the costs-and-random bar. Holdout, read once as look 2: 191 trades, win 37.2%, −$268 (−12.7%), −8.43 bp. Bootstrap p of a non-positive total 0.9995. Versus random entries p = 0.225. `worthTrading` is false.
 
@@ -56,34 +56,34 @@ Tests last run: `python -m unittest discover -s tests -q` — 97 tests, OK. The 
 
 ## What's in progress
 
-Nothing. The commission-free rerank is scored and not deployed.
+Nothing. The slippage-only rerank is scored and not deployed.
 
-Primary cost is schedule `regulatory` in `backtest/costs.py`: US$0 broker commission, 2 bp slippage on the next bar's open, SEC US$27.80 per US$1M and FINRA TAF US$0.000166 per share on sells. Secondary cost is schedule `fixed`: max(US$1.00, US$0.005 per share), plus the same slippage and regulatory fees. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. Look count is still 3. Do not append look 4.
+The live cost is schedule `zero` in `app/cost_model.json` and `backtest/costs.py`: US$0 commission, no regulatory fee, 2 bp slippage on the next bar's open. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. Look count is still 3. Do not append look 4. There is no IBKR commission column.
 
 Pooled 2023-01-01 through 2026-03-31. Positive means net above zero.
 
-| Rule | Commission-free | Fixed | Validation, commission-free | Gate |
-| --- | ---: | ---: | ---: | --- |
-| appear_disappear_midmorning | −$824, −4.8 bp | −$1,971 | −$475 | reference |
-| h5_gap_down | +$313, +4.6 bp | −$1,103 | +$139 | rejected, 8/12 |
-| d_rs_leader | +$228, +1.8 bp | −$1,338 | −$124 | rejected, 8/12 |
-| h2_opening_reversal | −$182, −0.02 bp | −$1,719 | −$34 | rejected, 9/12 |
-| h4_opening_range | −$210, −2.5 bp | −$1,804 | −$733 | rejected, 6/12 |
-| d_pullback | −$334 | −$1,758 | −$202 | rejected, 8/12 |
-| d_orb | −$347 | −$1,498 | −$770 | rejected, 6/12 |
-| d_vwap_reclaim | −$582 | −$1,668 | −$757 | rejected, 5/12 |
-| h1_spy | −$324 | −$1,179 | −$183 | rejected, 4/12 |
-| h1_stocks | −$599 | −$1,945 | −$233 | rejected, 6/12 |
-| d_vwap_stretch | −$693 | −$1,845 | −$500 | rejected, 5/12 |
-| h3_vwap_shortfall | −$953 | −$2,034 | −$518 | rejected, 5/12 |
+| Rule | Net | Validation | Gate |
+| --- | ---: | ---: | --- |
+| appear_disappear_midmorning | −$786, −4.2 bp | −$452 | reference |
+| h5_gap_down | +$350, +6.2 bp | +$194 | rejected, 8/12 |
+| d_rs_leader | +$302, +2.1 bp | −$98 | rejected, 8/12 |
+| h2_opening_reversal | −$134, +0.2 bp | −$23 | rejected, 9/12 |
+| h4_opening_range | −$187, −2.2 bp | −$710 | rejected, 5/12 |
+| d_pullback | −$307 | −$166 | rejected, 8/12 |
+| d_orb | −$336 | −$760 | rejected, 6/12 |
+| h1_spy | −$302 | −$172 | rejected, 4/12 |
+| d_vwap_reclaim | −$556 | −$744 | rejected, 5/12 |
+| h1_stocks | −$553 | −$208 | rejected, 6/12 |
+| d_vwap_stretch | −$656 | −$478 | rejected, 5/12 |
+| h3_vwap_shortfall | −$883 | −$481 | rejected, 6/12 |
 
-Under commission-free costs, `h5_gap_down` and `d_rs_leader` are positive on the pooled window. Under fixed commissions, none is positive. On the validation window, only `h5_gap_down` is positive (+$139). The daily rank, highest validation net first, is `d_rs_leader` −$124, `d_pullback` −$202, `d_vwap_stretch` −$500, `d_vwap_reclaim` −$757, `d_orb` −$770. The finalist is still `d_rs_leader` because every daily validation net is a loss and it clears the 95% coverage bar.
+`h5_gap_down` and `d_rs_leader` are positive on the pooled window. On the validation window, only `h5_gap_down` is positive. The daily rank, highest validation net first, is `d_rs_leader` −$98, `d_pullback` −$166, `d_vwap_stretch` −$478, `d_vwap_reclaim` −$744, `d_orb` −$760. The finalist is still `d_rs_leader` because every daily validation net is a loss and it clears the 95% coverage bar.
 
-`h5_gap_down` fails the gate: 8 of 12 windows, severe losses on down days and low-vol days, and −$514 after its best five days are removed. Paired p-values 0.061 and 0.064 versus 0.00094. Drawdown $1,019. Its holdout was not opened.
+`h5_gap_down` fails the gate: 8 of 12 windows, severe losses on down days and low-vol days, and −$485 after its best five days are removed. Paired p-values 0.063 and 0.066 versus 0.00094. Drawdown $1,012. Its holdout was not opened.
 
-`d_rs_leader` fails the same gate: validation −$124, 8 of 12 windows, down days $2,039 worse than the champion, paired p-values 0.094 and 0.101. Look 3 restated, not used to rank: commission-free +$163 (+6.6 bp), fixed −$134. Look 2 restated: commission-free −$149 (−3.5 bp, 190 trades), fixed −$518.
+`d_rs_leader` fails the same gate: validation −$98, 8 of 12 windows, down days $2,059 worse than the champion, paired p-values 0.090 and 0.101. Look 3 restated, not used to rank: +$170, +6.9 bp. Look 2 restated: −$141, −3.2 bp, 190 trades.
 
-The tiered daily table below is the previous cost. It is not the owner's account.
+The tiered daily table below is the earlier IBKR-assumption measurement. It is not the execution cost.
 
 The live midmorning book filled on 563 of 813 SPY sessions (69.2%) from 2023-01-01 through 2026-03-31. Five frozen rules in `backtest/daily.py` were built to signal more often. Finalist rule, chosen on validation coverage (≥95%) and then validation net, before the holdout load: `d_rs_leader`. Look 3 is that one read. `models/ACTIVE` is still `v0.1`. `app/signal_rule.json` was not edited.
 
@@ -109,7 +109,7 @@ Not started, and not authorized as a silent next search:
 
 ## Exact next steps
 
-Stop. The commission-free rerank is finished. Two pooled nets are above zero and neither passed the gate. Nothing stays positive once IBKR Pro's US$1 minimum is charged. Do not deploy `d_rs_leader` or `h5_gap_down`. Do not open the holdout. Do not move a threshold after seeing +$313 or +$228.
+Stop. The slippage-only rerank is finished. Two pooled nets are above zero and neither passed the gate. Do not deploy `d_rs_leader` or `h5_gap_down`. Do not open the holdout. Do not move a threshold after seeing +$350 or +$302. Do not add an IBKR commission column.
 
 The Bonferroni denominator is 53. Do not rewrite `research/gate_results.csv` (scored at 33) or `research/areas.csv` (scored at 48).
 
@@ -147,7 +147,7 @@ Score the five daily-frequency rules. This command reads the holdout once if a v
 python -m backtest.run_daily
 ```
 
-Re-score the frozen rules on the commission-free account. This does not append a holdout look:
+Re-score the frozen rules on the live cost model (no commission, 2 bp slippage). This does not append a holdout look:
 
 ```powershell
 python -m backtest.run_costs

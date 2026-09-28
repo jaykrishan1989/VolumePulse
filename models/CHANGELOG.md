@@ -75,24 +75,25 @@ Holdout of `d_rs_leader`, one read: 123 trades, 26.8% wins, $90 net, $0.73/trade
 <!-- DAILY_CHANGELOG_END -->
 
 <!-- COSTS_CHANGELOG_BEGIN -->
-## Commission-free costs — 2026-09-28 — no checkpoint
+## Slippage-only cost — 2026-09-28 — no checkpoint
 
-The same frozen rules were re-scored with US$0 broker commission as the primary cost and IBKR Pro fixed commissions as a sensitivity column. The daily finalist on validation was `d_rs_leader`. None replaced v0.1. The live list was not edited and no order was placed.
+IBKR is data only. The same frozen rules were re-scored with no commission and 2 bp slippage per side. No IBKR commission column. The daily finalist on validation was `d_rs_leader`. None replaced v0.1. The live list was not edited and no order was placed.
 
-| Id | Commission-free net | Fixed net |
-| --- | ---: | ---: |
-| appear_disappear_midmorning | −$824 | −$1971 |
-| h1_spy | −$324 | −$1179 |
-| h1_stocks | −$599 | −$1945 |
-| h2_opening_reversal | −$182 | −$1719 |
-| h3_vwap_shortfall | −$953 | −$2034 |
-| h4_opening_range | −$210 | −$1804 |
-| h5_gap_down | $313 | −$1103 |
-| d_rs_leader | $228 | −$1338 |
-| d_vwap_stretch | −$693 | −$1845 |
-| d_orb | −$347 | −$1498 |
-| d_pullback | −$334 | −$1758 |
-| d_vwap_reclaim | −$582 | −$1668 |
+| Id | Net |
+| --- | ---: |
+| appear_disappear_midmorning | −$786 |
+| h1_spy | −$302 |
+| h1_stocks | −$553 |
+| h2_opening_reversal | −$134 |
+| h3_vwap_shortfall | −$883 |
+| h4_opening_range | −$187 |
+| h5_gap_down | $350 |
+| d_rs_leader | $302 |
+| d_vwap_stretch | −$656 |
+| d_orb | −$336 |
+| d_pullback | −$307 |
+| d_vwap_reclaim | −$556 |
 <!-- COSTS_CHANGELOG_END -->
+
 
 
