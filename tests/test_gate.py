@@ -20,6 +20,7 @@ from backtest.gate import (
     promote,
 )
 from backtest.areas import AREA_REGISTRY, AREAS_BEGIN, AREAS_END
+from backtest.daily import DAILY_BEGIN, DAILY_END, DAILY_REGISTRY
 from backtest.grid import SPECS
 from backtest.hypotheses import REGISTRY
 from backtest.periods import HOLDOUT_START
@@ -84,8 +85,9 @@ class GateRuleTests(unittest.TestCase):
         self.assertEqual(len(PASS1), 8)
         self.assertEqual(len(REGISTRY), 6)
         self.assertEqual(len(AREA_REGISTRY), 15)
-        self.assertEqual(ideas_tried(), 15 + 12 + 6 + 15)
-        self.assertAlmostEqual(bonferroni_alpha(ideas_tried()), 0.05 / 48)
+        self.assertEqual(len(DAILY_REGISTRY), 5)
+        self.assertEqual(ideas_tried(), 15 + 12 + 6 + 15 + 5)
+        self.assertAlmostEqual(bonferroni_alpha(ideas_tried()), 0.05 / 53)
 
     def test_regime_labels_use_the_prior_close_and_a_trailing_window(self) -> None:
         closes = []

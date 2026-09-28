@@ -358,15 +358,20 @@ def _markdown(rows: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def load_book() -> dict[tuple[str, date], list[dict[str, Any]]]:
+def load_book(include_holdout: bool = False) -> dict[tuple[str, date], list[dict[str, Any]]]:
+    """Load stored 5-minute bars. The holdout stays out unless a caller opts in.
+
+    The default is the pre-holdout book. ``include_holdout=True`` is only for
+    the one daily-frequency finalist read. It does not connect to IBKR.
+    """
     book: dict[tuple[str, date], list[dict[str, Any]]] = {}
     for symbol in list(CANDIDATES) + ["SPY"]:
         print(f"loading {symbol}", flush=True)
         for day, frame in sessions(load_symbol(symbol)):
-            if day >= HOLDOUT_START:
+            if day >= HOLDOUT_START and not include_holdout:
                 continue
             book[(symbol, day)] = bars_from_frame(frame)
-    if any(day >= HOLDOUT_START for (_symbol, day) in book):
+    if not include_holdout and any(day >= HOLDOUT_START for (_symbol, day) in book):
         raise RuntimeError("holdout day remained after the load filter")
     return book
 

@@ -67,9 +67,10 @@ GATE_END = "<!-- GATE_END -->"
 def ideas_tried(extra: int = 0) -> int:
     """Bonferroni denominator: every idea already scored, plus any new ids."""
     from backtest.areas import AREA_REGISTRY
+    from backtest.daily import DAILY_REGISTRY
     from backtest.hypotheses import REGISTRY
 
-    return BRACKET_TRIALS + ROUNDTRIP_TRIALS + len(REGISTRY) + len(AREA_REGISTRY) + extra
+    return BRACKET_TRIALS + ROUNDTRIP_TRIALS + len(REGISTRY) + len(AREA_REGISTRY) + len(DAILY_REGISTRY) + extra
 
 
 def bonferroni_alpha(tried: int) -> float:
@@ -535,6 +536,8 @@ def preserve_marked_section(new_log: str, old_log: str, begin: str, end: str) ->
 def preserve_gate_section(new_log: str, old_log: str) -> str:
     """Keep the gate and research-area write-ups when the hypothesis log is regenerated."""
     from backtest.areas import AREAS_BEGIN, AREAS_END
+    from backtest.daily import DAILY_BEGIN, DAILY_END
 
     kept = preserve_marked_section(new_log, old_log, GATE_BEGIN, GATE_END)
-    return preserve_marked_section(kept, old_log, AREAS_BEGIN, AREAS_END)
+    kept = preserve_marked_section(kept, old_log, AREAS_BEGIN, AREAS_END)
+    return preserve_marked_section(kept, old_log, DAILY_BEGIN, DAILY_END)

@@ -56,19 +56,33 @@ Tests last run: `python -m unittest discover -s tests -q` — 87 tests, OK. UI w
 
 ## What's in progress
 
-Nothing. The four-area batch is committed and pushed. `app/signal_rule.json` is still the midmorning rule. `models/ACTIVE` is `v0.1`. There is no `models/checkpoints/v1.0`.
+Owner goal shift, 2026-09-28: a rule that signals on essentially every session, using only the stored 5-minute bars. Five frozen rules are in `backtest/daily.py` (`d_rs_leader`, `d_vwap_stretch`, `d_orb`, `d_pullback`, `d_vwap_reclaim`). The runner is `python -m backtest.run_daily`. It has not been scored on the market file yet if this section still says so.
+
+Selection, written before any holdout load: on 2024-07-01..2026-03-31, coverage of SPY sessions at least 95 percent, then the highest tiered net. One holdout read for that finalist only, look 3, appended to `research/holdout_looks.csv`. If none clears 95 percent, do not open the holdout. Do not edit `app/signal_rule.json` or `models/ACTIVE`. Do not mint v1.0. Do not place orders.
+
+Measured baseline, already computed, not a new trial: the frozen midmorning list has a membership bar on 565 of 813 SPY sessions in 2023-01-01..2026-03-31 (69.5%), not one day in seven. The runner also prints champion fill-day coverage.
 
 Not started, and not authorized as a silent next search:
 
 - Heston same-clock continuation across days. Needs a wider cross-section than these eight names.
 - Order-flow imbalance. These files are OHLC. There are no aggressor prints.
 - Shorts. Canadian cash account, long-only.
-- Any retune of the frozen thresholds in `backtest/areas.py` or `backtest/hypotheses.py`.
-- A holdout read. Look count is 2. `fresh_slice` and `milestone` both raise.
+- Any retune of the frozen thresholds in `backtest/areas.py`, `backtest/hypotheses.py`, or `backtest/daily.py`.
+- A second holdout read. Look count is 2 until `run_daily` appends look 3 for the one validation finalist. `fresh_slice` and `milestone` still raise.
 
 ## Exact next steps
 
-Only if the owner adds a new pre-registered idea:
+Finish the daily-frequency batch if `research/daily_summary.json` does not exist yet:
+
+1. `python -m backtest.run_daily`
+2. Read `research/daily.csv` and the daily section of `research/RESEARCH_LOG.md`.
+3. Write the same numbers into `RESULTS.md` and a short paragraph in `README.md`. Do not deploy the finalist.
+4. Update this file with the measured table, the finalist id, and whether the holdout was read.
+5. Commit, push `cursor/right-time-to-buy-79f9`, and update PR #1. No agent metadata in the PR body.
+
+The Bonferroni denominator is now 53 (the old 48 plus these five ids). Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
+
+Only if the owner adds a further pre-registered idea:
 
 1. Add one frozen id. A threshold tweak is a new id, written down before the run. Do not edit the champion in place.
 2. `ideas_tried()` already counts `AREA_REGISTRY`. A new id raises the denominator. Update `tests/test_gate.py` to the new total. Do not rewrite old rows in `research/gate_results.csv` or `research/areas.csv`.
@@ -77,7 +91,7 @@ Only if the owner adds a new pre-registered idea:
 5. A v1 checkpoint also has to pass `passes_costs_and_random` in `models/registry.py` (holdout net > 0, bootstrap p < 0.05, random-entry p < 0.05). Failing that stays v0.x. `create_passing_checkpoint` refuses v0.1's published results.
 6. Commit and push after every meaningful step. Update PR #1 with `ManagePullRequest` (`branch_name` `cursor/right-time-to-buy-79f9`, `base_branch` `main`). Do not put agent metadata or cursor.com links in the PR body.
 
-If the owner does not add an idea, stop. Do not fish the least-negative cell.
+After `research/daily_summary.json` exists, stop. Do not fish a new threshold. Do not add an idea unless the owner registers one.
 
 ## Commands to resume
 
@@ -94,6 +108,12 @@ Re-score the fifteen overlays, still without the holdout:
 
 ```powershell
 python -m backtest.run_areas
+```
+
+Score the five daily-frequency rules. This command reads the holdout once if a validation finalist clears 95 percent coverage:
+
+```powershell
+python -m backtest.run_daily
 ```
 
 That rewrites the areas section of `research/RESEARCH_LOG.md`, `research/areas.csv`, `research/area_folds.csv`, `research/area_summary.json`, and the marked block in `models/CHANGELOG.md`. It refuses to run if `models/ACTIVE` is not `v0.1`, and it refuses if the live rule file changes. Parquets live in `data/raw5/<SYMBOL>/` (gitignored). Membership cache is `backtest_cache/membership.pkl` (gitignored).
