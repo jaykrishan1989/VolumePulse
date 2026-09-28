@@ -87,3 +87,17 @@ To see how signals would have done over the next 15, 30, and 60 minutes, run thi
 python scripts/replay_entries.py --days 5
 python scripts/replay_entries.py --symbols NVDA,AMD,JPM --days 3
 ```
+
+### Does the setup pay for itself?
+
+On the stored 5-minute bars, no. `RESULTS.md` is the locked test: train through mid-2024, choose on July 2024–March 2026, then one holdout from April 2026. Costs are tiered IBKR commissions on a US$2,160 ticket and 2 bp of slippage each side. The live rule's holdout is about **−5.9 bp (−$1.18) per trade**. Every filter with enough validation trades also lost money. The least-bad one (only 10:00–12:00 ET) was still **−1.7 bp** on the holdout and was not significant, so the live thresholds were left alone.
+
+The tab shows that holdout expectancy on each card, keeps a local paper log (`data/outcomes.sqlite`) of live setups, and can POST a notice to `ALERT_WEBHOOK_URL` or an ntfy topic in `ALERT_NTFY_TOPIC`. The notice is not an order. Gateway stays read-only.
+
+```powershell
+python -m unittest tests.test_entry tests.test_harness tests.test_outcomes
+python -m backtest.scan
+python -m backtest.run_search
+```
+
+Bar files live in `data/raw5/<SYMBOL>/*.parquet` (or `RTTB_RAW`). They are not committed.

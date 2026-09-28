@@ -25,7 +25,10 @@ except Exception:
 
     NY = timezone(timedelta(hours=-4), "EDT")
 
+from app.alerts import notify_setups
 from app.entry import DISCLAIMER, build_demo_board, screen_entries, watch_symbols
+from app.outcomes import OutcomeLog
+from app.research import load_research
 from app.etfs import (
     ETF_DEMO,
     ETF_SYMBOLS,
@@ -1304,6 +1307,29 @@ class VolumeFeed:
                 books[symbol] = payload
         return books
 
+    def _outcome_log(self) -> OutcomeLog:
+        log = getattr(self, "_outcomes", None)
+        if log is None:
+            log = OutcomeLog()
+            self._outcomes = log
+        return log
+
+    def _research_fields(self) -> dict[str, Any]:
+        try:
+            paper = self._outcome_log().summary()
+        except Exception:
+            paper = {"open": 0, "closed": 0, "note": "Paper log only. Volume Pulse never places orders."}
+        return {"entryResearch": load_research(), "entryPaper": paper}
+
+    def _stamp_research(self, row: dict[str, Any]) -> dict[str, Any]:
+        hold = (load_research().get("holdout") or {}) if load_research() else {}
+        if hold:
+            row["entryHistWin"] = hold.get("winRate")
+            row["entryHistBps"] = hold.get("avgNetBps")
+            row["entryHistDollars"] = hold.get("avgNetDollars")
+            row["entryHistTrades"] = hold.get("trades")
+        return row
+
     def _apply_signals(self, tickers: list[dict[str, Any]], screened: dict[str, Any]) -> list[dict[str, Any]]:
         by_symbol = {row["symbol"]: row for row in tickers}
         rows = []
@@ -1312,16 +1338,18 @@ class VolumeFeed:
             base.update(signal.as_row())
             if base.get("last") is None:
                 base["last"] = signal.last
-            rows.append(base)
+            rows.append(self._stamp_research(base))
         return rows
 
     def _entry_meta(self, screened: dict[str, Any]) -> dict[str, Any]:
-        return {
+        meta = {
             "entryNote": screened["note"],
             "entryDisclaimer": DISCLAIMER,
             "entryThreshold": screened["threshold"],
             "entryTopN": screened["topN"],
         }
+        meta.update(self._research_fields())
+        return meta
 
     def _live_entry(
         self, tickers: list[dict[str, Any]], session: dict[str, Any]
@@ -1352,7 +1380,18 @@ class VolumeFeed:
             session_fraction=float(session.get("fraction") or 0.5),
             enforce_clock=True,
         )
-        return self._apply_signals(tickers, screened), self._entry_meta(screened)
+        rows = self._apply_signals(tickers, screened)
+        marks = {
+            row["symbol"]: float(row["last"])
+            for row in tickers
+            if row.get("symbol") and row.get("last") is not None
+        }
+        try:
+            self._outcome_log().observe(rows, marks, datetime.now(NY))
+            notify_setups(rows)
+        except Exception:
+            pass
+        return rows, self._entry_meta(screened)
 
     def _demo_entry_snapshot(self, session: dict[str, Any]) -> dict[str, Any]:
         now = time.time()
@@ -1366,7 +1405,7 @@ class VolumeFeed:
             item["updated"] = now
             item.setdefault("spark", [])
             item.setdefault("priceSpark", [])
-            tickers.append(item)
+            tickers.append(self._stamp_research(item))
         return {
             "mode": "demo",
             "connected": False,
@@ -1394,6 +1433,7 @@ class VolumeFeed:
             "entryDisclaimer": DISCLAIMER,
             "entryThreshold": board["threshold"],
             "entryTopN": board["topN"],
+            **self._research_fields(),
         }
 
     def _print_payload(self, tickers: list[dict[str, Any]]) -> dict[str, Any]:

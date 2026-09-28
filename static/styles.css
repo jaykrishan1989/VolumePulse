@@ -605,6 +605,46 @@ input[type="search"] { width: 160px; }
   font-size: 13px;
 }
 
+.entry-research {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #10161d;
+}
+
+.entry-verdict {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.entry-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.entry-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.entry-stats b {
+  font: 600 13px var(--mono);
+}
+
+.entry-hist {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .entry-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .entry-list { display: flex; flex-direction: column; gap: 10px; }
 
 .entry-card {

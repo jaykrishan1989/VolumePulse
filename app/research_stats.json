@@ -1,0 +1,36 @@
+{
+  "chosenId": "morning",
+  "shippedRule": "baseline",
+  "worthTrading": false,
+  "verdict": "No configuration kept a cost-inclusive edge on the locked holdout. Do not trade it.",
+  "accountUsd": 2160.0,
+  "slipBps": 2.0,
+  "schedule": "tiered",
+  "holdout": {
+    "trades": 1984,
+    "winRate": 0.36643145161290325,
+    "avgNetBps": -5.893822564012602,
+    "avgNetDollars": -1.17617459064926,
+    "avgNetR": -0.24640927108673052,
+    "profitFactor": 0.7158678654656434,
+    "tradesPerDay": 16.130081300813007
+  },
+  "validation": {
+    "trades": 7388,
+    "winRate": 0.3500270709258257,
+    "avgNetBps": -9.425836435408645,
+    "avgNetDollars": -1.9120556388414502
+  },
+  "baselineHoldout": {
+    "trades": 1984,
+    "winRate": 0.36643145161290325,
+    "avgNetBps": -5.893822564012602,
+    "avgNetDollars": -1.17617459064926
+  },
+  "chosenHoldout": {
+    "trades": 736,
+    "winRate": 0.40217391304347827,
+    "avgNetBps": -1.7378683144116438,
+    "avgNetDollars": -0.36201460682584985
+  }
+}

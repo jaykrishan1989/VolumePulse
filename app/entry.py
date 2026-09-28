@@ -361,9 +361,11 @@ class EntrySignal:
     triggered_ago_sec: int
     last: float
     pullback_atr: float
+    vwap: float | None = None
+    atr: float | None = None
 
     def as_row(self) -> dict[str, Any]:
-        return {
+        row = {
             "entryScore": int(round(self.score)),
             "entryReasons": list(self.reasons),
             "entryLow": self.entry_low,
@@ -375,6 +377,11 @@ class EntrySignal:
             "entryAgoSec": self.triggered_ago_sec,
             "entryPullbackAtr": round(self.pullback_atr, 2),
         }
+        if self.vwap is not None:
+            row["vwap"] = self.vwap
+        if self.atr is not None:
+            row["entryAtr"] = self.atr
+        return row
 
 
 def diagnose_entry(
@@ -693,6 +700,8 @@ def diagnose_entry(
         triggered_ago_sec=ago,
         last=_px(price),
         pullback_atr=pullback_atr,
+        vwap=_px(vwap_now) if vwap_now else None,
+        atr=_px(atr_now),
     )
     return {
         "ok": score + 1e-9 >= cfg.min_score,

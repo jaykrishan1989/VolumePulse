@@ -496,6 +496,46 @@ function entryPlan(row) {
   </div>`;
 }
 
+function fmtBps(n) {
+  if (n == null || Number.isNaN(Number(n))) return "—";
+  const value = Number(n);
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)} bp`;
+}
+
+function fmtSignedMoney(n) {
+  if (n == null || Number.isNaN(Number(n))) return "—";
+  const value = Number(n);
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}$${Math.abs(value).toFixed(2)}`;
+}
+
+function entryHistLine(row) {
+  if (row.entryHistBps == null && row.entryHistWin == null) return "";
+  const win = row.entryHistWin == null ? "—" : `${(Number(row.entryHistWin) * 100).toFixed(0)}%`;
+  return `<div class="entry-hist">This rule, holdout: ${win} wins · ${fmtBps(row.entryHistBps)} · ${fmtSignedMoney(row.entryHistDollars)} · n=${row.entryHistTrades ?? "—"}</div>`;
+}
+
+function researchPanel(snap) {
+  const research = snap.entryResearch || {};
+  const paper = snap.entryPaper || {};
+  const hold = research.holdout || {};
+  const verdict = research.verdict || "Measured holdout stats load with the published backtest.";
+  const win = hold.winRate == null ? "—" : `${(Number(hold.winRate) * 100).toFixed(1)}%`;
+  const paperWin = paper.winRate == null ? "—" : `${(Number(paper.winRate) * 100).toFixed(0)}% wins`;
+  return `<section class="entry-research">
+    <p class="entry-verdict">${esc(verdict)}</p>
+    <div class="entry-stats">
+      <div><span>Holdout win</span><b>${win}</b></div>
+      <div><span>Expectancy</span><b>${fmtBps(hold.avgNetBps)}</b></div>
+      <div><span>Avg $ / trade</span><b>${fmtSignedMoney(hold.avgNetDollars)}</b></div>
+      <div><span>Holdout trades</span><b>${hold.trades ?? "—"}</b></div>
+      <div><span>Paper open</span><b>${paper.open ?? 0}</b></div>
+      <div><span>Paper closed</span><b>${paper.closed ?? 0} · ${paperWin} · ${fmtSignedMoney(paper.avgNetDollars)}</b></div>
+    </div>
+  </section>`;
+}
+
 function renderEntryBoard(snap, rows, selectedSymbol) {
   if (!entryBoard) return;
   const cards = rows.length
@@ -513,12 +553,16 @@ function renderEntryBoard(snap, rows, selectedSymbol) {
               <div class="stop"><span>Stop</span><b>${fmtNum(row.entryStop)}</b></div>
               <div class="target"><span>Target</span><b>${fmtNum(row.entryTarget)}</b></div>
               <div><span>Reward / risk</span><b>${fmtX(row.entryRR)}</b></div>
+              <div><span>VWAP</span><b>${fmtNum(row.vwap)}</b></div>
+              <div><span>RVOL</span><b>${fmtX(row.rvol)}</b></div>
             </div>
+            ${entryHistLine(row)}
           </div>
         </button>`).join("")}</div>`
     : `<p class="entry-empty">${esc(snap.entryNote || "No fresh long entry on this tape.")}</p>`;
   entryBoard.innerHTML = `
     <p class="entry-disclaimer">${esc(snap.entryDisclaimer || "Not financial advice. Volume Pulse never places orders.")}</p>
+    ${researchPanel(snap)}
     ${rows.length ? `<p class="entry-note">${esc(snap.entryNote || "")}</p>` : ""}
     ${cards}
   `;
