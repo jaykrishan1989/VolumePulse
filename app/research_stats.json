@@ -1,36 +1,98 @@
 {
-  "chosenId": "morning",
-  "shippedRule": "baseline",
+  "rule": "appear_disappear",
+  "chosenId": "midmorning",
+  "shippedRule": "midmorning",
+  "spec": {
+    "id": "midmorning",
+    "confirm": 1,
+    "exit_lag": 1,
+    "minute_from": 600,
+    "minute_to": 660
+  },
   "worthTrading": false,
-  "verdict": "No configuration kept a cost-inclusive edge on the locked holdout. Do not trade it.",
-  "accountUsd": 2160.0,
+  "verdict": "No appear-to-disappear rule kept a cost-inclusive edge on the locked holdout. Do not trade it.",
+  "accountUsd": 2120.0,
   "slipBps": 2.0,
   "schedule": "tiered",
   "holdout": {
-    "trades": 1984,
-    "winRate": 0.36643145161290325,
-    "avgNetBps": -5.893822564012602,
-    "avgNetDollars": -1.17617459064926,
-    "avgNetR": -0.24640927108673052,
-    "profitFactor": 0.7158678654656434,
-    "tradesPerDay": 16.130081300813007
+    "trades": 191,
+    "winRate": 0.3717277486910995,
+    "net": -268.365512488125,
+    "returnPct": -12.658750589062498,
+    "avgNetDollars": -1.4050550392048429,
+    "avgNetBps": -8.434117953234715,
+    "maxDrawdown": 320.72548873106257,
+    "tradesPerDay": 1.5528455284552845,
+    "reasons": {
+      "sell": 175,
+      "stop": 16
+    },
+    "sessionDays": 123,
+    "profitFactor": 0.5271793798564537
   },
-  "validation": {
-    "trades": 7388,
-    "winRate": 0.3500270709258257,
-    "avgNetBps": -9.425836435408645,
-    "avgNetDollars": -1.9120556388414502
+  "holdoutWithoutStop": {
+    "trades": 187,
+    "winRate": 0.37967914438502676,
+    "net": -249.8880072755985,
+    "returnPct": -11.787170154509363,
+    "avgNetDollars": -1.3362995041475856,
+    "avgNetBps": -7.539173295121345,
+    "maxDrawdown": 303.57070988406167,
+    "tradesPerDay": 1.5203252032520325,
+    "reasons": {
+      "sell": 187
+    },
+    "sessionDays": 123,
+    "profitFactor": 0.5460126247352819
   },
-  "baselineHoldout": {
-    "trades": 1984,
-    "winRate": 0.36643145161290325,
-    "avgNetBps": -5.893822564012602,
-    "avgNetDollars": -1.17617459064926
+  "holdoutFixed": {
+    "trades": 189,
+    "winRate": 0.23809523809523808,
+    "net": -517.8332292124642,
+    "returnPct": -24.426095717569066,
+    "avgNetDollars": -2.7398583556215037,
+    "avgNetBps": -21.13439056580068,
+    "maxDrawdown": 540.3259615754205,
+    "tradesPerDay": 1.5365853658536586,
+    "reasons": {
+      "sell": 172,
+      "stop": 17
+    },
+    "sessionDays": 123,
+    "profitFactor": 0.28225627071490683
   },
-  "chosenHoldout": {
-    "trades": 736,
-    "winRate": 0.40217391304347827,
-    "avgNetBps": -1.7378683144116438,
-    "avgNetDollars": -0.36201460682584985
+  "validationNet": -863.9923562265731,
+  "bootstrap": {
+    "draws": 2000,
+    "pValue": 0.9995,
+    "days": 96
+  },
+  "random": {
+    "draws": 200,
+    "pValue": 0.225,
+    "randomMeanBps": -7.91959872143836,
+    "strategyMeanBps": -6.454396002118782
+  },
+  "trials": 12,
+  "bracket": {
+    "chosenId": "morning",
+    "shippedRule": "baseline",
+    "holdout": {
+      "trades": 1984,
+      "winRate": 0.36643145161290325,
+      "avgNetBps": -5.893822564012602,
+      "avgNetDollars": -1.17617459064926,
+      "avgNetR": -0.24640927108673052,
+      "profitFactor": 0.7158678654656434,
+      "tradesPerDay": 16.130081300813007
+    },
+    "validation": {
+      "trades": 7388,
+      "winRate": 0.3500270709258257,
+      "avgNetBps": -9.425836435408645,
+      "avgNetDollars": -1.9120556388414502
+    },
+    "accountUsd": 2160.0,
+    "verdict": "No configuration kept a cost-inclusive edge on the locked holdout. Do not trade it."
   }
 }

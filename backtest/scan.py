@@ -80,6 +80,8 @@ def collect_signals(
     day_bars: list[tuple[date, list[dict[str, Any]]]],
     spy: dict[tuple[date, int], tuple[str, bool]],
     qqq: dict[tuple[date, int], tuple[str, bool]],
+    *,
+    membership: bool = False,
 ) -> list[dict[str, Any]]:
     """Score one symbol. ``day_bars`` is chronological regular-session bars."""
     daily_volume: list[float] = []
@@ -148,37 +150,41 @@ def collect_signals(
                 continue
             signal = found["signal"]
             trigger_t = int(bar["t"]) - int(signal.triggered_ago_sec)
-            if (day, trigger_t) in seen:
+            if membership:
+                # Every on-list bar. Spells, not the first print only.
+                pass
+            elif (day, trigger_t) in seen:
                 continue
-            seen.add((day, trigger_t))
-            future = _future_bars(today, index)
-            if not future:
+            else:
+                seen.add((day, trigger_t))
+            future = [] if membership else _future_bars(today, index)
+            if not membership and not future:
                 continue
             vwap = signal.vwap
             reasons = list(signal.reasons)
-            signals.append(
-                {
-                    "symbol": symbol,
-                    "day": day,
-                    "t": int(bar["t"]),
-                    "trigger_t": trigger_t,
-                    "minute": int(bar["minute"]),
-                    "score": float(signal.score),
-                    "rr": float(signal.reward_risk),
-                    "rvol": None if rvol is None else float(rvol),
-                    "vwap": None if vwap is None else float(vwap),
-                    "close": float(last),
-                    "above_vwap": bool(vwap is not None and last + 1e-9 >= float(vwap)),
-                    "reclaimed_vwap": any(reason == "Reclaimed VWAP" for reason in reasons),
-                    "spy_above": bool(spy_above),
-                    "qqq_above": bool(qqq_above),
-                    "prior5": None if prior5 is None else float(prior5),
-                    "stop": float(signal.stop),
-                    "target": float(signal.target),
-                    "atr": None if signal.atr is None else float(signal.atr),
-                    "future": future,
-                }
-            )
+            row = {
+                "symbol": symbol,
+                "day": day,
+                "t": int(bar["t"]),
+                "trigger_t": trigger_t,
+                "minute": int(bar["minute"]),
+                "score": float(signal.score),
+                "rr": float(signal.reward_risk),
+                "rvol": None if rvol is None else float(rvol),
+                "close": float(last),
+                "above_vwap": bool(vwap is not None and last + 1e-9 >= float(vwap)),
+                "reclaimed_vwap": any(reason == "Reclaimed VWAP" for reason in reasons),
+                "spy_above": bool(spy_above),
+                "qqq_above": bool(qqq_above),
+                "prior5": None if prior5 is None else float(prior5),
+                "stop": float(signal.stop),
+            }
+            if not membership:
+                row["vwap"] = None if vwap is None else float(vwap)
+                row["target"] = float(signal.target)
+                row["atr"] = None if signal.atr is None else float(signal.atr)
+                row["future"] = future
+            signals.append(row)
         daily_volume.append(sum(bar["volume"] for bar in today))
         daily_close.append(today[-1]["close"])
     return signals
@@ -260,6 +266,53 @@ def _init_worker(root: str) -> None:
 def _scan_job(symbol: str) -> list[dict[str, Any]]:
     assert _WORKER_CONTEXT is not None
     return scan_symbol(symbol, _WORKER_CONTEXT, Path(_WORKER_ROOT) if _WORKER_ROOT else None)
+
+
+def membership_path() -> Path:
+    return CACHE_DIR / "membership.pkl"
+
+
+def _scan_membership_job(symbol: str) -> list[dict[str, Any]]:
+    assert _WORKER_CONTEXT is not None
+    root = Path(_WORKER_ROOT) if _WORKER_ROOT else None
+    day_bars = [(day, bars_from_frame(frame)) for day, frame in sessions(load_symbol(symbol, root))]
+    return collect_signals(symbol, day_bars, _WORKER_CONTEXT["SPY"], _WORKER_CONTEXT["QQQ"], membership=True)
+
+
+def scan_membership(symbols: list[str] | None = None, root: Path | None = None, workers: int = 4) -> list[dict[str, Any]]:
+    """Every bar the live scorer would keep a name on the list."""
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
+    from backtest.data import CANDIDATES
+
+    root = root or raw_root()
+    symbols = list(symbols or CANDIDATES)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    if not context_path().exists():
+        print("building SPY/QQQ context", flush=True)
+        context = build_context(root)
+        with context_path().open("wb") as handle:
+            pickle.dump(context, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    hits: list[dict[str, Any]] = []
+    with ProcessPoolExecutor(max_workers=max(1, workers), initializer=_init_worker, initargs=(str(root),)) as pool:
+        futures = {pool.submit(_scan_membership_job, symbol): symbol for symbol in symbols}
+        for future in as_completed(futures):
+            symbol = futures[future]
+            rows = future.result()
+            print(f"{symbol} on-list bars {len(rows)}", flush=True)
+            hits.extend(rows)
+    hits.sort(key=lambda row: (row["day"], row["t"], row["symbol"]))
+    payload = {"scanned_at": datetime.now().isoformat(timespec="seconds"), "symbols": symbols, "hits": hits}
+    with membership_path().open("wb") as handle:
+        pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"wrote {len(hits)} on-list bars to {membership_path()}", flush=True)
+    return hits
+
+
+def load_membership() -> list[dict[str, Any]]:
+    with membership_path().open("rb") as handle:
+        payload = pickle.load(handle)
+    return list(payload["hits"])
 
 
 def main() -> None:

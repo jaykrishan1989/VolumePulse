@@ -1,0 +1,14 @@
+{
+  "id": "midmorning",
+  "confirm": 1,
+  "exit_lag": 1,
+  "min_score": null,
+  "min_rr": null,
+  "min_rvol": null,
+  "require_vwap_reclaim": false,
+  "minute_from": 600,
+  "minute_to": 660,
+  "stop_scale": 1.0,
+  "use_stop": true,
+  "note": "Frozen on the validation window. The holdout was not used to pick this."
+}

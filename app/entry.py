@@ -25,9 +25,9 @@ except Exception:
     NY = timezone(timedelta(hours=-4), "EDT")
 
 DISCLAIMER = (
-    "Not financial advice. Volume Pulse never places orders. A row is a short-term "
-    "long setup on this tape, not a recommendation, and it drops off when that setup "
-    "is no longer valid."
+    "Not financial advice. Volume Pulse never places orders. BUY and SELL are signals "
+    "to confirm by hand. A row is a short-term long setup on this tape, not a recommendation, "
+    "and it drops off when that setup is no longer valid."
 )
 
 # Specific groups win over broad ones so NVDA maps to SMH, not XLK.

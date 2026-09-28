@@ -63,6 +63,28 @@ class OutcomeLog:
             """
         )
         self._ensure_columns()
+        self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS signals (
+                id INTEGER PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                day TEXT NOT NULL,
+                action TEXT NOT NULL,
+                price REAL,
+                stop REAL,
+                target REAL,
+                score INTEGER,
+                delayed INTEGER,
+                lag_sec REAL,
+                appeared_at TEXT NOT NULL,
+                status TEXT NOT NULL,
+                exit_price REAL,
+                exit_at TEXT,
+                net_dollars REAL,
+                net_bps REAL
+            )
+            """
+        )
         self._conn.commit()
 
     def _ensure_columns(self) -> None:
@@ -178,4 +200,117 @@ class OutcomeLog:
             "avgNetBps": (sum(row[2] or 0 for row in closed) / len(closed)) if closed else None,
             "byStatus": by_status,
             "note": "Paper log only. Volume Pulse never places orders.",
+            "signals": self.signal_summary(),
+        }
+
+    def record_signals(self, events: list[dict[str, Any]], now: datetime) -> None:
+        """Log a BUY and its later SELL, STOP, or FLAT. This is not an order."""
+        day = now.date().isoformat()
+        for event in events:
+            symbol = str(event.get("symbol") or "")
+            action = str(event.get("action") or "")
+            if not symbol or action not in {"BUY", "SELL", "STOP", "FLAT"}:
+                continue
+            price = _num(event.get("price"))
+            self._conn.execute(
+                """
+                INSERT INTO signals (
+                    symbol, day, action, price, stop, target, score, delayed, lag_sec,
+                    appeared_at, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    symbol,
+                    day,
+                    action,
+                    price,
+                    _num(event.get("stop")),
+                    _num(event.get("target")),
+                    int(event["score"]) if event.get("score") is not None else None,
+                    1 if event.get("delayed") else 0,
+                    _num(event.get("lagSec")),
+                    event.get("at") or now.isoformat(timespec="seconds"),
+                    "open" if action == "BUY" else action.lower(),
+                ),
+            )
+            if action != "BUY":
+                self._close_buy(symbol, day, action.lower(), price, now)
+        self._conn.commit()
+
+    def _close_buy(self, symbol: str, day: str, status: str, price: float | None, now: datetime) -> None:
+        row = self._conn.execute(
+            """
+            SELECT id, price FROM signals
+            WHERE symbol = ? AND day = ? AND action = 'BUY' AND status = 'open'
+            ORDER BY id DESC LIMIT 1
+            """,
+            (symbol, day),
+        ).fetchone()
+        if row is None or price is None or not row[1]:
+            return
+        from backtest.spells import ACCOUNT_USD as SIGNAL_ACCOUNT
+
+        entry = apply_slip(float(row[1]), "buy", SLIP_BPS)
+        exit_px = apply_slip(float(price), "sell", SLIP_BPS)
+        shares = share_count(SIGNAL_ACCOUNT, entry)
+        if shares < 1:
+            net = 0.0
+            bps = 0.0
+        else:
+            gross = (exit_px - entry) * shares
+            fees = commission(shares, entry, "buy", "tiered") + commission(shares, exit_px, "sell", "tiered")
+            net = gross - fees
+            bps = net / (entry * shares) * 10_000.0
+        self._conn.execute(
+            """
+            UPDATE signals
+            SET status = ?, exit_price = ?, exit_at = ?, net_dollars = ?, net_bps = ?
+            WHERE id = ?
+            """,
+            (status, exit_px, now.isoformat(timespec="seconds"), net, bps, row[0]),
+        )
+
+    def recent_signals(self, day: str, limit: int = 12) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            """
+            SELECT action, symbol, price, stop, score, appeared_at, status
+            FROM signals WHERE day = ? ORDER BY id DESC LIMIT ?
+            """,
+            (day, limit),
+        ).fetchall()
+        notes = {
+            "BUY": "Enter at the next bar open. Confirm manually. Not an order.",
+            "SELL": "Exit at the next bar open. Confirm manually. Not an order.",
+            "STOP": "Protective stop. Confirm the exit manually. Not an order.",
+            "FLAT": "Flat by 15:55 ET. Confirm the exit manually. Not an order.",
+        }
+        out = []
+        for action, symbol, price, stop, score, appeared_at, _status in reversed(rows):
+            out.append(
+                {
+                    "action": action,
+                    "symbol": symbol,
+                    "price": price,
+                    "stop": stop,
+                    "score": score,
+                    "at": appeared_at,
+                    "note": notes.get(action, "Confirm manually. Not an order."),
+                    "simulated": False,
+                }
+            )
+        return out
+
+    def signal_summary(self) -> dict[str, Any]:
+        rows = self._conn.execute(
+            "SELECT status, net_dollars, net_bps FROM signals WHERE action = 'BUY'"
+        ).fetchall()
+        closed = [row for row in rows if row[0] in ("sell", "stop", "flat")]
+        wins = [row for row in closed if (row[1] or 0) > 0]
+        return {
+            "open": sum(1 for row in rows if row[0] == "open"),
+            "closed": len(closed),
+            "winRate": (len(wins) / len(closed)) if closed else None,
+            "avgNetDollars": (sum(row[1] or 0 for row in closed) / len(closed)) if closed else None,
+            "avgNetBps": (sum(row[2] or 0 for row in closed) / len(closed)) if closed else None,
+            "note": "Signals only. Confirm every trade. Volume Pulse never places orders.",
         }

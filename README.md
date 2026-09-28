@@ -90,16 +90,18 @@ python scripts/replay_entries.py --symbols NVDA,AMD,JPM --days 3
 
 ### Does the setup pay for itself?
 
-On the stored 5-minute bars, no. `RESULTS.md` is the locked test: train through mid-2024, choose on July 2024–March 2026, then one holdout from April 2026. Costs are tiered IBKR commissions on a US$2,160 ticket and 2 bp of slippage each side. The live rule's holdout is about **−5.9 bp (−$1.18) per trade**. Every filter with enough validation trades also lost money. The least-bad one (only 10:00–12:00 ET) was still **−1.7 bp** on the holdout and was not significant, so the live thresholds were left alone.
+On the stored 5-minute bars, no. The trade the research targets is the round trip from appearing on the list to leaving it: buy the next bar's open, sell the next bar's open after it drops off, flat by 15:55, with a hard stop reported both on and off. `RESULTS.md` is the locked test on a US$2,120 ticket (CA$3,000 at 1.4165), tiered commissions (about US$0.35 minimum per side) and the US$1 fixed minimum, plus 2 bp of slippage. Twelve validation trials all lost money. The least-bad one, names only from 10:00–11:00 ET, was still **−$268 (−12.7%, −8.4 bp)** on the locked holdout from April 2026, 191 trades, 37% winners, $321 max drawdown. It did not beat random entries of the same length. Do not trade it.
 
-The tab shows that holdout expectancy on each card, keeps a local paper log (`data/outcomes.sqlite`) of live setups, and can POST a notice to `ALERT_WEBHOOK_URL` or an ntfy topic in `ALERT_NTFY_TOPIC`. The notice is not an order. Gateway stays read-only.
+The tab shows that holdout on each card. A name that joins the list raises a **BUY**. A name that leaves raises a **SELL**. A print through the stop raises a **STOP**, and 15:55 raises a **FLAT**. Those are alerts and a local log (`data/outcomes.sqlite`), not orders. You confirm each one. A webhook in `ALERT_WEBHOOK_URL` or an ntfy topic in `ALERT_NTFY_TOPIC` can ping the same text. Gateway stays read-only.
 
 If Gateway is on delayed data (market data type 3 or 4), or the last bar is more than a minute behind the clock, a banner says so and Right Time to Buy does not list that setup. A last price already through the stop or the target is dropped too. The paper log records the delay on each row. On 28 Sep 2026 the delayed tape showed AAPL and XOM after the real price had already stopped out.
 
 ```powershell
-python -m unittest tests.test_entry tests.test_harness tests.test_outcomes
+python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals
 python -m backtest.scan
 python -m backtest.run_search
+python -m backtest.run_roundtrip select
+python -m backtest.run_roundtrip holdout
 ```
 
 Bar files live in `data/raw5/<SYMBOL>/*.parquet` (or `RTTB_RAW`). They are not committed.

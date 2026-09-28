@@ -524,6 +524,10 @@ function researchPanel(snap) {
   const verdict = research.verdict || "Measured holdout stats load with the published backtest.";
   const win = hold.winRate == null ? "—" : `${(Number(hold.winRate) * 100).toFixed(1)}%`;
   const paperWin = paper.winRate == null ? "—" : `${(Number(paper.winRate) * 100).toFixed(0)}% wins`;
+  const sig = paper.signals || {};
+  const sigWin = sig.winRate == null ? "—" : `${(Number(sig.winRate) * 100).toFixed(0)}% wins`;
+  const ret = hold.returnPct == null ? "—" : `${Number(hold.returnPct) > 0 ? "+" : ""}${Number(hold.returnPct).toFixed(1)}%`;
+  const dd = hold.maxDrawdown == null ? "—" : fmtSignedMoney(-Math.abs(Number(hold.maxDrawdown)));
   return `<section class="entry-research">
     <p class="entry-verdict">${esc(verdict)}</p>
     <div class="entry-stats">
@@ -531,10 +535,28 @@ function researchPanel(snap) {
       <div><span>Expectancy</span><b>${fmtBps(hold.avgNetBps)}</b></div>
       <div><span>Avg $ / trade</span><b>${fmtSignedMoney(hold.avgNetDollars)}</b></div>
       <div><span>Holdout trades</span><b>${hold.trades ?? "—"}</b></div>
+      <div><span>Holdout return</span><b>${ret}</b></div>
+      <div><span>Max drawdown</span><b>${dd}</b></div>
       <div><span>Paper open</span><b>${paper.open ?? 0}</b></div>
       <div><span>Paper closed</span><b>${paper.closed ?? 0} · ${paperWin} · ${fmtSignedMoney(paper.avgNetDollars)}</b></div>
+      <div><span>Signals closed</span><b>${sig.closed ?? 0} · ${sigWin} · ${fmtSignedMoney(sig.avgNetDollars)}</b></div>
     </div>
   </section>`;
+}
+
+function signalStrip(snap) {
+  const rows = snap.entrySignals || [];
+  const rule = snap.entryRule ? `<p class="entry-rule">${esc(snap.entryRule)}</p>` : "";
+  if (!rows.length) return rule;
+  const cards = rows.map((row) => {
+    const action = String(row.action || "").toLowerCase();
+    return `<div class="signal-row ${esc(action)}">
+      <span class="signal-action">${esc(row.action)}</span>
+      <b>${esc(row.symbol)}</b>
+      <span>${esc(row.note || "Confirm manually. Not an order.")}</span>
+    </div>`;
+  }).join("");
+  return `${rule}<div class="entry-signals">${cards}</div>`;
 }
 
 function withholdLabel(code) {
@@ -596,6 +618,7 @@ function renderEntryBoard(snap, rows, selectedSymbol) {
   entryBoard.innerHTML = `
     <p class="entry-disclaimer">${esc(snap.entryDisclaimer || "Not financial advice. Volume Pulse never places orders.")}</p>
     ${researchPanel(snap)}
+    ${signalStrip(snap)}
     ${rows.length || (snap.entryWithheld || []).length ? `<p class="entry-note">${esc(snap.entryNote || "")}</p>` : ""}
     ${cards}
     ${withheldCards(snap.entryWithheld)}

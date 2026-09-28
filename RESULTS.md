@@ -1,6 +1,70 @@
 # Right Time to Buy — measured results
 
-Verdict: **do not trade it.** No pre-registered configuration has a cost-inclusive edge on the locked holdout. That includes the live rule and the least-bad filter the validation window could find. This is not a forecast that every future day loses money. It is the out-of-sample result: after commissions and 2 bp of slippage, the average trade lost money, and the loss is not a sampling fluke in the direction of a profit.
+Verdict: **do not trade it.** The rule is now the round trip from the moment a name appears on the list to the moment it leaves. Twelve validation trials, including hysteresis so names do not flicker, all lost money after IBKR commissions and 2 bp of slippage on a US$2,120 account. The least-bad cell was read once on the locked holdout and lost there too. The tab still emits BUY and SELL for a person to confirm. It does not place orders.
+
+## Appear, then disappear
+
+A BUY is the bar a ticker joins the Right Time to Buy list. The fill is the next 5-minute bar's open, worsened by 2 bp. A SELL is the bar it leaves. The fill is the next bar's open, again worsened by 2 bp. One off bar can be ignored when exit lag is greater than 1, and the name has to stay on for the confirm bars before the buy exists. Anything still open is flat on the close of the 15:50 ET bar (15:55). The stop printed on the buy bar is a safety net. Results are reported with that stop and without it. Cash left over can fund a second share in another name. Whole shares only.
+
+The account is US$2,120, which is CA$3,000 at 1.4165. Tiered commission is max(US$0.35, US$0.0035/share), cap 1% of notional. Fixed is max(US$1, US$0.005/share). Sells add SEC US$27.80 per US$1M and FINRA TAF US$0.000166/share. The scorer is still `diagnose_entry`. These trials do not change its numeric gates. They decide which of its prints become a list membership, and when that membership ends.
+
+| Window | Dates | Role |
+| --- | --- | --- |
+| Train | 2022-01-01 – 2024-06-30 | Description only. Not used to pick. |
+| Validate | 2024-07-01 – 2026-03-31 | The only window that ranks rules. 439 sessions. |
+| Holdout | 2026-04-01 – end of the files (~Sep 2026) | Read once, after the pick was frozen. 123 sessions. |
+
+Eight cells were written down first: appear on the first on-list bar and leave on the first off bar; wait 2 off bars; wait 3; require 2 on bars and 2 off bars; score at least 80; 10:00–12:00 ET; VWAP reclaim; reward/risk at least 2. All eight lost on validation, so one disclosed second pass added four cells from those summaries: a 1.5× wider stop, the next hysteresis step, a tighter or shifted clock, and the next score or reward/risk step. That is 12 trials. A cell needed at least 80 portfolio trades. The pick is the eligible cell with the highest validation net dollars after the tiered schedule, 2 bp, and the hard stop. Holdout dates were not in that ranking.
+
+Validation portfolio, tiered, 2 bp, with the stop:
+
+| Rule | Trades | /day | Win | Net | Return | Avg | Max DD | PF |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| midmorning 10:00–11:00 | 628 | 1.43 | 30.9% | −$864 | −40.8% | −10.8 bp | $882 | 0.43 |
+| confirm 3, lag 3 | 1,298 | 2.96 | 24.6% | −$1,744 | −82.3% | −18.2 bp | $1,791 | 0.32 |
+| morning 10:00–12:00 | 1,408 | 3.21 | 25.8% | −$1,574 | −74.2% | −14.4 bp | $1,574 | 0.39 |
+| VWAP reclaim | 1,382 | 3.15 | 25.1% | −$1,598 | −75.4% | −12.9 bp | $1,598 | 0.31 |
+| score ≥ 85 | 1,818 | 4.14 | 18.4% | −$1,931 | −91.1% | −18.1 bp | $1,931 | 0.25 |
+| confirm 2, lag 2 | 1,691 | 3.85 | 22.5% | −$1,941 | −91.5% | −21.1 bp | $1,972 | 0.29 |
+| lag 3 | 1,798 | 4.10 | 27.3% | −$1,951 | −92.0% | −20.5 bp | $2,013 | 0.40 |
+| lag 2 | 1,821 | 4.15 | 24.4% | −$1,953 | −92.1% | −20.8 bp | $2,000 | 0.35 |
+| score ≥ 80 | 1,777 | 4.05 | 19.7% | −$1,963 | −92.6% | −19.5 bp | $1,963 | 0.26 |
+| reward/risk ≥ 2 | 1,795 | 4.09 | 20.0% | −$1,966 | −92.7% | −21.1 bp | $1,977 | 0.24 |
+| appear/disappear, no extra lag | 1,790 | 4.08 | 18.4% | −$1,985 | −93.7% | −22.5 bp | $1,985 | 0.25 |
+| wider stop 1.5× | 1,786 | 4.07 | 18.9% | −$1,985 | −93.6% | −22.6 bp | $1,985 | 0.25 |
+
+Waiting through extra off bars raised the win rate from 18% to 27% and did not produce a profit. Dropping the stop on the plain appear/disappear rule changed validation from −$1,985 to −$1,985. The loss is the round trip, not the stop. The fixed US$1 minimum made the same rule about −56 bp per trade. Train, which was not used to pick, lost −$2,094 (−48.5 bp) on the plain rule.
+
+The frozen rule is **10:00–11:00 ET, confirm 1, exit lag 1, hard stop on**. Its validation variants:
+
+| | Trades | Win | Net | Return | Avg | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Tiered, with stop | 628 | 30.9% | −$864 | −40.8% | −10.8 bp / −$1.38 | $882 |
+| Tiered, no stop | 628 | 31.1% | −$862 | −40.7% | −11.0 bp / −$1.37 | $882 |
+| Fixed US$1, with stop | 632 | 16.6% | −$1,555 | −73.4% | −31.8 bp / −$2.46 | $1,560 |
+
+Holdout of that one rule, read once. Worth trading required holdout portfolio net above zero, a day-bootstrap p < 0.05, and a random-entry test (same symbol, same clock minute, same hold, same percent stop, another session) beaten at p < 0.05. None of that happened.
+
+| | Tiered, with stop | Tiered, no stop | Fixed US$1, with stop |
+| --- | ---: | ---: | ---: |
+| Trades | 191 | 187 | 189 |
+| Trades / session | 1.55 | 1.52 | 1.54 |
+| Win rate | 37.2% | 38.0% | 23.8% |
+| Net | **−$268** | −$250 | −$518 |
+| Return on US$2,120 | **−12.7%** | −11.8% | −24.4% |
+| Avg | **−8.4 bp / −$1.41** | −7.5 bp / −$1.34 | −21.1 bp / −$2.74 |
+| Profit factor | 0.53 | 0.55 | 0.28 |
+| Max drawdown | $321 | $304 | $540 |
+| Day-bootstrap p (total ≤ 0) | 0.9995 | | |
+| vs random entries | p = 0.225 (rule −6.5 bp, random −7.9 bp, full ticket) | | |
+
+Exits on the holdout with the stop: 175 sells, 16 stops, no 15:55 flats in the taken book. The rule was a fraction of a basis point less bad than holding a random bar of the same length, and that gap is not significant. Both sides lost. The bootstrap says the dollar loss is stable. Removing the stop saved about $18 on the holdout and left the strategy unprofitable. The fixed schedule roughly doubled the loss.
+
+### What changed versus the 60-minute bracket
+
+The previous rule bought the first bar of a trigger and held until the stop, the target, 12 bars, or 15:55. On the holdout that was 1,984 signals, a 36.6% win rate, and **−5.9 bp (−$1.18) per trade**, with about 45% stopped, 45% timed out, and 4% hitting the target. The printed reward/risk was not the realized trade. That study used US$2,160 and did not change the live gates, because the morning bracket was only less bad and had already been seen on the holdout.
+
+This study throws that exit away. The position lasts only while the name stays on the list. The account is US$2,120. Several names can be open when a share still fits; at these prices the book is usually one position, and skipped signals are why 6,169 validation spells became 1,790 portfolio trades. The live list now uses the frozen 10:00–11:00 window, so a row on the list is the BUY and the row leaving is the SELL. `ENTRY` itself is unchanged. The card shows this holdout, not the old bracket. A delayed or stale quote is still hidden and is not a BUY.
 
 ## Delayed quotes, 28 Sep 2026
 
@@ -13,9 +77,13 @@ The live tab now does four things:
 3. The paper log stores `delayed`, `data_type`, `lag_sec`, and `withhold` on every setup. A withheld row is not an open paper trade and is not marked as a later target.
 4. Before a row is listed, the latest price is checked again. At or through the stop, or at or through the target, the row is dropped.
 
-Demo mode is unchanged unless `RTTB_FORCE_DELAY=1`, which only previews the banner. The backtest numbers below are the historical bars, not this live-tape fix. They already said the rule loses after costs. Delayed data makes that worse, because the stop can be gone before the row is visible.
+Demo mode is unchanged unless `RTTB_FORCE_DELAY=1`, which only previews the banner. The measured P&L in this file uses the historical bars, not this live-tape fix. Those bars already lose after costs. Delayed data makes a live row worse, because the stop can be gone before it is visible.
 
-The app still shows the setups. Each card carries the holdout win rate and expectancy of the rule that is actually on screen (the unmodified baseline). The paper log records live appearances and later marks stop, target, or the 15:55 exit. Nothing in this repo places an order.
+The app still shows the list. A new name is a BUY alert, a name that leaves is a SELL, a print through the stop is a STOP, and 15:55 is a FLAT. Each one is logged and, if a webhook or ntfy topic is set, pinged with the words that it is not an order. The owner confirms every trade. Each card carries the holdout win rate and expectancy of the appear-to-disappear rule above. Nothing in this repo places an order.
+
+## Previous test: 60-minute bracket
+
+The numbers below are the earlier exit. They are not the rule the tab trades now, and they were not used to choose the 10:00–11:00 window above.
 
 ## Account and costs
 
@@ -108,9 +176,12 @@ The earlier LightGBM ensemble (5 models, 60-minute return, 51 features) is not i
 ## How to reproduce
 
 ```powershell
-python -m unittest tests.test_entry tests.test_harness tests.test_outcomes
+python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals
 python -m backtest.scan
 python -m backtest.run_search
+python -c "from backtest.scan import scan_membership; scan_membership()"
+python -m backtest.run_roundtrip select
+python -m backtest.run_roundtrip holdout
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `run_search` writes `backtest_cache/report.json` and refreshes `app/research_stats.json`, which is what the tab displays. Re-running the search repeats the same locked holdout; it does not authorize a new grid.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid.

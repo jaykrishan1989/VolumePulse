@@ -137,10 +137,14 @@ class PublishedStatsTests(unittest.TestCase):
     def test_shipped_rule_is_a_loss(self) -> None:
         path = Path(__file__).resolve().parents[1] / "app" / "research_stats.json"
         payload = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(payload["rule"], "appear_disappear")
+        self.assertEqual(payload["shippedRule"], "midmorning")
         self.assertFalse(payload["worthTrading"])
-        self.assertEqual(payload["shippedRule"], "baseline")
+        self.assertLess(payload["holdout"]["net"], 0)
         self.assertLess(payload["holdout"]["avgNetBps"], 0)
         self.assertIn("Do not trade", payload["verdict"])
+        self.assertGreaterEqual(payload["bootstrap"]["pValue"], 0.05)
+        self.assertLess(payload["bracket"]["holdout"]["avgNetBps"], 0)
 
 
 if __name__ == "__main__":

@@ -25,11 +25,12 @@ except Exception:
 
     NY = timezone(timedelta(hours=-4), "EDT")
 
-from app.alerts import notify_setups
+from app.alerts import notify_signals
 from app.entry import DISCLAIMER, ENTRY, build_demo_board, screen_entries, watch_symbols
 from app.freshness import annotate_setup, delay_banner
 from app.outcomes import OutcomeLog
 from app.research import load_research
+from app.signals import SignalBook, describe_rule, load_rule, row_passes
 from app.etfs import (
     ETF_DEMO,
     ETF_SYMBOLS,
@@ -407,6 +408,7 @@ class VolumeFeed:
         self._unknown_contracts: set[str] = set()
         self._lock = asyncio.Lock()
         self._stop = asyncio.Event()
+        self._signal_book = SignalBook(load_rule())
 
         self._demo_state: dict[str, dict[str, float]] = {}
         self._demo_entry_books: dict[str, list[dict[str, Any]]] = {}
@@ -1437,14 +1439,36 @@ class VolumeFeed:
             for row in tickers
             if row.get("symbol") and row.get("last") is not None
         }
+        rule = load_rule()
+        minute = now.hour * 60 + now.minute
+        qualifying = [row for row in listed if row_passes(row, rule, minute)]
+        bar_epochs: dict[str, int | None] = {}
+        for symbol, series in books.items():
+            if series:
+                bar_epochs[symbol] = series[-1]["t"]
+        events = self._signal_book.update(qualifying, bar_epochs, marks, now)
         try:
-            self._outcome_log().observe(annotated, marks, now)
-            notify_setups(listed)
+            log = self._outcome_log()
+            log.record_signals(events, now)
+            notify_signals(events)
+            logged = log.recent_signals(now.date().isoformat())
         except Exception:
-            pass
+            logged = events
+        active_rows = []
+        for symbol, saved in self._signal_book.active.items():
+            fresh = next((row for row in listed if row.get("symbol") == symbol), None)
+            active_rows.append(dict(fresh or saved))
+        listed = active_rows
         meta = self._entry_meta(screened)
         meta["entryWithheld"] = withheld
         meta["quoteDelay"] = self._quote_delay(tickers, withheld)
+        meta["entrySignals"] = logged
+        meta["entryRule"] = describe_rule(rule)
+        if qualifying and not listed:
+            meta["entryNote"] = (
+                "A name has to stay on the list for the confirm bars before it is a BUY. "
+                "Nothing is confirmed yet. Confirm any signal yourself — this is not an order."
+            )
         if not listed and withheld:
             meta["entryNote"] = (
                 f"{len(withheld)} setup{'s' if len(withheld) != 1 else ''} hidden. "
@@ -1512,6 +1536,19 @@ class VolumeFeed:
             "entryTopN": board["topN"],
             "entryWithheld": withheld,
             "quoteDelay": quote_delay,
+            "entryRule": describe_rule(),
+            "entrySignals": [
+                {
+                    "action": "BUY",
+                    "symbol": item.get("symbol"),
+                    "price": item.get("last"),
+                    "stop": item.get("entryStop"),
+                    "score": item.get("entryScore"),
+                    "note": "Simulated. Enter at the next bar open. Confirm manually. Not an order.",
+                    "simulated": True,
+                }
+                for item in tickers
+            ],
             **self._research_fields(),
         }
 

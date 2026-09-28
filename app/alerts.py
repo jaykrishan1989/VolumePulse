@@ -61,5 +61,39 @@ def notify_setups(rows: list[dict[str, Any]]) -> None:
             continue
 
 
+def notify_signals(events: list[dict[str, Any]]) -> None:
+    """Ping once per BUY or exit. The text says to confirm by hand."""
+    url = (os.environ.get("ALERT_WEBHOOK_URL") or "").strip()
+    topic = (os.environ.get("ALERT_NTFY_TOPIC") or "").strip()
+    if not url and not topic:
+        return
+    for event in events:
+        action = str(event.get("action") or "")
+        symbol = event.get("symbol")
+        if action not in {"BUY", "SELL", "STOP", "FLAT"} or not symbol:
+            continue
+        key = f"{action}|{symbol}|{event.get('at')}|{event.get('stop')}"
+        if key in _seen:
+            continue
+        _seen.add(key)
+        text = (
+            f"{action} {symbol} at {event.get('price')} stop {event.get('stop')}. "
+            f"{event.get('note') or 'Confirm manually. Not an order.'} "
+            "Volume Pulse does not place orders."
+        )
+        raw = json.dumps({"text": text, "action": action, "symbol": symbol}).encode("utf-8")
+        try:
+            if topic:
+                _post(
+                    f"https://ntfy.sh/{topic}",
+                    text.encode("utf-8"),
+                    {"Title": f"Volume Pulse {action}", "Content-Type": "text/plain"},
+                )
+            if url:
+                _post(url, raw, {"Content-Type": "application/json"})
+        except Exception:
+            continue
+
+
 def reset_for_tests() -> None:
     _seen.clear()
