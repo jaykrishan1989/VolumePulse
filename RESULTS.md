@@ -262,6 +262,46 @@ Pooled window 2023-01-01 through 2026-03-31. Positive means the portfolio net is
 
 **What stays negative.** The opening reversal loses $134. Its average trade is about +0.2 bp because that average does not weight the dollar size the way the portfolio does, and it still fails on down days. The opening-range break is −$187. The live book is −$786 (−4.2 bp). Look 2 restated on that rule is −$141 (−3.2 bp, 190 trades).
 
+## Intraday model
+
+One pre-registered model, `ml_lgb_60m`. LightGBM regression of the 60-minute forward return from the next bar's open, divided by the prior-day ATR as a fraction of the prior close. Three frozen seeds (7, 11, 21) are averaged. Eighty rounds, 15 leaves. Features stop at the signal bar's close: multi-horizon returns, volatility, relative volume, VWAP distance, time of day, prior-day context, cross-sectional ranks, and SPY/QQQ context. The label is not inside the features, and slippage is charged at the fill, not inside the label.
+
+The entry is the next bar's open when the predicted raw return is at least the chosen threshold. The exit is the open 60 minutes later, or the 15:50 bar if that horizon would still be open at the flat. One ATR under the entry open is a stop. Same-name overlap is blocked. The book is flat by 15:55. Account US$2,120. No commission. 2 bp slippage per side.
+
+The threshold was chosen on the validation window only, from 0, 10, 20, and 30 bp, before the holdout model was fit. Every cell lost money. 20 bp was the least-bad (−$93, 126 trades), a dollar ahead of 10 bp. That choice is `research/ml_selection.json` with `holdout_used` false. Walk-forward test folds are quarterly from 2023Q1 through 2026Q1. Training drops the day before the fold and never includes a holdout day.
+
+| Slice | Trades | Days with a trade | Trades/day | Win | Net | Per trade | Per day | bp | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pooled 2023-01-01..2026-03-31 | 270 | 11.9% | 0.33 | 46.7% | −$319 | −$1.18 | −$0.39 | −6.6 | $456 |
+| Validation | 126 | 9.1% | 0.29 | 46.8% | −$93 | −$0.74 | −$0.21 | −10.4 | $358 |
+| Holdout, look 4 | 29 | 6.5% | 0.24 | 48.3% | +$77 | +$2.66 | +$0.63 | +12.6 | $86 |
+
+Per day is the portfolio net divided by SPY sessions in the window, including sessions with no trade. The model does not produce a signal on most days. A lower threshold would. At 0 bp the validation book lost $1,436 on 2,348 trades, so the frozen rule kept the higher bar.
+
+| Window | Trades | Net | Per trade | bp |
+| --- | ---: | ---: | ---: | ---: |
+| 2023H1 | 109 | −$93 | −$0.85 | −3.7 |
+| 2023H2 | 28 | −$122 | −$4.35 | −23.0 |
+| 2024H1 | 19 | −$37 | −$1.93 | +11.0 |
+| 2024H2 | 34 | −$13 | −$0.40 | −10.4 |
+| 2025H1 | 66 | −$122 | −$1.85 | −14.3 |
+| 2025H2 | 12 | +$61 | +$5.05 | +25.4 |
+| 2026Q1 | 10 | −$11 | −$1.14 | −7.8 |
+
+2025H2 is the only half-year with a positive dollar net. 2024H1 is positive in basis points and negative in dollars.
+
+**Calibration, validation bars only.** Ten equal-count bins of predicted return. The top bin averages a predicted +10.5 bp and a realized −2.1 bp. Realized return does not rise with the prediction. The 20 bp entries sit in that top tail.
+
+**Feature gain** on the final pre-holdout boosters, highest first: prior-day QQQ return, prior-day SPY return, QQQ return from the open, SPY return from the open, prior-day range over ATR. The stock's own one-bar return and the cross-sectional rank of the 12-bar return have zero gain.
+
+**Against the rules.** The promotion gate compares with the live midmorning book under the same zero-commission cost. The model loses fewer dollars (−$319 versus −$786) because it trades 270 times instead of 1,228. It loses more per trade (−$1.18 versus −$0.64) and more per trade in basis points (−6.6 versus −4.2). It wins 1 of 12 windows and no half-year. Down days, both volatility buckets, and both ticker groups fail. After the five best days are removed the model is −$644. Paired bootstrap p = 0.107 and permutation p = 0.107, against alpha 0.05/54 = 0.00093. Decision: rejected.
+
+The best pre-holdout rule on the validation window is still the down-gap hold (+$194 there, +$350 pooled). The model is negative on both of those windows. That rule's holdout was not opened. The morning leader is positive pooled (+$302) and negative on validation (−$98).
+
+**Holdout, look 4, one read.** 29 trades, 8 of 123 sessions, win rate 48.3%, +$77, +$2.66 per trade, +12.6 bp, max drawdown $86. Day-bootstrap p of a non-positive total is 0.197 (2,000 draws, 8 days). Versus random entries of the same count, p = 0.03 (100 shuffles). The fresh slice does beat the restated midmorning holdout (−$141, look 2). The profit is not significant at 5 percent, so `passes_costs_and_random` fails. No v1 checkpoint. `models/ACTIVE` stays `v0.1`. The three boosters and the config are in `models/ml/ml_lgb_60m/`. They are a record of this fit, not a live signal.
+
+A second architecture was not fit. The spec above was frozen before the run. Another model would be a new idea and another holdout look.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
@@ -271,7 +311,7 @@ The monitor trips when the last 30 closed paper trades average at least 10 bp wo
 ## How to reproduce
 
 ```powershell
-python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals tests.test_hypotheses tests.test_gate tests.test_areas tests.test_models
+python -m unittest discover -s tests -q
 python -m backtest.scan
 python -m backtest.run_search
 python -c "from backtest.scan import scan_membership; scan_membership()"
@@ -282,6 +322,7 @@ python -m backtest.run_gate
 python -m backtest.run_areas
 python -m backtest.run_daily
 python -m backtest.run_costs
+python -m backtest.run_ml
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again.

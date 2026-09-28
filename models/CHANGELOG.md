@@ -95,5 +95,11 @@ IBKR is data only. The same frozen rules were re-scored with no commission and 2
 | d_vwap_reclaim | −$556 |
 <!-- COSTS_CHANGELOG_END -->
 
+<!-- ML_CHANGELOG_BEGIN -->
+## Intraday model — 2026-09-28 — no checkpoint
+
+`ml_lgb_60m` is a three-seed LightGBM of the 60-minute forward return. Threshold 20 bp, chosen on validation before holdout look 4. Pooled −$319 on 270 trades (−6.6 bp). Holdout +$77 on 29 trades, bootstrap p 0.197. Gate rejected, 1/12. ACTIVE stays v0.1. No order was placed.
+<!-- ML_CHANGELOG_END -->
+
 
 

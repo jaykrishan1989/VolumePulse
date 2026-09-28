@@ -52,13 +52,15 @@ Findings worth keeping:
 
 Write-ups: `research/RESEARCH_LOG.md` (marked `<!-- AREAS_BEGIN -->`), `research/areas.csv`, `research/area_folds.csv`, `research/area_summary.json`, `RESULTS.md`, `README.md`, `models/CHANGELOG.md` (marked `<!-- AREAS_CHANGELOG_BEGIN -->`). `backtest/run_hypotheses.py` preserves both the gate section and the areas section via `preserve_gate_section`.
 
-Tests last run: `python -m unittest discover -s tests -q` — 97 tests, OK. The cost rerank does not change the dashboard, so no new browser pass was required.
+Tests last run: `python -m unittest discover -s tests -q` — 103 tests, OK. The model does not change the dashboard, so no new browser pass was required.
 
 ## What's in progress
 
-The slippage-only rule ranking is finished and pushed. The owner then switched the goal: train one intraday machine-learning model on the stored 5-minute bars. That work starts after this handoff commit. It does not retune the frozen rules.
+The intraday model is scored and rejected. `ml_lgb_60m` is a three-seed LightGBM of the 60-minute forward return. The validation threshold is 20 bp (`research/ml_selection.json`, written before the holdout fit). Pooled 2023-01-01..2026-03-31: 270 trades, 11.9% of days, win 46.7%, −$319, −$1.18/trade, −$0.39/day, −6.6 bp, max DD $456. Holdout look 4: 29 trades, 8 days, win 48.3%, +$77, +$2.66/trade, +12.6 bp, max DD $86. Day-bootstrap p 0.197. Random-entry p 0.03. Gate 1/12, paired p 0.107 and 0.107 versus alpha 0.00093. No checkpoint. `models/ACTIVE` is `v0.1`. The boosters are `models/ml/ml_lgb_60m/seed_{7,11,21}.txt`.
 
-The live cost is schedule `zero` in `app/cost_model.json` and `backtest/costs.py`: US$0 commission, no regulatory fee, 2 bp slippage on the next bar's open. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. Look count is still 3. Do not append look 4. There is no IBKR commission column.
+Do not run `python -m backtest.run_ml` again. Look 4 is already the one authorized read. Do not move the 20 bp threshold. Do not add a sequence model after this loss. Do not point ACTIVE at the model files. Do not retune the frozen rules.
+
+The live cost is schedule `zero` in `app/cost_model.json` and `backtest/costs.py`: US$0 commission, no regulatory fee, 2 bp slippage on the next bar's open. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. Look count is 4. Do not append look 5. There is no IBKR commission column.
 
 Pooled 2023-01-01 through 2026-03-31. Positive means net above zero.
 
@@ -97,7 +99,7 @@ The live midmorning book filled on 563 of 813 SPY sessions (69.2%) from 2023-01-
 
 `d_rs_leader` validation net −$367. Holdout look 3: 123 trades, every session, win 26.8%, +$90, +3.2 bp, max DD $243. Fixed US$1 minimum on that same slice: −$134. Pooled tiered result −$318, −1.8 bp. Down days were $1,680 worse than the champion. Paired p 0.047 and 0.056 versus alpha 0.00094. No cost-inclusive edge. Do not trade it and do not retune it off the holdout print.
 
-Look count is 3. Do not append look 4. `record_look` will reuse look 3 if `run_daily` is repeated for `d_rs_leader`.
+Look 3 is the daily finalist. Look 4 is `ml_lgb_60m` and is already written. Do not append look 5. `record_look` will reuse look 3 if `run_daily` is repeated for `d_rs_leader`.
 
 Not started, and not authorized as a silent next search:
 
@@ -105,23 +107,15 @@ Not started, and not authorized as a silent next search:
 - Order-flow imbalance. These files are OHLC. There are no aggressor prints.
 - Shorts. Canadian cash account, long-only.
 - Any retune of the frozen thresholds in `backtest/areas.py`, `backtest/hypotheses.py`, or `backtest/daily.py`.
-- A second holdout read. Look count is 2 until `run_daily` appends look 3 for the one validation finalist. `fresh_slice` and `milestone` still raise.
+- Another holdout read. Looks 1 through 4 are already on file. `fresh_slice` and `milestone` still raise.
 
 ## Exact next steps
 
 The daily-frequency rule family is closed. Do not deploy `d_rs_leader` or `h5_gap_down`. Do not move a rule threshold after seeing +$350 or +$302. Do not add an IBKR commission column.
 
-The authorized task is one intraday model, id `ml_lgb_60m`, written down before the fit:
+The intraday model is also closed. `ml_lgb_60m` failed the promotion gate (1/12) and failed `passes_costs_and_random` (holdout bootstrap p 0.197). Stay on v0.1. Do not deploy the files in `models/ml/`. Do not open look 5. Bonferroni denominator is 54. Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
 
-- Data: the stored 5-minute bars for AAPL, AMD, AMZN, GOOGL, META, MSFT, NVDA, TSLA, SPY, QQQ. No new download and no Gateway socket.
-- Cost: `app/cost_model.json`. No commission. 2 bp slippage per side. Next bar's open. Flat by 15:55. US$2,120. Long only.
-- Label: 60-minute forward return from the next bar's open, vol-scaled. LightGBM regression, three frozen seeds averaged. Features use only information known at the signal bar's close.
-- Walk-forward: expanding train, one-day embargo, quarterly test folds. The probability stand-in is the predicted return. The entry threshold is chosen on 2024-07-01..2026-03-31 only, from the frozen set 0, 10, 20, 30 bp.
-- Holdout from 2026-04-01 is look 4, one read, after that threshold is written to disk. It is not used to pick the threshold or the features.
-- Promotion gate against the live midmorning book, same zero-commission cost. Bonferroni denominator becomes 54 when this one id is counted. Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
-- A v1 checkpoint only if the gate passes and `passes_costs_and_random` passes. Otherwise stay on v0.1. No orders.
-
-The Bonferroni denominator before this id is 53.
+Nothing further is authorized until the owner asks. No new data and no Gateway socket.
 
 ## Commands to resume
 

@@ -1078,5 +1078,27 @@ Holdout restatements of looks already recorded. Not used to choose the finalist.
 | 3 | d_rs_leader | 123 | $170 | 6.9 bp |
 <!-- COSTS_END -->
 
+<!-- ML_BEGIN -->
+## Intraday model
 
+`ml_lgb_60m` predicts the 60-minute forward return from the next bar's open, scaled by the prior-day ATR. Three LightGBM seeds are averaged. Features stop at the signal bar's close. The entry threshold is 20 bp of predicted return, chosen on the validation window from 0, 10, 20 and 30 bp before the holdout was loaded. Costs are the live model: no commission, 2 bp slippage per side, next-bar open, US$2120, flat by 15:55, one ATR stop. Bonferroni denominator 54. Gate rejected, 1/12 windows. Holdout look 4 was not used to pick the threshold. A checkpoint is written only when the gate and the costs-and-random bar both pass. `models/ACTIVE` stays `v0.1`. No order was placed.
+
+| Slice | Trades | Days with a trade | Trades/day | Win | Net | $/trade | bp | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pooled 2023-01-01..2026-03-31 | 270 | 11.9% | 0.33 | 46.7% | −$319 | −$1.18 | −6.6 bp | $456 |
+| Validation | 126 | 9.1% | 0.29 | 46.8% | −$93 | −$0.74 | −10.4 bp | $358 |
+| Holdout | 29 | 6.5% | 0.24 | 48.3% | $77 | $2.66 | 12.6 bp | $86 |
+
+| Window | Trades | Net | $/trade | bp |
+| --- | ---: | ---: | ---: | ---: |
+| 2023H1 | 109 | −$93 | −$0.85 | −3.7 bp |
+| 2023H2 | 28 | −$122 | −$4.35 | −23.0 bp |
+| 2024H1 | 19 | −$37 | −$1.93 | 11.0 bp |
+| 2024H2 | 34 | −$13 | −$0.40 | −10.4 bp |
+| 2025H1 | 66 | −$122 | −$1.85 | −14.3 bp |
+| 2025H2 | 12 | $61 | $5.05 | 25.4 bp |
+| 2026Q1 | 10 | −$11 | −$1.14 | −7.8 bp |
+
+Pooled sample does not beat the champion on net and expectancy (challenger $-319 on 270 trades, $-1.18/trade, -6.6 bp; champion $-786 on 1228 trades, $-0.64/trade, -4.2 bp). Does not beat the champion in every market regime (down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 1 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2024-07-25, 2024-11-11, 2023-04-27, 2025-02-03, 2024-08-02), the challenger is behind on dollars per trade, basis points per trade (challenger $-644 on 259 trades, $-2.49/trade, -14.1 bp; champion $-791 on 1216 trades, $-0.65/trade, -4.3 bp). Paired tests do not clear the Bonferroni line for 54 ideas tried (bootstrap p=0.1068, permutation p=0.1072, alpha=0.00093).
+<!-- ML_END -->
 
