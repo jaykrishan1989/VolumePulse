@@ -249,6 +249,13 @@ class GateRuleTests(unittest.TestCase):
         self.assertIn("areas", new)
         self.assertLess(new.index("gate"), new.index("areas"))
 
+    def test_cost_section_survives_a_rewritten_log(self) -> None:
+        from backtest.costs import COSTS_BEGIN, COSTS_END
+
+        old = "hypothesis log\n\n" + COSTS_BEGIN + "\nzero commission\n" + COSTS_END + "\n"
+        new = preserve_gate_section("# Research log\n\nbody\n", old)
+        self.assertIn("zero commission", new)
+
 
 if __name__ == "__main__":
     unittest.main()

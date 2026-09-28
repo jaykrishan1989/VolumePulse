@@ -536,8 +536,10 @@ def preserve_marked_section(new_log: str, old_log: str, begin: str, end: str) ->
 def preserve_gate_section(new_log: str, old_log: str) -> str:
     """Keep the gate and research-area write-ups when the hypothesis log is regenerated."""
     from backtest.areas import AREAS_BEGIN, AREAS_END
+    from backtest.costs import COSTS_BEGIN, COSTS_END
     from backtest.daily import DAILY_BEGIN, DAILY_END
 
     kept = preserve_marked_section(new_log, old_log, GATE_BEGIN, GATE_END)
     kept = preserve_marked_section(kept, old_log, AREAS_BEGIN, AREAS_END)
-    return preserve_marked_section(kept, old_log, DAILY_BEGIN, DAILY_END)
+    kept = preserve_marked_section(kept, old_log, DAILY_BEGIN, DAILY_END)
+    return preserve_marked_section(kept, old_log, COSTS_BEGIN, COSTS_END)

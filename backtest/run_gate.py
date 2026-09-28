@@ -73,15 +73,18 @@ def _calendar(book: dict[tuple[str, date], list[dict[str, Any]]]) -> list[date]:
     return sorted(set(days))
 
 
-def _trades(spells: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _trades(spells: list[dict[str, Any]], schedule: str = "tiered") -> list[dict[str, Any]]:
     kept = [spell for spell in spells if POOLED_START <= spell["day"] <= POOLED_END]
     if any(spell["day"] >= HOLDOUT_START for spell in kept):
         raise RuntimeError("gate received a holdout spell")
-    result = portfolio(kept, use_stop=True, schedule="tiered", equity=ACCOUNT_USD, slip_bps=SLIP_BPS)
+    result = portfolio(kept, use_stop=True, schedule=schedule, equity=ACCOUNT_USD, slip_bps=SLIP_BPS)
     return list(result["trades"])
 
 
-def champion_trades(book: dict[tuple[str, date], list[dict[str, Any]]]) -> list[dict[str, Any]]:
+def champion_trades(
+    book: dict[tuple[str, date], list[dict[str, Any]]],
+    schedule: str = "tiered",
+) -> list[dict[str, Any]]:
     spec = json.loads(RULE_PATH.read_text(encoding="utf-8"))
     hits = [
         hit
@@ -91,7 +94,7 @@ def champion_trades(book: dict[tuple[str, date], list[dict[str, Any]]]) -> list[
     if any(hit["day"] >= HOLDOUT_START for hit in hits):
         raise RuntimeError("membership leaked a holdout row into the gate")
     spells = build_spells(hits, book, spec)
-    return _trades(spells)
+    return _trades(spells, schedule)
 
 
 def challenger_trades(

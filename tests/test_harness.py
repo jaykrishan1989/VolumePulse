@@ -98,6 +98,15 @@ class FillTests(unittest.TestCase):
         self.assertGreater(apply_slip(100, "buy", 2), 100)
         self.assertLess(apply_slip(100, "sell", 2), 100)
 
+    def test_regulatory_schedule_is_broker_commission_free(self) -> None:
+        self.assertEqual(commission(10, 50, "buy", "regulatory"), 0.0)
+        sell = commission(10, 50, "sell", "regulatory")
+        sec = 500 * 27.80 / 1_000_000.0
+        taf = min(8.30, 10 * 0.000166)
+        self.assertAlmostEqual(sell, sec + taf)
+        self.assertLess(sell, commission(10, 50, "sell", "tiered"))
+        self.assertLess(commission(10, 50, "sell", "tiered"), commission(10, 50, "sell", "fixed"))
+
     def test_buy_slippage_is_in_the_entry(self) -> None:
         trade = simulate_long([_bar(100, 101, 99, 100.4, 15 * 60 + 50)], stop=90, target=120)
         assert trade is not None
