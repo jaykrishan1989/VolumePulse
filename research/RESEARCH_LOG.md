@@ -1031,3 +1031,51 @@ Half-years are votes. 2026Q1 is reported and is not a vote. Each fold is its own
 The promotion-gate paragraph for this rule says the fresh slice was not read. That sentence means the gate was not given the slice, so it cannot promote. This paragraph is the one look. A profit here does not undo a loss on the validation window.
 
 <!-- DAILY_END -->
+
+<!-- COSTS_BEGIN -->
+## Commission-free primary
+
+The owner reports zero broker commissions. The primary book is US$2,120, whole shares, US$0 broker commission, 2 bp slippage on the next bar's open, and the SEC fee plus FINRA TAF on sells. The secondary column is IBKR Pro fixed: US$0.005 per share with a US$1 minimum, plus the same slippage and regulatory fees. Thresholds were not moved. The Bonferroni denominator stays 53, because these are the same ideas under a corrected fee, not a new search. The daily finalist below was chosen on validation coverage and validation regulatory net, before either holdout restatement was loaded. That finalist is `d_rs_leader`. Looks 2 and 3 were already on file. Their dollar results are restated under the new fees and were not used to rank. No new look was appended. `models/ACTIVE` stays `v0.1`. No order was placed.
+
+Pooled window 2023-01-01 through 2026-03-31. Positive means the portfolio net is above zero.
+
+Positive under commission-free costs: `h5_gap_down`, `d_rs_leader`. Positive under IBKR Pro fixed commissions: none. Positive on the validation window under commission-free costs: `h5_gap_down`.
+
+Daily-frequency rank on the validation window under commission-free costs, highest net first: `d_rs_leader` −$124, `d_pullback` −$202, `d_vwap_stretch` −$500, `d_vwap_reclaim` −$757, `d_orb` −$770. Every validation net in that list is below zero, so the finalist is the smallest loss among rules that signaled on at least 95% of sessions. A pooled gain that the validation window does not confirm was not treated as a pass. The two pooled gains still failed the promotion gate, and the fresh slice stayed shut.
+
+| Rule | Family | Trades | Win | Commission-free net | $/trade | bp | Fixed net | Windows | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| appear_disappear_midmorning | champion | 1232 | 39.0% | −$824 | −$0.67 | −4.8 bp | −$1971 | champion | reference |
+| h1_spy | hypothesis | 466 | 34.5% | −$324 | −$0.70 | −4.1 bp | −$1179 | 4/12 | REJECTED |
+| h1_stocks | hypothesis | 1017 | 45.5% | −$599 | −$0.59 | −4.6 bp | −$1945 | 6/12 | REJECTED |
+| h2_opening_reversal | hypothesis | 787 | 39.9% | −$182 | −$0.23 | −0.02 bp | −$1719 | 9/12 | REJECTED |
+| h3_vwap_shortfall | hypothesis | 2523 | 46.8% | −$953 | −$0.38 | −3.3 bp | −$2034 | 5/12 | REJECTED |
+| h4_opening_range | hypothesis | 1190 | 45.6% | −$210 | −$0.18 | −2.5 bp | −$1804 | 6/12 | REJECTED |
+| h5_gap_down | hypothesis | 688 | 23.5% | $313 | $0.45 | 4.6 bp | −$1103 | 8/12 | REJECTED |
+| d_rs_leader | daily | 813 | 25.6% | $228 | $0.28 | 1.8 bp | −$1338 | 8/12 | REJECTED |
+| d_vwap_stretch | daily | 813 | 47.5% | −$693 | −$0.85 | −5.1 bp | −$1845 | 5/12 | REJECTED |
+| d_orb | daily | 766 | 44.5% | −$347 | −$0.45 | −1.9 bp | −$1498 | 6/12 | REJECTED |
+| d_pullback | daily | 812 | 22.0% | −$334 | −$0.41 | −2.0 bp | −$1758 | 8/12 | REJECTED |
+| d_vwap_reclaim | daily | 811 | 24.7% | −$582 | −$0.72 | −4.4 bp | −$1668 | 5/12 | REJECTED |
+
+Validation window 2024-07-01 to 2026-03-31, daily rules only, the selection sample. Finalist under commission-free costs: `d_rs_leader`.
+
+| Rule | Signal days | Commission-free net | Fixed net |
+| --- | ---: | ---: | ---: |
+| d_rs_leader | 100.0% | −$124 | −$935 |
+| d_vwap_stretch | 100.0% | −$500 | −$1258 |
+| d_orb | 93.8% | −$770 | −$1466 |
+| d_pullback | 100.0% | −$202 | −$987 |
+| d_vwap_reclaim | 99.8% | −$757 | −$1422 |
+
+Marginal after the old tiered commissions, from the already published loss per trade being smaller than US$1: `h4_opening_range`, `h5_gap_down`, and `d_rs_leader`. The other hypotheses and the live book were re-scored on the same run so a near-miss was not dropped after seeing the new fees.
+
+Holdout restatements of looks already recorded. Not used to choose the finalist.
+
+| Look | Rule | Trades | Commission-free net | bp | Fixed net |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 2 | appear_disappear_midmorning | 190 | −$149 | −3.5 bp | −$518 |
+| 3 | d_rs_leader | 123 | $163 | 6.6 bp | −$134 |
+<!-- COSTS_END -->
+
+

@@ -148,7 +148,11 @@ def _money0(value: float | None) -> str:
 
 
 def _bps(value: float | None) -> str:
-    return "n/a" if value is None else f"{value:.1f} bp"
+    if value is None:
+        return "n/a"
+    digits = 2 if abs(value) < 0.05 else 1
+    sign = "−" if value < 0 else ""
+    return f"{sign}{abs(value):.{digits}f} bp"
 
 
 def _pct(value: float | None) -> str:
@@ -239,6 +243,24 @@ def _look_count() -> int:
     return sum(1 for _row in csv.DictReader(LOOKS_PATH.open(encoding="utf-8")))
 
 
+def _ranking_note(rows: list[dict[str, Any]]) -> str:
+    daily = sorted(
+        (row for row in rows if row["family"] == "daily"),
+        key=lambda row: -float(row["validation_regulatory"]["net"]),
+    )
+    order = ", ".join(
+        f"`{row['id']}` {_money0(row['validation_regulatory']['net'])}" for row in daily
+    )
+    return (
+        "Daily-frequency rank on the validation window under commission-free costs, "
+        f"highest net first: {order}. "
+        "Every validation net in that list is below zero, so the finalist is the smallest loss "
+        "among rules that signaled on at least 95% of sessions. "
+        "A pooled gain that the validation window does not confirm was not treated as a pass. "
+        "The two pooled gains still failed the promotion gate, and the fresh slice stayed shut."
+    )
+
+
 def markdown(
     rows: list[dict[str, Any]],
     verdicts: dict[str, GateVerdict],
@@ -279,6 +301,8 @@ def markdown(
             + (", ".join(f"`{item}`" for item in validation_positive) if validation_positive else "none")
             + "."
         ),
+        "",
+        _ranking_note(rows),
         "",
         "| Rule | Family | Trades | Win | Commission-free net | $/trade | bp | Fixed net | Windows | Decision |",
         "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",

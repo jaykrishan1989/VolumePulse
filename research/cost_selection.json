@@ -1,0 +1,44 @@
+{
+  "cost_model": "regulatory",
+  "sensitivity": "fixed",
+  "chosen_on": "validation signal coverage >= 95%, then validation regulatory net",
+  "holdout_used": false,
+  "finalist": "d_rs_leader",
+  "rows": [
+    {
+      "id": "d_rs_leader",
+      "signal_day_frac": 1.0,
+      "net": -124.00372222979662,
+      "bps": -0.7224106018107568,
+      "fixed_net": -935.2276126935129
+    },
+    {
+      "id": "d_vwap_stretch",
+      "signal_day_frac": 1.0,
+      "net": -499.9723504913122,
+      "bps": -6.496185769841695,
+      "fixed_net": -1258.136282665516
+    },
+    {
+      "id": "d_orb",
+      "signal_day_frac": 0.9384965831435079,
+      "net": -770.1501496671078,
+      "bps": -11.631203955330308,
+      "fixed_net": -1465.8073954041593
+    },
+    {
+      "id": "d_pullback",
+      "signal_day_frac": 1.0,
+      "net": -202.34473567395392,
+      "bps": -1.9332229539733519,
+      "fixed_net": -986.773932635571
+    },
+    {
+      "id": "d_vwap_reclaim",
+      "signal_day_frac": 0.9977220956719818,
+      "net": -756.623661294944,
+      "bps": -10.95280023275722,
+      "fixed_net": -1422.3171533454686
+    }
+  ]
+}

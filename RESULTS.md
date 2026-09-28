@@ -231,6 +231,37 @@ The morning leader is the validation finalist because it signals every session a
 
 Its holdout, look 3, was a signal every session: 123 trades, 26.8% winners, +$90, +3.2 bp, $243 max drawdown. The same trades lose $134 under the fixed US$1 minimum. The validation window had already lost $367. One green slice after that loss is not an edge, and the live rule was left at v0.1.
 
+## Commission-free account
+
+The owner reports zero broker commissions. The primary book is now that account: US$2,120, whole shares, US$0 broker commission, 2 bp slippage on the next bar's open, and the SEC fee plus FINRA TAF on sells. IBKR Pro fixed (US$0.005 per share, US$1 minimum, plus the same slippage and regulatory fees) is a sensitivity column. The same frozen rules were re-scored. Thresholds were not moved. The Bonferroni denominator stays 53. Look count stays 3. `models/ACTIVE` stays `v0.1`.
+
+Pooled window 2023-01-01 through 2026-03-31. Positive means the portfolio net is above zero.
+
+| Rule | Trades | Win | Commission-free | Per trade | Fixed | Gate |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Live midmorning book | 1,232 | 39.0% | −$824 | −$0.67, −4.8 bp | −$1,971 | reference |
+| SPY last half-hour | 466 | 34.5% | −$324 | −$0.70, −4.1 bp | −$1,179 | 4/12, rejected |
+| Same clock, eight stocks | 1,017 | 45.5% | −$599 | −$0.59, −4.6 bp | −$1,945 | 6/12, rejected |
+| Opening reversal | 787 | 39.9% | −$182 | −$0.23, −0.02 bp | −$1,719 | 9/12, rejected |
+| VWAP shortfall | 2,523 | 46.8% | −$953 | −$0.38, −3.3 bp | −$2,034 | 5/12, rejected |
+| Opening-range break | 1,190 | 45.6% | −$210 | −$0.18, −2.5 bp | −$1,804 | 6/12, rejected |
+| Down-gap hold | 688 | 23.5% | +$313 | +$0.45, +4.6 bp | −$1,103 | 8/12, rejected |
+| Morning leader vs SPY | 813 | 25.6% | +$228 | +$0.28, +1.8 bp | −$1,338 | 8/12, rejected |
+| Furthest under VWAP | 813 | 47.5% | −$693 | −$0.85, −5.1 bp | −$1,845 | 5/12, rejected |
+| First opening-range break, daily | 766 | 44.5% | −$347 | −$0.45, −1.9 bp | −$1,498 | 6/12, rejected |
+| First pullback | 812 | 22.0% | −$334 | −$0.41, −2.0 bp | −$1,758 | 8/12, rejected |
+| First VWAP reclaim | 811 | 24.7% | −$582 | −$0.72, −4.4 bp | −$1,668 | 5/12, rejected |
+
+**What stays positive.** Under commission-free costs, two pooled nets are above zero: the down-gap hold (`h5_gap_down`, +$313) and the morning leader (`d_rs_leader`, +$228). Under IBKR Pro fixed commissions, none of the twelve is positive. Nothing stays positive under both.
+
+**Daily-frequency rank**, validation window only, commission-free, highest net first: morning leader −$124, first pullback −$202, furthest under VWAP −$500, first VWAP reclaim −$757, first opening-range break −$770. The opening-range break also misses the 95% coverage bar (93.8% of validation sessions). Every validation net is a loss, so the finalist is still the morning leader, as the smallest loss among the rules that fire often enough. Its pooled +$228 is the earlier part of the sample. The window that is allowed to rank rules lost $124.
+
+**Down-gap hold.** This was the marginal hypothesis under tiered commissions (−$183, −$0.26 per trade). Without the broker fee it is +$313 pooled and +$139 on the validation window (+3.2 bp, 351 trades). It still fails the gate. It wins 8 of 12 windows, short of 9. Down days and low-volatility days are severe regressions. Removing its five best days leaves −$514 and −$0.75 per trade. Paired p-values are 0.061 and 0.064, against 0.00094. The win rate is 23.5% and the drawdown is $1,019 on a $2,120 account. Its holdout was not opened.
+
+**Morning leader.** Pooled +$228, +1.8 bp, a trade every session, win rate 25.6%, drawdown $581. Validation −$124. Fixed commissions turn the pooled result into −$1,338. The gate wins 8 of 12 windows. Down days are $2,039 worse than the champion. Paired p-values are 0.094 and 0.101. Look 3 was already on file, so those same trades were restated and not used to rank: commission-free +$163 (+6.6 bp), fixed −$134. The fixed figure matches the earlier fixed holdout. A green holdout after a losing validation window is not a promotion.
+
+**Near misses that stay negative.** The opening reversal is about flat in basis points (−$182, −0.02 bp) and wins 9 of 12 windows, then loses them on down days. The opening-range break, which was also inside a dollar per trade under tiered commissions, is still −$210 (−2.5 bp). The live book is still a loss without broker commissions: −$824 pooled (−4.8 bp). Look 2 restated on the same rule is −$149 (−3.5 bp, 190 trades). The fixed restatement is −$518, the same loss already published for that slice. One fewer trade than the tiered holdout is the cash path: a cheaper fill can take an extra share and crowd out the next name.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
@@ -249,6 +280,8 @@ python -m backtest.run_roundtrip holdout
 python -m backtest.run_hypotheses
 python -m backtest.run_gate
 python -m backtest.run_areas
+python -m backtest.run_daily
+python -m backtest.run_costs
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with US$0 broker commission as the primary cost and IBKR Pro fixed commissions as the sensitivity column. It does not append a holdout look.
