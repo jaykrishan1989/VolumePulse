@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=41" />
 </head>
 <body>
   <div class="app">
@@ -27,24 +27,29 @@
         <span id="nyClock">--:--:-- ET</span>
       </div>
 
-      <div class="link" id="linkChip" title="IBKR Gateway connection">
+      <button class="link" id="linkChip" type="button" title="Connect your IBKR Gateway">
         <span class="pill" id="modePill">…</span>
         <span id="linkText">127.0.0.1:4001</span>
-      </div>
+      </button>
     </header>
 
     <section class="toolbar">
       <div class="scans" id="scanPills" role="tablist" aria-label="Scanner">
         <button class="scan on" data-scan="sp500">S&amp;P 500</button>
+        <button class="scan" data-scan="etfs">ETFs</button>
+        <button class="scan" data-scan="overview">Market Overview</button>
+        <button class="scan" data-scan="mid_price">Stocks $10 – $50</button>
         <button class="scan" data-scan="hot_volume">Hot by volume</button>
         <button class="scan" data-scan="most_active">Most active</button>
         <button class="scan" data-scan="top_percent_gain">Top % gain</button>
         <button class="scan" data-scan="top_percent_lose">Top % lose</button>
+        <button class="scan" id="printsBtn" type="button">Prints</button>
       </div>
       <div class="tools">
         <div class="view-toggle" role="tablist" aria-label="Layout">
           <button class="view" data-view="tiles" type="button">Tiles</button>
           <button class="view on" data-view="bubbles" type="button">Bubbles</button>
+          <button class="view" data-view="prints" type="button">Prints</button>
         </div>
         <label class="sort">
           Rank by
@@ -76,6 +81,18 @@
       <section class="viz" id="vizWrap" data-mode="bubbles">
         <div class="heat" id="heat"></div>
         <div class="bubble-stage" id="bubbleStage"></div>
+        <div class="etf-board" id="etfBoard"></div>
+        <div class="overview-board" id="overviewBoard"></div>
+        <div class="mid-board" id="midBoard"></div>
+        <div class="prints-board" id="printsBoard">
+          <form class="print-lookup" id="printLookupForm" autocomplete="off">
+            <label for="printTicker">Ticker</label>
+            <input id="printTicker" name="ticker" type="text" maxlength="10" placeholder="NVDA, TSLA…" spellcheck="false" />
+            <button type="submit">Show prints</button>
+            <span class="print-lookup-msg" id="printLookupMsg"></span>
+          </form>
+          <div class="prints-body" id="printsBody"></div>
+        </div>
       </section>
 
       <aside class="side">
@@ -111,6 +128,88 @@
       </table>
     </section>
   </div>
-  <script src="app.js?v=8"></script>
+
+  <dialog class="modal" id="connectModal">
+    <form id="connectForm" method="dialog">
+      <h2>Connect your IBKR Gateway</h2>
+      <p class="modal-lead">
+        This app never asks for your IBKR username or password. Log into
+        <strong>IBKR Gateway</strong> (or TWS) on this computer, then enter the API socket below.
+      </p>
+      <ol class="modal-steps">
+        <li>Open IBKR Gateway and sign in with your own account (2FA stays in their app).</li>
+        <li>Configuration → API → Settings: enable socket clients, port <strong>4001</strong> live or <strong>4002</strong> paper.</li>
+        <li>Trusted IP <strong>127.0.0.1</strong>. Read-Only API can stay on.</li>
+      </ol>
+      <div class="modal-grid">
+        <label>Host
+          <input id="gwHost" name="host" value="127.0.0.1" autocomplete="off" spellcheck="false" />
+        </label>
+        <label>Port
+          <select id="gwPort" name="port">
+            <option value="4001">4001 — Gateway live</option>
+            <option value="4002">4002 — Gateway paper</option>
+            <option value="7496">7496 — TWS live</option>
+            <option value="7497">7497 — TWS paper</option>
+          </select>
+        </label>
+        <label>Client ID
+          <input id="gwClient" name="clientId" type="number" min="0" max="32" value="7" />
+        </label>
+        <label>Quotes
+          <select id="gwData" name="marketDataType">
+            <option value="3">Delayed (no US equity sub)</option>
+            <option value="1">Live</option>
+          </select>
+        </label>
+      </div>
+      <p class="modal-note" id="connectStatus"></p>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="connectCancel">Close</button>
+        <button type="submit" class="primary" id="connectSubmit">Connect</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="chart-overlay" id="chartOverlay" hidden>
+    <div class="chart-shell" role="dialog" aria-modal="true" aria-labelledby="chartSymbol">
+      <header class="chart-top">
+        <div>
+          <h2 id="chartSymbol">—</h2>
+          <p id="chartMeta"></p>
+        </div>
+        <div class="chart-stats" id="chartStats"></div>
+        <button type="button" class="chart-close" id="chartClose">Close</button>
+      </header>
+      <div class="chart-keys">
+        <span><i class="k-up"></i>Up</span>
+        <span><i class="k-down"></i>Down</span>
+        <span><i class="k-mean"></i>5-day mean ±1σ</span>
+        <span><i class="k-ma"></i>5-period avg</span>
+        <span><i class="k-macd"></i>MACD 12/26</span>
+        <span><i class="k-sig"></i>Signal 9</span>
+        <span><i class="k-rsi"></i>RSI 14</span>
+        <div class="chart-tools">
+          <div class="chart-interval" role="tablist" aria-label="Bar size">
+            <button type="button" class="chart-iv on" data-interval="5">5 min</button>
+            <button type="button" class="chart-iv" data-interval="15">15 min</button>
+          </div>
+          <button type="button" class="chart-ma" id="chartMa5">5-period avg</button>
+        </div>
+      </div>
+      <div class="chart-panes">
+        <div class="chart-pane price" id="chartPrice"></div>
+        <div class="chart-subhead">MACD</div>
+        <div class="chart-pane macd" id="chartMacd"></div>
+        <div class="chart-subhead">RSI</div>
+        <div class="chart-pane rsi" id="chartRsi"></div>
+      </div>
+      <p class="chart-status" id="chartStatus"></p>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="chart.js?v=41"></script>
+  <script src="app.js?v=41"></script>
 </body>
 </html>

@@ -13,6 +13,8 @@ const sortBy = document.getElementById("sortBy");
 const filterEl = document.getElementById("filter");
 
 let selected = null;
+let sortDir = "desc";
+let midMoverFilter = null;
 let lastPrintKey = "";
 let feedMode = "connecting";
 let viewMode = "bubbles";
@@ -21,7 +23,19 @@ let lastSnap = null;
 const flashUntil = new Map();
 const vizWrap = document.getElementById("vizWrap");
 const bubbleStage = document.getElementById("bubbleStage");
+const etfBoard = document.getElementById("etfBoard");
+const overviewBoard = document.getElementById("overviewBoard");
+const midBoard = document.getElementById("midBoard");
+const printsBoard = document.getElementById("printsBoard");
+const printsBody = document.getElementById("printsBody");
+const printsBtn = document.getElementById("printsBtn");
+const printLookupForm = document.getElementById("printLookupForm");
+const printTicker = document.getElementById("printTicker");
+const printLookupMsg = document.getElementById("printLookupMsg");
 const BUBBLE_LIMIT = 18;
+let watchedSymbols = [];
+let tickerTap = { t: 0, symbol: null };
+let expandedEtfIndustry = null;
 
 function tickerVolume(row) {
   const session = lastSnap?.session || {};
@@ -29,24 +43,30 @@ function tickerVolume(row) {
   return Math.max(0, row.volume || row.extVolume || 0);
 }
 
+function bubbleWeight(row, scan) {
+  if (scan === "top_percent_gain") return Math.max(0, row.changePct || 0);
+  if (scan === "top_percent_lose") return Math.max(0, -(row.changePct || 0));
+  return tickerVolume(row);
+}
+
 function bubbleTone(changePct) {
   const t = Math.max(-1, Math.min(1, (changePct ?? 0) / 3.2));
   const g = Math.abs(t);
   if (t >= 0) {
     return {
-      hi: `hsl(148, ${72 + g * 18}%, ${58 + g * 16}%)`,
-      mid: `hsl(152, ${70 + g * 12}%, ${26 + g * 12}%)`,
-      lo: `hsl(160, 68%, ${10 + g * 8}%)`,
-      glow: `rgba(61, 214, 140, ${0.28 + g * 0.55})`,
-      ring: `rgba(180, 255, 214, ${0.25 + g * 0.45})`,
+      hi: `hsl(210, ${72 + g * 18}%, ${58 + g * 12}%)`,
+      mid: `hsl(212, ${70 + g * 12}%, ${32 + g * 10}%)`,
+      lo: `hsl(214, 68%, ${12 + g * 8}%)`,
+      glow: `rgba(77, 159, 255, ${0.28 + g * 0.55})`,
+      ring: `rgba(180, 220, 255, ${0.25 + g * 0.45})`,
     };
   }
   return {
-    hi: `hsl(356, ${70 + g * 16}%, ${60 + g * 10}%)`,
-    mid: `hsl(354, ${68 + g * 10}%, ${32 + g * 8}%)`,
-    lo: `hsl(352, 64%, ${16 + g * 6}%)`,
-    glow: `rgba(255, 93, 108, ${0.22 + g * 0.45})`,
-    ring: `rgba(255, 190, 198, ${0.2 + g * 0.35})`,
+    hi: `hsl(0, ${62 + g * 12}%, ${38 + g * 8}%)`,
+    mid: `hsl(0, ${60 + g * 10}%, ${24 + g * 6}%)`,
+    lo: `hsl(0, 58%, ${12 + g * 5}%)`,
+    glow: `rgba(139, 26, 26, ${0.32 + g * 0.45})`,
+    ring: `rgba(198, 70, 70, ${0.22 + g * 0.35})`,
   };
 }
 
@@ -68,11 +88,13 @@ const PHY = {
 
 const bubbleSim = {
   nodes: new Map(),
+  volRef: 0,
   running: false,
   raf: 0,
   lastT: 0,
   grab: null,
   dragMoved: false,
+  lastTap: null,
   bound: false,
   start() {
     if (this.running) return;
@@ -120,29 +142,58 @@ const bubbleSim = {
       g.px = p.x;
       g.py = p.y;
     });
-    const endGrab = () => {
-      if (!this.grab) return;
-      this.grab.node.el.classList.remove("grabbing");
-      this.grab = null;
+    const endGrab = (ev) => {
+      const symbol = this.grab?.node?.symbol;
+      const moved = this.dragMoved;
+      if (this.grab) {
+        this.grab.node.el.classList.remove("grabbing");
+        this.grab = null;
+      }
+      if (!ev || ev.type === "pointercancel" || !symbol || moved || lastSnap?.scan !== "sp500") return;
+      const now = performance.now();
+      if (this.lastTap && this.lastTap.symbol === symbol && now - this.lastTap.t < 360) {
+        this.lastTap = null;
+        if (typeof openTickerChart === "function") {
+          openTickerChart(symbol, lastRows.find((r) => r.symbol === symbol));
+        }
+        return;
+      }
+      this.lastTap = { t: now, symbol };
     };
     bubbleStage.addEventListener("pointerup", endGrab);
     bubbleStage.addEventListener("pointercancel", endGrab);
   },
   setRows(rows, selectedSymbol) {
     if (!bubbleStage) return;
+    const scan = lastSnap?.scan;
+    const byPct = scan === "top_percent_gain" || scan === "top_percent_lose";
     const ranked = [...rows]
-      .sort((a, b) => tickerVolume(b) - tickerVolume(a))
+      .sort((a, b) => bubbleWeight(b, scan) - bubbleWeight(a, scan))
       .slice(0, BUBBLE_LIMIT);
     const w = Math.max(280, bubbleStage.clientWidth || vizWrap?.clientWidth || 800);
     const h = Math.max(280, bubbleStage.clientHeight || 560);
-    const maxVol = Math.max(1, ...ranked.map(tickerVolume));
-    const maxD = Math.min(w, h) * 0.34;
-    const minD = 58;
+    const weights = ranked.map((row) => bubbleWeight(row, scan));
+    const maxW = Math.max(0.01, ...weights);
+    if (!byPct) {
+      const vols = ranked.map(tickerVolume);
+      const avgs = ranked.map((r) => r.avgVolume || 0);
+      const maxVol = Math.max(1, ...vols);
+      const typical = Math.max(25e6, ...(avgs.length ? avgs.map((n) => n * 0.4) : [0]));
+      if (!this.volRef) this.volRef = Math.max(typical, maxVol * 1.45);
+      if (maxVol > this.volRef * 1.12) {
+        this.volRef += (maxVol - this.volRef) * 0.06;
+      }
+    }
+    const maxD = Math.min(w, h) * (byPct ? 0.44 : 0.38);
+    const minD = byPct ? 50 : 64;
     const keep = new Set();
     ranked.forEach((row, i) => {
       keep.add(row.symbol);
-      const unit = Math.sqrt(tickerVolume(row) / maxVol);
-      const d = minD + Math.pow(unit, 0.7) * (maxD - minD);
+      const weight = bubbleWeight(row, scan);
+      const unit = byPct
+        ? Math.sqrt(weight / maxW)
+        : Math.sqrt(tickerVolume(row) / this.volRef);
+      const d = minD + Math.min(1.05, unit) * (maxD - minD);
       let node = this.nodes.get(row.symbol);
       if (!node) {
         const el = document.createElement("button");
@@ -164,6 +215,9 @@ const bubbleSim = {
           vy: 50 + Math.random() * 110,
           r: d / 2,
           tr: d / 2,
+          baseR: d / 2,
+          vol: 0,
+          inflate: 0,
           mass: 1,
           ax: 0,
           ay: 0,
@@ -172,7 +226,13 @@ const bubbleSim = {
         this.nodes.set(row.symbol, node);
       }
       node.row = row;
-      node.tr = d / 2;
+      if (weight > (node.vol || 0) && node.vol) {
+        const jump = (weight - node.vol) / Math.max(node.vol, 0.01);
+        node.inflate = Math.min(0.2, (node.inflate || 0) + Math.min(0.14, jump * 6));
+      }
+      node.vol = weight;
+      node.baseR = d / 2;
+      node.tr = node.baseR * (1 + (node.inflate || 0));
       elSync(node, {
         symbol: row.symbol,
         selected: row.symbol === selectedSymbol,
@@ -200,7 +260,9 @@ const bubbleSim = {
     const cx = w / 2;
     let maxMass = 1;
     for (const n of list) {
-      n.r += (n.tr - n.r) * (1 - Math.exp(-dt * 5));
+      n.inflate = Math.max(0, (n.inflate || 0) - dt * 1.35);
+      n.tr = (n.baseR || n.tr) * (1 + n.inflate);
+      n.r += (n.tr - n.r) * (1 - Math.exp(-dt * 2.4));
       n.mass = Math.PI * n.r * n.r;
       if (n.mass > maxMass) maxMass = n.mass;
       n.ax = 0;
@@ -280,11 +342,11 @@ const bubbleSim = {
         n.drawnR = d;
         n.el.style.width = `${d}px`;
         n.el.style.height = `${d}px`;
-        if (n.symEl) n.symEl.style.fontSize = `${Math.max(11, n.r * 0.28)}px`;
-        if (n.chgEl) n.chgEl.style.fontSize = `${Math.max(9, n.r * 0.18)}px`;
+        if (n.symEl) n.symEl.style.fontSize = `${Math.max(13, Math.min(26, n.r * 0.34))}px`;
+        if (n.chgEl) n.chgEl.style.fontSize = `${Math.max(11, Math.min(16, n.r * 0.2))}px`;
         if (n.volEl) {
-          n.volEl.style.fontSize = `${Math.max(8, n.r * 0.14)}px`;
-          n.volEl.style.display = n.r < 34 ? "none" : "";
+          n.volEl.style.fontSize = `${Math.max(10, Math.min(13, n.r * 0.155))}px`;
+          n.volEl.style.display = n.r < 30 ? "none" : "";
         }
       }
       n.el.style.transform = `translate3d(${(n.x - n.r).toFixed(2)}px, ${(n.y - n.r).toFixed(2)}px, 0)`;
@@ -424,11 +486,11 @@ function heatColor(changePct) {
   if (changePct == null) return "rgba(40, 48, 62, 0.95)";
   const t = Math.max(-1, Math.min(1, changePct / 4));
   if (t >= 0) {
-    const a = 0.18 + t * 0.42;
-    return `rgba(61, 214, 140, ${a})`;
+    const a = 0.22 + t * 0.5;
+    return `rgba(77, 159, 255, ${a})`;
   }
-  const a = 0.18 + Math.abs(t) * 0.42;
-  return `rgba(255, 93, 108, ${a})`;
+  const a = 0.28 + Math.abs(t) * 0.5;
+  return `rgba(139, 26, 26, ${a})`;
 }
 
 function dataTypeLabel(type, mode) {
@@ -452,17 +514,461 @@ function sparkPath(values, w = 88, h = 28) {
     .join(" ");
 }
 
-function sortTickers(tickers, key) {
+function sortTickers(tickers, key, dir = "desc") {
   const copy = [...tickers];
+  const sign = dir === "asc" ? -1 : 1;
+  const signed = key === "changePct" || key === "change" || key === "last";
   copy.sort((a, b) => {
     const av = a[key];
     const bv = b[key];
     if (av == null && bv == null) return (a.rank ?? 99) - (b.rank ?? 99);
     if (av == null) return 1;
     if (bv == null) return -1;
-    return Math.abs(bv) - Math.abs(av);
+    const cmp = signed ? bv - av : Math.abs(bv) - Math.abs(av);
+    return sign * cmp || String(a.symbol).localeCompare(String(b.symbol));
   });
   return copy;
+}
+
+function groupEtfs(rows, industryOrder) {
+  const by = new Map();
+  for (const row of rows) {
+    const key = row.industry || "Other";
+    if (!by.has(key)) by.set(key, []);
+    by.get(key).push(row);
+  }
+  const order = (industryOrder || []).length
+    ? industryOrder
+    : [...by.keys()];
+  return order
+    .filter((key) => by.has(key))
+    .map((industry) => {
+      const items = sortTickers(by.get(industry), "changePct");
+      const chgs = items.map((r) => r.changePct).filter((n) => n != null);
+      const avg = chgs.length ? chgs.reduce((a, b) => a + b, 0) / chgs.length : null;
+      return { industry, rows: items, avg };
+    });
+}
+
+function renderEtfTable(rows, industryOrder, selectedSymbol, expandedIndustry, holdings) {
+  const etfs = (rows || []).filter((row) => row.industry);
+  const bySym = quoteMap(rows);
+  const groups = groupEtfs(etfs, industryOrder);
+  etfBoard.innerHTML = `
+    <table class="etf-board">
+      <thead>
+        <tr>
+          <th>Industry</th>
+          <th>Symbol</th>
+          <th>Fund</th>
+          <th class="num">Last</th>
+          <th class="num">Chg %</th>
+          <th class="num">Volume</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${groups.map((group) => {
+          const open = group.industry === expandedIndustry;
+          const names = open ? (holdings || []) : [];
+          return `
+          <tr class="etf-group ${open ? "open" : ""}" data-industry="${group.industry}" title="Double-click to show stocks in this category">
+            <td colspan="4">${group.industry}${open ? " · stocks" : ""}</td>
+            <td class="num group-chg ${chgClass(group.avg)}">${signedPct(group.avg)}</td>
+            <td></td>
+          </tr>
+          ${group.rows.map((r) => `
+            <tr data-symbol="${r.symbol}" class="${r.symbol === selectedSymbol ? "selected" : ""}">
+              <td></td>
+              <td class="sym-cell">${r.symbol}</td>
+              <td class="etf-name">${r.name || ""}</td>
+              <td class="num">${fmtNum(r.last)}</td>
+              <td class="num ${chgClass(r.changePct)}">${signedPct(r.changePct)}</td>
+              <td class="num">${fmtVol(r.volume)}</td>
+            </tr>
+          `).join("")}
+          ${open ? (
+            names.length
+              ? names.map((sym) => {
+                  const r = quoteFor(sym, bySym) || { symbol: sym };
+                  const label = r.symbol || sym;
+                  return `
+            <tr data-symbol="${label}" class="etf-holding ${label === selectedSymbol ? "selected" : ""}">
+              <td></td>
+              <td class="sym-cell">${label}</td>
+              <td class="etf-name">Stock</td>
+              <td class="num">${fmtNum(r.last)}</td>
+              <td class="num ${chgClass(r.changePct)}">${signedPct(r.changePct)}</td>
+              <td class="num">${fmtVol(r.volume)}</td>
+                </tr>`;
+                }).join("")
+              : `<tr class="etf-holding empty"><td></td><td colspan="5">${
+                  group.industry === "Treasuries & credit" || group.industry === "Commodities"
+                  || (lastSnap?.etfIndustry === group.industry && !(lastSnap.industryStocks || []).length)
+                    ? "No stock list for this category"
+                    : "Loading stocks…"
+                }</td></tr>`
+          ) : ""}`;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function quoteMap(rows) {
+  const bySym = new Map();
+  for (const row of rows || []) {
+    bySym.set(row.symbol, row);
+    bySym.set(row.symbol.replaceAll(".", " "), row);
+    bySym.set(row.symbol.replaceAll(" ", "."), row);
+  }
+  return bySym;
+}
+
+function quoteFor(symbol, bySym) {
+  return bySym.get(symbol) || bySym.get(symbol.replaceAll(".", " ")) || bySym.get(symbol.replaceAll(" ", "."));
+}
+
+function renderOverview(rows, sectors, sectorId, selectedSymbol) {
+  const bySym = quoteMap(rows);
+  if (sectorId) {
+    const spec = (sectors || []).find((s) => s.id === sectorId);
+    const names = spec?.stocks?.length ? spec.stocks : (rows || []).map((r) => r.symbol);
+    const merged = names.map((sym) => {
+      const row = quoteFor(sym, bySym);
+      return row ? { ...row, symbol: row.symbol || sym } : { symbol: sym };
+    });
+    overviewBoard.innerHTML = `
+      <div class="ov-head">
+        <button type="button" class="ov-back">← Market Overview</button>
+        <h2>${spec?.name || "Sector"}</h2>
+      </div>
+      <table class="ov-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th class="num">Last</th>
+            <th class="num">Chg %</th>
+            <th class="num">Volume</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sortTickers(merged, "changePct").map((r) => `
+            <tr data-symbol="${r.symbol}" class="${r.symbol === selectedSymbol ? "selected" : ""}">
+              <td class="sym-cell">${r.symbol}</td>
+              <td class="num">${fmtNum(r.last)}</td>
+              <td class="num ${chgClass(r.changePct)}">${signedPct(r.changePct)}</td>
+              <td class="num">${fmtVol(r.volume)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+    return;
+  }
+  overviewBoard.innerHTML = `
+    <div class="ov-grid">
+      ${(sectors || []).map((s) => {
+        const row = quoteFor(s.etf, bySym);
+        const pct = row?.changePct;
+        return `<button type="button" class="ov-card ${chgClass(pct)}" data-sector="${s.id}">
+          <span class="ov-name">${s.name}</span>
+          <span class="ov-etf">${s.etf}</span>
+          <span class="ov-pct ${chgClass(pct)}">${signedPct(pct)}</span>
+        </button>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+function vsOpenLine(row) {
+  const open = row.open;
+  const last = row.last;
+  const prevOpen = row.prevOpen;
+  if (open == null || last == null) {
+    return `<div class="vs-open empty"><span class="vs-open-track"></span></div>`;
+  }
+  const high = row.high != null ? row.high : last;
+  const low = row.low != null ? row.low : last;
+  const extent = Math.max(
+    Math.abs(high - open),
+    Math.abs(low - open),
+    Math.abs(last - open),
+    prevOpen != null ? Math.abs(prevOpen - open) : 0,
+    Math.abs(open) * 0.012,
+    0.02
+  );
+  const pct = 50 + (50 * (last - open)) / extent;
+  const left = Math.max(8, Math.min(92, pct));
+  const side = last > open ? "up" : last < open ? "down" : "flat";
+  let prevMark = "";
+  if (prevOpen != null) {
+    const prevPct = 50 + (50 * (prevOpen - open)) / extent;
+    const prevLeft = Math.max(8, Math.min(92, prevPct));
+    prevMark = `<span class="vs-open-prev" style="left:${prevLeft.toFixed(1)}%">
+      <i></i><em>YEST (${fmtNum(prevOpen)})</em>
+    </span>`;
+  }
+  const title = prevOpen != null
+    ? `YEST (${fmtNum(prevOpen)}) · OPEN (${fmtNum(open)}) · NOW (${fmtNum(last)})`
+    : `OPEN (${fmtNum(open)}) · NOW (${fmtNum(last)})`;
+  return `<div class="vs-open ${side}" title="${title}">
+    <div class="vs-open-track">
+      ${prevMark}
+      <i class="vs-open-tick"></i>
+      <span class="vs-open-mid">OPEN (${fmtNum(open)})</span>
+      <b class="vs-open-bubble" style="left:${left.toFixed(1)}%">NOW (${fmtNum(last)})</b>
+    </div>
+  </div>`;
+}
+
+function midBandRows(rows) {
+  return (rows || []).filter((r) => {
+    const px = r.last ?? r.close;
+    return px != null && px >= 10 && px <= 50;
+  });
+}
+
+function midMoverLists(rows) {
+  return {
+    up2: sortTickers((rows || []).filter((r) => Number(r.changePct) >= 2), "changePct", "desc"),
+    down4: sortTickers((rows || []).filter((r) => Number(r.changePct) <= -4), "changePct", "asc"),
+  };
+}
+
+function midMoverColumn(title, key, rows, selectedSymbol) {
+  const on = midMoverFilter === key ? " on" : "";
+  const body = rows.length
+    ? rows.map((r) => `
+        <button type="button" class="mid-mover ${chgClass(r.changePct)}${r.symbol === selectedSymbol ? " selected" : ""}" data-symbol="${r.symbol}">
+          <b>${r.symbol}</b>
+          <span>${signedPct(r.changePct)}</span>
+        </button>`).join("")
+    : `<p class="mid-mover-empty">None right now</p>`;
+  return `
+    <aside class="mid-movers ${key}${on}">
+      <button type="button" class="mid-movers-head" data-mid-filter="${key}">${title}</button>
+      <div class="mid-movers-list">${body}</div>
+    </aside>`;
+}
+
+function renderMidTable(rows, selectedSymbol, universe) {
+  const chgDir = sortBy.value === "changePct" ? sortDir : "";
+  const movers = midMoverLists(universe || rows);
+  midBoard.innerHTML = `
+    <div class="mid-layout">
+      <div class="mid-main">
+        <table class="ov-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th class="num">Last</th>
+              <th class="num sortable${chgDir ? " on" : ""}" data-sort="changePct" data-dir="${chgDir}">Chg %</th>
+              <th class="num">Volume</th>
+              <th>YEST · OPEN · NOW</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows.map((r) => `
+              <tr data-symbol="${r.symbol}" class="${r.symbol === selectedSymbol ? "selected" : ""}">
+                <td class="sym-cell">${r.symbol}</td>
+                <td class="num">${fmtNum(r.last)}</td>
+                <td class="num ${chgClass(r.changePct)}">${signedPct(r.changePct)}</td>
+                <td class="num">${fmtVol(r.volume)}</td>
+                <td class="vs-cell">${vsOpenLine(r)}</td>
+              </tr>
+            `).join("") : `<tr><td colspan="5" class="empty">No names in this cut.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      ${midMoverColumn("+2%", "up2", movers.up2, selectedSymbol)}
+      ${midMoverColumn("−4%", "down4", movers.down4, selectedSymbol)}
+    </div>
+  `;
+}
+
+function printTime(t) {
+  return new Date((t || 0) * 1000).toLocaleTimeString("en-US", {
+    hour12: false,
+    timeZone: "America/Los_Angeles",
+  }) + " PT";
+}
+
+function printTapeRows(prints, emptyText) {
+  if (!prints.length) {
+    return `<tr><td colspan="4">${emptyText}</td></tr>`;
+  }
+  return prints.map((p) => `
+    <tr class="print-row ${p.side || "unknown"}">
+      <td>${printTime(p.t)}</td>
+      <td class="num">${fmtVol(p.size)}</td>
+      <td class="num">${fmtNum(p.price)}</td>
+      <td class="num">${p.size && p.price ? "$" + fmtVol(p.size * p.price) : "—"}</td>
+    </tr>`).join("");
+}
+
+function printFlow(bought, sold) {
+  const buy = Number(bought || 0);
+  const sell = Number(sold || 0);
+  const total = buy + sell;
+  if (total <= 0) {
+    return { side: "flat", title: "NO FLOW", lean: "—", detail: "Waiting for prints", buyPct: 50, hasFlow: false };
+  }
+  const buyPct = (buy / total) * 100;
+  if (buy > sell) {
+    return { side: "up", title: "BUYING", lean: "BUY", detail: `${buyPct.toFixed(0)}% of share volume`, buyPct, hasFlow: true };
+  }
+  if (sell > buy) {
+    return { side: "down", title: "SELLING", lean: "SELL", detail: `${(100 - buyPct).toFixed(0)}% of share volume`, buyPct, hasFlow: true };
+  }
+  return { side: "flat", title: "EVEN", lean: "EVEN", detail: "Buy and sell volume match", buyPct: 50, hasFlow: true };
+}
+
+function renderPrintsBoard(snap, rows, selectedSymbol) {
+  if (!printsBody) return;
+  const statsMap = snap.printStats || {};
+  const book = snap.printsBySymbol || {};
+  const extras = [...new Set([...(snap.extraWatches || []), ...watchedSymbols])];
+  const have = new Set(rows.map((r) => r.symbol));
+  extras.forEach((sym) => {
+    if (!have.has(sym)) {
+      const extraRow = (snap.tickers || []).find((r) => r.symbol === sym) || { symbol: sym };
+      rows = [...rows, extraRow];
+      have.add(sym);
+    }
+  });
+  const ranked = [...rows].sort((a, b) => {
+    const ta = (statsMap[a.symbol]?.bought || 0) + (statsMap[a.symbol]?.sold || 0);
+    const tb = (statsMap[b.symbol]?.bought || 0) + (statsMap[b.symbol]?.sold || 0);
+    return tb - ta;
+  });
+  const symbol = selectedSymbol && ranked.some((r) => r.symbol === selectedSymbol)
+    ? selectedSymbol
+    : ranked[0]?.symbol;
+  const stats = statsMap[symbol] || {};
+  const prints = book[symbol] || [];
+  const buys = prints.filter((p) => p.side === "buy");
+  const sells = prints.filter((p) => p.side === "sell");
+  const bought = stats.bought || 0;
+  const sold = stats.sold || 0;
+  const net = Number(stats.net || bought - sold);
+  const flow = printFlow(bought, sold);
+  const netLabel = net === 0 ? "Even" : net > 0 ? "Net buying" : "Net selling";
+  printsBody.innerHTML = `
+    <div class="prints-layout">
+      <div class="prints-names">
+        <table class="ov-table prints-tickers">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th class="num">Buy</th>
+              <th class="num">Sell</th>
+              <th>Flow</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ranked.map((r) => {
+              const s = statsMap[r.symbol] || {};
+              const rowFlow = printFlow(s.bought, s.sold);
+              return `<tr class="${r.symbol === symbol ? "selected" : ""}" data-symbol="${r.symbol}">
+                <td>${r.symbol}</td>
+                <td class="num up">${fmtVol(s.bought)}</td>
+                <td class="num down">${fmtVol(s.sold)}</td>
+                <td class="prints-flow" title="${rowFlow.title}${rowFlow.hasFlow ? " · " + rowFlow.detail : ""}">
+                  <span class="prints-lean ${rowFlow.side}">${rowFlow.lean}</span>
+                  <span class="prints-mini"><i style="width:${rowFlow.buyPct.toFixed(1)}%"></i></span>
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="prints-detail">
+        <div class="prints-summary">
+          <div class="prints-hero">
+            <h2>${symbol || "—"}</h2>
+            <div class="prints-bias ${flow.side}">
+              <strong>${flow.title}</strong>
+              <span>${flow.detail}</span>
+            </div>
+          </div>
+          <div class="prints-kpis">
+            <div><span>Bought</span><b class="up">${fmtVol(bought)} sh · $${fmtVol(stats.boughtDollars)}</b></div>
+            <div><span>Sold</span><b class="down">${fmtVol(sold)} sh · $${fmtVol(stats.soldDollars)}</b></div>
+            <div><span>${netLabel}</span><b class="${flow.side === "flat" ? "" : flow.side}">${fmtVol(Math.abs(net))} sh</b></div>
+            <div><span>Orders</span><b>${stats.count || 0}</b></div>
+          </div>
+          <div class="prints-bar" title="Buy ${flow.buyPct.toFixed(0)}% · Sell ${(100 - flow.buyPct).toFixed(0)}%">
+            <i style="width:${flow.buyPct.toFixed(1)}%"></i>
+          </div>
+          <div class="prints-bar-labels">
+            <span class="up">${flow.hasFlow ? `Buy ${flow.buyPct.toFixed(0)}%` : "Buy —"}</span>
+            <span class="down">${flow.hasFlow ? `Sell ${(100 - flow.buyPct).toFixed(0)}%` : "Sell —"}</span>
+          </div>
+        </div>
+        <div class="prints-tapes">
+          <div>
+            <h3 class="up">Buys</h3>
+            <table class="ov-table prints-tape">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th class="num">Size</th>
+                  <th class="num">Price</th>
+                  <th class="num">$</th>
+                </tr>
+              </thead>
+              <tbody>${printTapeRows(buys, "No buys yet for this name.")}</tbody>
+            </table>
+          </div>
+          <div>
+            <h3 class="down">Sells</h3>
+            <table class="ov-table prints-tape">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th class="num">Size</th>
+                  <th class="num">Price</th>
+                  <th class="num">$</th>
+                </tr>
+              </thead>
+              <tbody>${printTapeRows(sells, "No sells yet for this name.")}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function postScan(scan, sector) {
+  document.querySelectorAll(".scan").forEach((btn) => {
+    btn.classList.toggle("on", btn.dataset.scan === scan);
+  });
+  if (scan !== "etfs") expandedEtfIndustry = null;
+  fetch(`${API_BASE}/api/scan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scan, sector: sector || null }),
+  }).catch(() => {});
+}
+
+function toggleEtfIndustry(industry) {
+  const next = expandedEtfIndustry === industry ? null : industry;
+  expandedEtfIndustry = next;
+  if (lastSnap?.scan === "etfs") {
+    renderEtfTable(
+      lastRows,
+      lastSnap.industries,
+      selected,
+      expandedEtfIndustry,
+      next === lastSnap.etfIndustry ? (lastSnap.industryStocks || []) : []
+    );
+  }
+  fetch(`${API_BASE}/api/etf-industry`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ industry: next }),
+  }).catch(() => {});
 }
 
 function render(snap) {
@@ -481,11 +987,11 @@ function render(snap) {
   if (snap.mode === "demo") {
     alertBar.hidden = false;
     alertBar.textContent =
-      "SIMULATED TAPE — not IBKR. Gateway is not connected on 127.0.0.1:4001. Log into IBKR Gateway, keep API socket 4001 enabled, then refresh. Do not trade off these prices.";
+      "SIMULATED TAPE — Gateway is not connected. Click 127.0.0.1:4001 above, log into IBKR Gateway on this computer, then Connect. This site never asks for your IBKR password.";
   } else if (snap.lastError && snap.mode !== "live") {
     alertBar.hidden = false;
     alertBar.textContent = snap.lastError;
-  } else if (snap.mode === "live" && !snap.usingScanner) {
+  } else if (snap.mode === "live" && !snap.usingScanner && snap.scan !== "etfs" && snap.scan !== "overview" && snap.scan !== "mid_price") {
     alertBar.hidden = false;
     alertBar.textContent = snap.scan === "sp500"
       ? "S&P 500 mode — showing liquid index names ranked by volume. IBKR’s raw hot-volume scan had few S&P 500 hits this session."
@@ -506,9 +1012,34 @@ function render(snap) {
       sessionName === "premarket" ? "PM vol" : "Volume";
   }
   const legend = document.getElementById("legendText");
-  if (legend && viewMode === "bubbles") {
+  if (legend && viewMode === "prints") {
     legend.innerHTML =
-      "Area is <strong>volume</strong>. Mass scales with area — heavy names sink, pull lighter ones in, and win collisions. Color is <strong>green up / red down</strong>. Drag a name to toss it.";
+      "The badge and <strong>Flow</strong> column show whether <strong>buy volume</strong> beats <strong>sell volume</strong>. <strong>BUY</strong> is at/above the ask; <strong>SELL</strong> is at/below the bid.";
+  } else if (legend && snap.scan === "etfs") {
+    legend.innerHTML =
+      "Major US ETFs grouped by <strong>industry</strong>. Color is <strong>% change</strong> vs the cash close. <strong>Double-click</strong> a category for the stocks in that group.";
+  } else if (legend && snap.scan === "overview" && snap.sector) {
+    legend.innerHTML =
+      "Names in this category. Color is <strong>% change</strong>. Click a row for the full tape on the right.";
+  } else if (legend && snap.scan === "overview") {
+    legend.innerHTML =
+      "Each card is a <strong>market category</strong>. The large number is that group’s ETF move — <strong>blue up / dark red down</strong>. Click a card to see the stocks.";
+  } else if (legend && snap.scan === "mid_price") {
+    legend.innerHTML =
+      "S&amp;P 500 names trading <strong>$10–$50</strong> with established financials. Color is <strong>% vs yesterday’s close</strong>. Click <strong>+2%</strong> or <strong>−4%</strong> for quality names up at least 2% or down at least 4%.";
+  } else if (legend && snap.scan === "sp500") {
+    legend.innerHTML = viewMode === "tiles"
+      ? "Tile size is <strong>pace</strong>. Color is <strong>price change</strong>. The spark is recent flow. <strong>Double-click</strong> a tile for MACD, RSI, and the 5-day mean ±1σ."
+      : "Area is <strong>volume</strong>. Color is <strong>blue up / dark red down</strong>. <strong>Double-click</strong> a name for a 5-day chart with MACD, RSI, and the 5-day mean ±1σ. Scroll to zoom.";
+  } else if (legend && viewMode === "bubbles" && lastSnap?.scan === "top_percent_gain") {
+    legend.innerHTML =
+      "Circle area is <strong>% gain</strong> — the bigger the move, the bigger the bubble. Color is <strong>blue up / dark red down</strong>.";
+  } else if (legend && viewMode === "bubbles" && lastSnap?.scan === "top_percent_lose") {
+    legend.innerHTML =
+      "Circle area is <strong>% decline</strong> — the bigger the drop, the bigger the bubble. Color is <strong>blue up / dark red down</strong>.";
+  } else if (legend && viewMode === "bubbles") {
+    legend.innerHTML =
+      "Area is <strong>volume</strong> and grows as shares print. Heavy names sink and pull lighter ones. Color is <strong>blue up / dark red down</strong>. Drag a name to toss it.";
   } else if (legend && session.extended) {
     legend.innerHTML =
       "Tile size is <strong>extended-hours volume</strong> since the cash close. Color is <strong>change vs regular-session close</strong>, not yesterday’s close.";
@@ -530,19 +1061,61 @@ function render(snap) {
 
   const q = filterEl.value.trim().toUpperCase();
   let rows = snap.tickers || [];
-  if (q) rows = rows.filter((r) => r.symbol.includes(q));
-  rows = sortTickers(rows, sortBy.value);
+  let midUniverse = [];
+  if (snap.scan !== "mid_price") midMoverFilter = null;
+  if (q && snap.scan !== "overview") rows = rows.filter((r) => r.symbol.includes(q));
+  if (snap.scan === "mid_price" && viewMode !== "prints") {
+    midUniverse = midBandRows(snap.tickers || []);
+    rows = q ? midUniverse.filter((r) => r.symbol.includes(q)) : midUniverse;
+    if (midMoverFilter === "up2") rows = midMoverLists(rows).up2;
+    else if (midMoverFilter === "down4") rows = midMoverLists(rows).down4;
+  }
+  if (!(snap.scan === "mid_price" && midMoverFilter)) {
+    const sortKey = snap.scan === "mid_price" && sortBy.value === "pace" ? "volume" : sortBy.value;
+    rows = sortTickers(rows, sortKey, sortKey === "changePct" ? sortDir : "desc");
+  }
   lastRows = rows;
 
+  const extras = new Set([...(snap.extraWatches || []), ...watchedSymbols]);
   if (selected && !rows.some((r) => r.symbol === selected)) {
-    selected = rows[0]?.symbol ?? null;
+    if (!(viewMode === "prints" && extras.has(selected))) {
+      selected = rows[0]?.symbol ?? null;
+    }
   }
   if (!selected && rows[0]) selected = rows[0].symbol;
+
+  document.querySelectorAll(".scan").forEach((btn) => {
+    btn.classList.toggle("on", btn.dataset.scan === snap.scan);
+  });
+  document.querySelector(".app")?.classList.toggle(
+    "etf-mode",
+    viewMode === "prints" || snap.scan === "etfs" || snap.scan === "overview" || snap.scan === "mid_price"
+  );
+  printsBtn?.classList.toggle("on", viewMode === "prints");
 
   const maxPace = Math.max(1, ...rows.map((r) => r.pace || 0));
   const now = Date.now();
 
-  if (viewMode === "bubbles") {
+  if (viewMode === "prints") {
+    bubbleSim.stop();
+    vizWrap.dataset.mode = "prints";
+    renderPrintsBoard(snap, rows, selected);
+  } else if (snap.scan === "etfs") {
+    bubbleSim.stop();
+    vizWrap.dataset.mode = "etfs";
+    if (Object.prototype.hasOwnProperty.call(snap, "etfIndustry")) {
+      expandedEtfIndustry = snap.etfIndustry || null;
+    }
+    renderEtfTable(rows, snap.industries, selected, expandedEtfIndustry, snap.industryStocks || []);
+  } else if (snap.scan === "overview") {
+    bubbleSim.stop();
+    vizWrap.dataset.mode = "overview";
+    renderOverview(rows, snap.sectors, snap.sector, selected);
+  } else if (snap.scan === "mid_price") {
+    bubbleSim.stop();
+    vizWrap.dataset.mode = "mid";
+    renderMidTable(rows, selected, midUniverse);
+  } else if (viewMode === "bubbles") {
     vizWrap.dataset.mode = "bubbles";
     bubbleSim.setRows(rows, selected);
     bubbleSim.start();
@@ -553,12 +1126,15 @@ function render(snap) {
       .map((r) => {
         const weight = Math.max(0.35, r.extVolume || r.volume || r.pace || 0.35);
         const flashing = (flashUntil.get(r.symbol) || 0) > now;
+        const spark = sparkPath(session.extended ? r.priceSpark || r.spark : r.spark, 120, 32);
         return `<button class="tile ${r.symbol === selected ? "selected" : ""} ${flashing ? "flash" : ""}"
         data-symbol="${r.symbol}"
+        title="Double-click for MACD / RSI / ±1σ"
         style="flex:${weight} 1 120px; background:${heatColor(r.changePct)}">
         <div class="sym">${r.symbol}${feedMode === "demo" ? " · SIM" : ""}</div>
         <div class="chg ${chgClass(r.changePct)}">${signedPct(r.changePct)}</div>
         <div class="pace">${session.extended ? `${fmtVol(r.extVolume || r.volume)} since cash close` : `${fmtX(r.pace)} pace · ${fmtVol(r.volume)}`}</div>
+        ${spark ? `<svg class="tile-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="${spark}" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ""}
       </button>`;
       })
       .join("");
@@ -581,7 +1157,7 @@ function render(snap) {
         <td class="num">${fmtX(r.pace)}</td>
         <td><div class="pacebar"><i style="width:${bar}%"></i></div></td>
         <td class="num">${fmtVol(r.volumeRate)}</td>
-        <td><svg class="spark" viewBox="0 0 88 28" aria-hidden="true"><path d="${path}" fill="none" stroke="${r.changePct >= 0 ? "#3dd68c" : "#ff5d6c"}" stroke-width="1.6"/></svg></td>
+        <td><svg class="spark" viewBox="0 0 88 28" aria-hidden="true"><path d="${path}" fill="none" stroke="${r.changePct >= 0 ? "#4d9fff" : "#c62828"}" stroke-width="1.6"/></svg></td>
       </tr>`;
     })
     .join("");
@@ -601,8 +1177,10 @@ function render(snap) {
   tapeEl.innerHTML = prints
     .map((p) => {
       const t = new Date((p.t || 0) * 1000);
-      const hh = t.toLocaleTimeString("en-US", { hour12: false, timeZone: "America/New_York" });
-      return `<div class="print"><span>${hh}</span><b>${p.symbol}</b><span class="${chgClass(p.changePct)}">${fmtVol(p.size)} @ ${fmtNum(p.price)}</span></div>`;
+      const hh = t.toLocaleTimeString("en-US", { hour12: false, timeZone: "America/Los_Angeles" }) + " PT";
+      const sideClass = p.side === "buy" ? "up" : p.side === "sell" ? "down" : chgClass(p.changePct);
+      const tag = p.side === "buy" ? "B" : p.side === "sell" ? "S" : "";
+      return `<div class="print"><span>${hh}</span><b>${p.symbol}</b><span class="${sideClass}">${tag} ${fmtVol(p.size)} @ ${fmtNum(p.price)}</span></div>`;
     })
     .join("");
 }
@@ -621,7 +1199,7 @@ function renderDetail(row) {
     <div class="kv">
       <div><span>Bid / Ask</span><b>${fmtNum(row.bid)} / ${fmtNum(row.ask)}</b></div>
       <div><span>Spread</span><b>${fmtNum(row.spread, 3)}</b></div>
-      <div><span>${row.extended ? "Vs cash close" : "Vs prev close"}</span><b>${fmtNum(row.close)}</b></div>
+      <div><span>${lastSnap?.session?.label === "afterhours" ? "Vs cash close" : "Vs prev close"}</span><b>${fmtNum(row.close)}</b></div>
       <div><span>RTH volume</span><b>${fmtVol(row.rthVolume)}</b></div>
       <div><span>${row.extended ? "Ext. volume" : "Volume"}</span><b>${fmtVol(row.extVolume || row.volume)}</b></div>
       <div><span>Avg volume</span><b>${fmtVol(row.avgVolume)}</b></div>
@@ -640,10 +1218,28 @@ function renderDetail(row) {
 const FROM_FILE = location.protocol === "file:";
 const API_BASE = FROM_FILE ? "http://127.0.0.1:8080" : "";
 
+function openSp500Chart(symbol) {
+  if (!symbol || lastSnap?.scan !== "sp500" || typeof openTickerChart !== "function") return false;
+  openTickerChart(symbol, lastRows.find((r) => r.symbol === symbol) || (lastSnap?.tickers || []).find((r) => r.symbol === symbol));
+  return true;
+}
+
+function activateTicker(symbol) {
+  if (!symbol) return;
+  const now = performance.now();
+  if (tickerTap.symbol === symbol && now - tickerTap.t < 420) {
+    tickerTap = { t: 0, symbol: null };
+    if (openSp500Chart(symbol)) return;
+  }
+  tickerTap = { t: now, symbol };
+  pinSymbol(symbol);
+}
+
 function pinSymbol(symbol) {
   if (!symbol) return;
   selected = symbol;
-  const row = lastRows.find((r) => r.symbol === symbol);
+  const row = lastRows.find((r) => r.symbol === symbol)
+    || (lastSnap?.tickers || []).find((r) => r.symbol === symbol);
   if (row) renderDetail(row);
   bubbleSim.nodes.forEach((node) => {
     node.el.classList.toggle("selected", node.symbol === symbol);
@@ -651,12 +1247,32 @@ function pinSymbol(symbol) {
   boardBody.querySelectorAll("tr[data-symbol]").forEach((tr) => {
     tr.classList.toggle("selected", tr.dataset.symbol === symbol);
   });
+  etfBoard.querySelectorAll("tr[data-symbol]").forEach((tr) => {
+    tr.classList.toggle("selected", tr.dataset.symbol === symbol);
+  });
+  overviewBoard.querySelectorAll("tr[data-symbol]").forEach((tr) => {
+    tr.classList.toggle("selected", tr.dataset.symbol === symbol);
+  });
+  midBoard.querySelectorAll("tr[data-symbol]").forEach((tr) => {
+    tr.classList.toggle("selected", tr.dataset.symbol === symbol);
+  });
+  if (viewMode === "prints" && lastSnap) {
+    renderPrintsBoard(lastSnap, lastRows, symbol);
+    return;
+  }
+  printsBoard.querySelectorAll("[data-symbol]").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.symbol === symbol);
+  });
 }
 
 function bindClicks() {
   heatEl.addEventListener("click", (e) => {
     const tile = e.target.closest("[data-symbol]");
-    if (tile) pinSymbol(tile.dataset.symbol);
+    if (tile) activateTicker(tile.dataset.symbol);
+  });
+  boardBody.addEventListener("click", (e) => {
+    const row = e.target.closest("[data-symbol]");
+    if (row) activateTicker(row.dataset.symbol);
   });
   bubbleStage.addEventListener("click", (e) => {
     if (bubbleSim.dragMoved) {
@@ -666,9 +1282,103 @@ function bindClicks() {
     const bubble = e.target.closest("[data-symbol]");
     if (bubble) pinSymbol(bubble.dataset.symbol);
   });
-  boardBody.addEventListener("click", (e) => {
+  etfBoard.addEventListener("click", (e) => {
+    const group = e.target.closest("tr.etf-group");
+    if (group) {
+      const industry = group.dataset.industry;
+      if (!industry) return;
+      const now = performance.now();
+      if (tickerTap.symbol === `etf:${industry}` && now - tickerTap.t < 420) {
+        tickerTap = { t: 0, symbol: null };
+        toggleEtfIndustry(industry);
+        return;
+      }
+      tickerTap = { t: now, symbol: `etf:${industry}` };
+      return;
+    }
+    const row = e.target.closest("tr[data-symbol]");
+    if (row) pinSymbol(row.dataset.symbol);
+  });
+  overviewBoard.addEventListener("click", (e) => {
+    const back = e.target.closest(".ov-back");
+    if (back) {
+      postScan("overview", null);
+      return;
+    }
+    const card = e.target.closest("[data-sector]");
+    if (card) {
+      postScan("overview", card.dataset.sector);
+      return;
+    }
+    const row = e.target.closest("tr[data-symbol]");
+    if (row) pinSymbol(row.dataset.symbol);
+  });
+  midBoard.addEventListener("click", (e) => {
+    const filterBtn = e.target.closest("[data-mid-filter]");
+    if (filterBtn) {
+      const key = filterBtn.dataset.midFilter;
+      midMoverFilter = midMoverFilter === key ? null : key;
+      if (midMoverFilter === "up2") {
+        sortBy.value = "changePct";
+        sortDir = "desc";
+      } else if (midMoverFilter === "down4") {
+        sortBy.value = "changePct";
+        sortDir = "asc";
+      }
+      if (lastSnap) render(lastSnap);
+      return;
+    }
+    const head = e.target.closest("th[data-sort]");
+    if (head) {
+      const key = head.dataset.sort;
+      midMoverFilter = null;
+      if (sortBy.value === key) {
+        sortDir = sortDir === "desc" ? "asc" : "desc";
+      } else {
+        sortBy.value = key;
+        sortDir = "desc";
+      }
+      if (lastSnap) render(lastSnap);
+      return;
+    }
+    const hit = e.target.closest("[data-symbol]");
+    if (hit) pinSymbol(hit.dataset.symbol);
+  });
+  printsBoard.addEventListener("click", (e) => {
     const row = e.target.closest("[data-symbol]");
     if (row) pinSymbol(row.dataset.symbol);
+  });
+  printLookupForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const symbol = (printTicker?.value || "").trim().toUpperCase().replace(/\./g, " ").replace(/\s+/g, " ");
+    if (!symbol) return;
+    if (printLookupMsg) printLookupMsg.textContent = "";
+    fetch(`${API_BASE}/api/watch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol }),
+    })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok || !data.ok) {
+          if (printLookupMsg) printLookupMsg.textContent = data.error || "Could not watch that ticker.";
+          return;
+        }
+        watchedSymbols = [data.symbol, ...watchedSymbols.filter((item) => item !== data.symbol)].slice(0, 12);
+        if (printTicker) printTicker.value = data.symbol;
+        viewMode = "prints";
+        document.querySelectorAll(".view").forEach((item) => item.classList.toggle("on", item.dataset.view === "prints"));
+        pinSymbol(data.symbol);
+        if (lastSnap) render(lastSnap);
+      })
+      .catch(() => {
+        if (printLookupMsg) printLookupMsg.textContent = "Could not watch that ticker.";
+      });
+  });
+  printsBtn?.addEventListener("click", () => {
+    viewMode = "prints";
+    document.querySelectorAll(".view").forEach((item) => item.classList.toggle("on", item.dataset.view === "prints"));
+    if (lastSnap) render(lastSnap);
   });
   document.querySelectorAll(".view").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -686,13 +1396,92 @@ function bindClicks() {
   });
   document.querySelectorAll(".scan").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".scan").forEach((b) => b.classList.toggle("on", b === btn));
-      fetch(`${API_BASE}/api/scan`, {
+      if (!btn.dataset.scan) return;
+      if (viewMode === "prints") {
+        viewMode = "bubbles";
+        document.querySelectorAll(".view").forEach((item) => {
+          item.classList.toggle("on", item.dataset.view === "bubbles");
+        });
+      }
+      postScan(btn.dataset.scan, null);
+    });
+  });
+  sortBy?.addEventListener("change", () => {
+    sortDir = "desc";
+    if (lastSnap) render(lastSnap);
+  });
+  filterEl?.addEventListener("input", () => {
+    if (lastSnap) render(lastSnap);
+  });
+  bindConnectModal();
+}
+
+function bindConnectModal() {
+  const modal = document.getElementById("connectModal");
+  const form = document.getElementById("connectForm");
+  const status = document.getElementById("connectStatus");
+  const submit = document.getElementById("connectSubmit");
+  if (!modal || !form) return;
+
+  function loadSaved() {
+    try {
+      return JSON.parse(localStorage.getItem("vp_gateway") || "null");
+    } catch {
+      return null;
+    }
+  }
+
+  function fillForm() {
+    const saved = loadSaved();
+    const host = saved?.host || lastSnap?.host || "127.0.0.1";
+    const port = String(saved?.port || lastSnap?.port || 4001);
+    const clientId = saved?.clientId ?? lastSnap?.clientId ?? 7;
+    const dataType = String(saved?.marketDataType || lastSnap?.marketDataType || 3);
+    document.getElementById("gwHost").value = host;
+    const portEl = document.getElementById("gwPort");
+    if (![...portEl.options].some((opt) => opt.value === port)) {
+      portEl.add(new Option(port, port));
+    }
+    portEl.value = port;
+    document.getElementById("gwClient").value = clientId;
+    document.getElementById("gwData").value = dataType === "1" ? "1" : "3";
+    status.textContent = "";
+  }
+
+  document.getElementById("linkChip").addEventListener("click", () => {
+    fillForm();
+    modal.showModal();
+  });
+  document.getElementById("connectCancel").addEventListener("click", () => modal.close());
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const payload = {
+      host: document.getElementById("gwHost").value.trim() || "127.0.0.1",
+      port: Number(document.getElementById("gwPort").value),
+      clientId: Number(document.getElementById("gwClient").value),
+      marketDataType: Number(document.getElementById("gwData").value),
+    };
+    status.textContent = "Connecting to Gateway…";
+    submit.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scan: btn.dataset.scan }),
-      }).catch(() => {});
-    });
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        status.textContent = data.error || "Could not connect.";
+        return;
+      }
+      localStorage.setItem("vp_gateway", JSON.stringify(payload));
+      status.textContent = `Connected to ${data.host}:${data.port}.`;
+      setTimeout(() => modal.close(), 700);
+    } catch {
+      status.textContent = "Could not reach the Volume Pulse server. Run python run.py locally.";
+    } finally {
+      submit.disabled = false;
+    }
   });
 }
 
