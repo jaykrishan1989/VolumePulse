@@ -43,9 +43,11 @@ from backtest.ml_registry import (
 from backtest.periods import FLAT_MINUTE, HOLDOUT_END, HOLDOUT_START, VALIDATE_END, VALIDATE_START
 from backtest.run_daily import LOOKS_PATH, pack, record_look, spy_days
 from backtest.run_gate import _calendar, _spy_closes, champion_record, champion_trades
+from backtest.data import CONTEXT, bars_from_frame, load_symbol, sessions
 from backtest.run_hypotheses import load_book
 from backtest.scan import load_membership
 from backtest.spells import ACCOUNT_USD, SLIP_BPS, build_spells, portfolio
+from models.registry import Store, create_passing_checkpoint, passes_costs_and_random
 
 ROOT = Path(__file__).resolve().parents[1]
 RESEARCH = ROOT / "research"
@@ -86,6 +88,25 @@ PARAMS = {
     "num_threads": 4,
     "force_col_wise": True,
 }
+
+
+def load_ml_book() -> dict[tuple[str, date], list[dict[str, Any]]]:
+    """Stored bars for the eight names plus SPY and QQQ. No Gateway socket.
+
+    ``load_book`` already includes SPY. QQQ is context only, so it is attached
+    here rather than added to the tradeable book those other runners walk.
+    """
+    book = load_book(include_holdout=True)
+    for symbol in CONTEXT:
+        if any(key[0] == symbol for key in book):
+            continue
+        print(f"loading {symbol}", flush=True)
+        for day, frame in sessions(load_symbol(symbol)):
+            book[(symbol, day)] = bars_from_frame(frame)
+    missing = [symbol for symbol in CONTEXT if not any(key[0] == symbol for key in book)]
+    if missing:
+        raise RuntimeError("market context missing: " + ", ".join(missing))
+    return book
 
 
 def train_cut(test_start: date) -> date:
@@ -278,9 +299,9 @@ def _window_stats(
 ) -> dict[str, Any]:
     window = predictions.loc[(predictions["day"] >= start) & (predictions["day"] <= end)]
     days = [day for day in spy_days(book, start, end)]
-    result = run_spells(spells_for(window, book, threshold))
-    stats = pack(result["trades"], spells_for(window, book, threshold), len(days), result["maxDrawdown"])
-    return stats
+    spells = spells_for(window, book, threshold)
+    result = run_spells(spells)
+    return pack(result["trades"], spells, len(days), result["maxDrawdown"]), result["trades"]
 
 
 def calibration_rows(predictions: pd.DataFrame) -> list[dict[str, Any]]:
@@ -343,8 +364,8 @@ def markdown(
         f"Costs are the live model: no commission, {SLIP_BPS:.0f} bp slippage per side, next-bar open, "
         f"US${ACCOUNT_USD:.0f}, flat by 15:55, one ATR stop. "
         f"Bonferroni denominator {tried}. Gate {verdict.decision}, {wins}/{len(verdict.windows)} windows. "
-        f"Holdout look {look} was not used to pick the threshold. `models/ACTIVE` stays `v0.1` unless the gate "
-        "and the costs-and-random bar both pass. No order was placed.",
+        f"Holdout look {look} was not used to pick the threshold. A checkpoint is written only when the gate "
+        "and the costs-and-random bar both pass. `models/ACTIVE` stays `v0.1`. No order was placed.",
         "",
         "| Slice | Trades | Days with a trade | Trades/day | Win | Net | $/trade | bp | Max DD |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -441,15 +462,24 @@ def _look_count() -> int:
     return sum(1 for _row in csv.DictReader(LOOKS_PATH.open(encoding="utf-8")))
 
 
+def _look_for(rule_id: str) -> int | None:
+    found = None
+    for row in csv.DictReader(LOOKS_PATH.open(encoding="utf-8")):
+        if rule_id in row["rules"]:
+            found = int(row["look"])
+    return found
+
+
 def main() -> None:
     looks_before = _look_count()
+    prior_look = _look_for(MODEL_ID)
     rule_before = RULE_PATH.read_bytes()
     if ACTIVE_PATH.read_text(encoding="utf-8").strip() != "v0.1":
         raise SystemExit("refusing to train while ACTIVE is not v0.1")
     if PRIMARY_SCHEDULE != "zero":
         raise SystemExit("refusing to train while the cost config is not zero commission")
     print("loading bars", flush=True)
-    book = load_book(include_holdout=True)
+    book = load_ml_book()
     print("building features", flush=True)
     frame = build_frame(book)
     pre = frame.loc[frame["day"] < HOLDOUT_START].copy()
@@ -475,9 +505,8 @@ def main() -> None:
     threshold = threshold_bps / 10_000.0
     pooled_preds = predictions.loc[(predictions["day"] >= POOLED_START) & (predictions["day"] <= POOLED_END)]
     validation_preds = predictions.loc[(predictions["day"] >= VALIDATE_START) & (predictions["day"] <= VALIDATE_END)]
-    pooled = _window_stats(pooled_preds, book, threshold, POOLED_START, POOLED_END)
-    validation = _window_stats(validation_preds, book, threshold, VALIDATE_START, VALIDATE_END)
-    pooled_trades = run_spells(spells_for(pooled_preds, book, threshold))["trades"]
+    pooled, pooled_trades = _window_stats(pooled_preds, book, threshold, POOLED_START, POOLED_END)
+    validation, _validation_trades = _window_stats(validation_preds, book, threshold, VALIDATE_START, VALIDATE_END)
     print(f"pooled net {pooled['net']:.0f} trades {pooled['trades']}", flush=True)
 
     tried = ideas_tried()
@@ -524,14 +553,7 @@ def main() -> None:
         scaled = predict_scaled(models, holdout_frame)
         holdout_frame["pred_scaled"] = scaled
         holdout_frame["pred_ret"] = scaled * holdout_frame["vol"].to_numpy()
-    holdout = _window_stats(holdout_frame, book, threshold, HOLDOUT_START, HOLDOUT_END)
-    holdout_trades = run_spells(spells_for(holdout_frame, book, threshold))["trades"]
-    look = record_look(
-        MODEL_ID,
-        "One read after the validation threshold was frozen. Not used to pick the threshold.",
-    )
-    if _look_count() != looks_before + 1:
-        raise SystemExit("holdout look was not the single new row")
+    holdout, holdout_trades = _window_stats(holdout_frame, book, threshold, HOLDOUT_START, HOLDOUT_END)
     fresh_champion = _champion_holdout(book)
     verdict = judge(
         MODEL_ID,
@@ -545,7 +567,7 @@ def main() -> None:
     )
     folds = []
     for name, start, end in list(HALF_YEARS) + [("2026Q1", date(2026, 1, 1), date(2026, 3, 31))]:
-        stats = _window_stats(predictions, book, threshold, start, end)
+        stats, _fold_trades = _window_stats(predictions, book, threshold, start, end)
         folds.append({"fold": name, **stats})
         print(f"  {name} net {stats['net']:.0f}", flush=True)
     boot = _day_bootstrap(holdout_trades)
@@ -555,8 +577,33 @@ def main() -> None:
         f"bootstrap {boot.get('pValue')} random {random_vs.get('pValue')}",
         flush=True,
     )
-    if verdict.passed:
-        raise SystemExit("model passed the gate; refusing to promote from the batch command")
+    look = record_look(
+        MODEL_ID,
+        "One read after the validation threshold was frozen. Not used to pick the threshold.",
+    )
+    if _look_for(MODEL_ID) != look or (prior_look is None and _look_count() != looks_before + 1):
+        raise SystemExit("holdout look was not the single new row")
+    version_results = {"holdout": holdout, "bootstrap": boot, "random": random_vs}
+    costs_ok, cost_reasons = passes_costs_and_random(version_results)
+    checkpoint = None
+    if verdict.passed and costs_ok:
+        checkpoint = create_passing_checkpoint(
+            Store(),
+            version_results,
+            {
+                "passedGate": True,
+                "liveCapable": False,
+                "kind": MODEL_ID,
+                "status": "passing",
+                "signalRule": {"id": MODEL_ID, "note": "Record only. The live list stays appear/disappear."},
+                "costs": {"accountUsd": ACCOUNT_USD, "slipBps": SLIP_BPS, "schedule": PRIMARY_SCHEDULE, "flat": "15:55 ET"},
+                "thresholdBps": threshold_bps,
+                "modelDir": str(MODEL_DIR.relative_to(ROOT)),
+            },
+        )
+        print(f"checkpoint {checkpoint} written; ACTIVE left at v0.1", flush=True)
+    elif verdict.passed:
+        print("gate passed; no checkpoint: " + "; ".join(cost_reasons), flush=True)
     if ACTIVE_PATH.read_text(encoding="utf-8").strip() != "v0.1":
         raise SystemExit("ACTIVE changed during the run")
     if RULE_PATH.read_bytes() != rule_before:
@@ -586,7 +633,9 @@ def main() -> None:
         "folds": folds,
         "calibration": calibration_rows(predictions),
         "importance": importances,
-        "checkpoint": None,
+        "checkpoint": checkpoint,
+        "costs_and_random": costs_ok,
+        "cost_reasons": cost_reasons,
         "active": "v0.1",
     }
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8")

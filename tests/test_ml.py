@@ -104,6 +104,13 @@ class LeakageTests(unittest.TestCase):
         self.assertNotAlmostEqual(float(after["ret_1"]), float(before["ret_1"]), places=6)
         self.assertAlmostEqual(float(after["fwd_ret"]), float(before["fwd_ret"]), places=10)
 
+    def test_missing_market_context_drops_the_frame(self) -> None:
+        days = _weekdays(date(2024, 1, 2), 8)
+        book = _book(days)
+        for key in [key for key in book if key[0] == "QQQ"]:
+            del book[key]
+        self.assertTrue(build_frame(book).empty)
+
     def test_train_cut_drops_embargo_day_and_holdout(self) -> None:
         self.assertEqual(train_cut(date(2024, 7, 1)), date(2024, 6, 30))
         self.assertEqual(train_cut(HOLDOUT_START), date(2026, 3, 31))
