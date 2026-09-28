@@ -276,7 +276,11 @@ def portfolio(
     equity: float = ACCOUNT_USD,
 ) -> dict[str, Any]:
     """Spend remaining cash on each new spell. Concurrent when a share still fits."""
-    ordered = sorted(spells, key=lambda spell: (spell["entry_t"], spell["symbol"]))
+    # Higher priority spends scarce cash first. Equal priority keeps symbol order.
+    ordered = sorted(
+        spells,
+        key=lambda spell: (spell["entry_t"], -(float(spell.get("priority") or 0.0)), spell["symbol"]),
+    )
     planned: list[tuple[dict[str, Any], int]] = []
     for spell in ordered:
         resolved = resolve_exit(spell, use_stop=use_stop, slip_bps=slip_bps)

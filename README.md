@@ -104,4 +104,6 @@ python -m backtest.run_roundtrip select
 python -m backtest.run_roundtrip holdout
 ```
 
+New ideas are registered in `backtest/hypotheses.py` and scored with `python -m backtest.run_hypotheses`. The write-up is `research/RESEARCH_LOG.md`, with `research/hypotheses.csv` beside it. The holdout has been read twice (the bracket, then the appear-to-disappear rule). A research run does not read it again unless one pre-registered idea has already passed the walk-forward gate.
+
 Bar files live in `data/raw5/<SYMBOL>/*.parquet` (or `RTTB_RAW`). They are not committed.

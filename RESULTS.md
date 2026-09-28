@@ -173,6 +173,10 @@ A hard RVOL floor, which would have hidden a name printing 0.23×, was one of th
 
 The earlier LightGBM ensemble (5 models, 60-minute return, 51 features) is not in this repo. Its own write-up already reported a walk-forward that failed a day-bootstrap and a cost stress, with the profit concentrated on one day. It was not rebuilt and it is not a gate.
 
+## Research log
+
+Six further ideas, taken from the intraday-momentum, liquidity-reversal, VWAP, opening-range, and overnight/intraday papers cited in `research/RESEARCH_LOG.md`, were walk-forward tested on 2023 through March 2026 and rejected. None cleared a pre-registered gate that requires a positive pooled net, a positive validation window, a positive most-recent slice, at least 80 trades, and at least four of six semi-annual folds in the black, all after tiered commissions and 2 bp. The least-bad pooled result was buying a down open and holding to 15:55 (−$183, −8.6%). Three of its six folds made money, which is short of the gate, and the threshold was not moved after seeing that. The holdout was not opened. Look count remains 2. `research/holdout_looks.csv` is the tally.
+
 ## How to reproduce
 
 ```powershell
@@ -182,6 +186,7 @@ python -m backtest.run_search
 python -c "from backtest.scan import scan_membership; scan_membership()"
 python -m backtest.run_roundtrip select
 python -m backtest.run_roundtrip holdout
+python -m backtest.run_hypotheses
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry and does not open the holdout.
