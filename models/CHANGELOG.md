@@ -101,5 +101,11 @@ IBKR is data only. The same frozen rules were re-scored with no commission and 2
 `ml_lgb_60m` is a three-seed LightGBM of the 60-minute forward return. Threshold 20 bp, chosen on validation before holdout look 4. Pooled −$319 on 270 trades (−6.6 bp). Holdout +$77 on 29 trades, bootstrap p 0.197. Gate rejected, 1/12. ACTIVE stays v0.1. No order was placed.
 <!-- ML_CHANGELOG_END -->
 
+<!-- PROFIT_CHANGELOG_BEGIN -->
+## Profit search — 2026-09-28 — no checkpoint
+
+Validation dollars picked `ml:flat:flat:1atr:top1:1:20`. Holdout look 7: +$297 on 19 trades. The best rule, a 1.5% down gap, made +$210 on look 6. The model made more. Look 5 is an invalid same-day peek. ACTIVE stays v0.1. No order was placed.
+<!-- PROFIT_CHANGELOG_END -->
+
 
 

@@ -302,6 +302,29 @@ The best pre-holdout rule on the validation window is still the down-gap hold (+
 
 A second architecture was not fit. The spec above was frozen before the run. Another model would be a new idea and another holdout look.
 
+## Profit objective
+
+The ranking above asks whether a model beats the live book. This section asks a different question: which book makes the most dollars after 2 bp of slippage. Four hundred twenty-seven candidates were scored on the validation window only (2024-07-01 through 2026-03-31), with a floor of 50 trades. The menu was LightGBM at 15, 30, and 60 minutes, a wider tree, lagged returns, a stack of those forecasts, the frozen rules, and a down-gap grid. Threshold, stop, size, and exit were part of the score. The winner was written to `research/profit_selection.json` before its holdout fill.
+
+One name a day means the first bar that clears the threshold. A later, stronger bar is ignored. An earlier pass waited for that later bar. Its holdout, look 5, was +$1,398 and is not tradable. The files are `research/profit_lookahead_summary.json`.
+
+**Headline holdout, look 7: +$297.**
+
+The validation winner is a LightGBM that predicts the return from the next bar's open to the 15:50 close. The first time that prediction reaches 20 bp, it buys the strongest name at that minute with the full US$2,120, sets a stop one ATR under the entry, and exits on the 15:50 close.
+
+| Book | Window | Trades | Trades/day | Days with a trade | Win | Net | Per trade | Per day | bp | Max DD |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Model | Validation | 85 | 0.19 | 19.4% | 57.6% | +$1,261 | +$14.83 | +$2.87 | +60.3 | $237 |
+| Model | Holdout, look 7 | 19 | 0.15 | 15.4% | 68.4% | **+$297** | +$15.65 | +$2.42 | +82.6 | $73 |
+| 1.5% down-gap rule | Validation | 146 | 0.33 | 29.8% | 26.7% | +$467 | +$3.20 | +$1.06 | +15.6 | $428 |
+| 1.5% down-gap rule | Holdout, look 6 | 52 | 0.42 | 35.0% | 36.5% | +$210 | +$4.03 | +$1.70 | +41.0 | $223 |
+
+The model made more holdout profit than the rule ($297 versus $210). That is the comparison. The holdout sample is 19 trades. The rule trades more often and made $210 on 52 trades, with a deeper drawdown ($223 versus $73).
+
+The best frozen rule on the validation window is still the original 0.40% down-gap hold, at +$194. The 1.5% gap beat it on validation, which is why the 1.5% rule was the one read on the holdout. The 0.40% rule's holdout was not opened.
+
+Nothing was deployed. `models/ACTIVE` stays `v0.1`. The three boosters are in `models/ml/profit_ml/`.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
@@ -325,4 +348,4 @@ python -m backtest.run_costs
 python -m backtest.run_ml
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again.

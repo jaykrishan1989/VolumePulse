@@ -1102,3 +1102,16 @@ Holdout restatements of looks already recorded. Not used to choose the finalist.
 Pooled sample does not beat the champion on net and expectancy (challenger $-319 on 270 trades, $-1.18/trade, -6.6 bp; champion $-786 on 1228 trades, $-0.64/trade, -4.2 bp). Does not beat the champion in every market regime (down, high_vol, low_vol). Does not beat the champion in every ticker group (megacap, high_beta). Beats the champion in 0 half-years; need at least 2. Improves in 1 of 12 windows; need at least 9 (75%). After removing the top 5 days by daily gap (2024-07-25, 2024-11-11, 2023-04-27, 2025-02-03, 2024-08-02), the challenger is behind on dollars per trade, basis points per trade (challenger $-644 on 259 trades, $-2.49/trade, -14.1 bp; champion $-791 on 1216 trades, $-0.65/trade, -4.3 bp). Paired tests do not clear the Bonferroni line for 54 ideas tried (bootstrap p=0.1068, permutation p=0.1072, alpha=0.00093).
 <!-- ML_END -->
 
+<!-- PROFIT_BEGIN -->
+## Profit search
+
+Candidates were ranked on validation net dollars after 2 bp slippage. The minimum was 50 trades. One name a day means the first bar that qualifies, not a later peak. Look 5 used the later peak and is not a tradable result. The holdout below was read after `research/profit_selection.json` was written. Headline is the validation winner's holdout: `ml:flat:flat:1atr:top1:1:20`, $297. The model made more money on the holdout than the rule. The validation pick was the model. Nothing was deployed. `models/ACTIVE` stays `v0.1`.
+
+| Book | Validation net | Holdout net | Holdout trades | Trades/day | Win | Per day | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Model `ml:flat:flat:1atr:top1:1:20` | $1,261 | $297 | 19 | 0.15 | 68.4% | $2.42 | $73 |
+| Rule `gap:-0.015:1atr:flat:1` | $467 | $210 | 52 | 0.42 | 36.5% | $1.70 | $223 |
+
+<!-- PROFIT_END -->
+
+

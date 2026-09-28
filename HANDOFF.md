@@ -52,15 +52,19 @@ Findings worth keeping:
 
 Write-ups: `research/RESEARCH_LOG.md` (marked `<!-- AREAS_BEGIN -->`), `research/areas.csv`, `research/area_folds.csv`, `research/area_summary.json`, `RESULTS.md`, `README.md`, `models/CHANGELOG.md` (marked `<!-- AREAS_CHANGELOG_BEGIN -->`). `backtest/run_hypotheses.py` preserves both the gate section and the areas section via `preserve_gate_section`.
 
-Tests last run: `python -m unittest discover -s tests -q` — 103 tests, OK. The model does not change the dashboard, so no new browser pass was required.
+Tests last run: `python -m unittest discover -s tests -q` — 110 tests, OK. The model does not change the dashboard, so no new browser pass was required.
 
 ## What's in progress
 
-The intraday model is scored and rejected. `ml_lgb_60m` is a three-seed LightGBM of the 60-minute forward return. The validation threshold is 20 bp (`research/ml_selection.json`, written before the holdout fit). Pooled 2023-01-01..2026-03-31: 270 trades, 11.9% of days, win 46.7%, −$319, −$1.18/trade, −$0.39/day, −6.6 bp, max DD $456. Holdout look 4: 29 trades, 8 days, win 48.3%, +$77, +$2.66/trade, +12.6 bp, max DD $86. Day-bootstrap p 0.197. Random-entry p 0.03. Gate 1/12, paired p 0.107 and 0.107 versus alpha 0.00093. No checkpoint. `models/ACTIVE` is `v0.1`. The boosters are `models/ml/ml_lgb_60m/seed_{7,11,21}.txt`.
+The intraday model `ml_lgb_60m` is scored and rejected. Pooled −$319 on 270 trades. Holdout look 4: +$77 on 29 trades, bootstrap p 0.197. Gate 1/12. No checkpoint. Do not run `python -m backtest.run_ml` again.
 
-Do not run `python -m backtest.run_ml` again. Look 4 is already the one authorized read. Do not move the 20 bp threshold. Do not add a sequence model after this loss. Do not point ACTIVE at the model files. Do not retune the frozen rules.
+The profit search is also scored. `python -m backtest.run_profit` ranked 427 candidates on validation dollars. The winner predicts the return to the 15:50 close and buys the first name of the day whose forecast is at least 20 bp, full ticket, one ATR stop. Holdout look 7: 19 trades, +$297, +$15.65/trade, +$2.42/day, 68.4% winners, max DD $73. The best validation rule is a 1.5% down gap held to the close. Holdout look 6: 52 trades, +$210, +$4.03/trade, +$1.70/day, 36.5% winners, max DD $223. The model made more holdout profit. Nothing was deployed.
 
-The live cost is schedule `zero` in `app/cost_model.json` and `backtest/costs.py`: US$0 commission, no regulatory fee, 2 bp slippage on the next bar's open. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. Look count is 4. Do not append look 5. There is no IBKR commission column.
+Look 5 (`profit_ml`, a stack that waited for the best later bar of the day) is not tradable. Its +$1,398 is archived in `research/profit_lookahead_summary.json`. Do not cite it as a result.
+
+Do not run `python -m backtest.run_profit` again. The summary file exists and the command refuses a second holdout read. Do not point ACTIVE at `models/ml/profit_ml/`. Do not retune the frozen rules.
+
+The live cost is schedule `zero` in `app/cost_model.json` and `backtest/costs.py`: US$0 commission, no regulatory fee, 2 bp slippage on the next bar's open. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. That rerun did not append a look. There is no IBKR commission column. The look count is now 7, and look 5 is invalid.
 
 Pooled 2023-01-01 through 2026-03-31. Positive means net above zero.
 
@@ -107,13 +111,13 @@ Not started, and not authorized as a silent next search:
 - Order-flow imbalance. These files are OHLC. There are no aggressor prints.
 - Shorts. Canadian cash account, long-only.
 - Any retune of the frozen thresholds in `backtest/areas.py`, `backtest/hypotheses.py`, or `backtest/daily.py`.
-- Another holdout read. Looks 1 through 4 are already on file. `fresh_slice` and `milestone` still raise.
+- Another holdout read. Looks 1 through 7 are on file, and look 5 is invalid. `fresh_slice` and `milestone` still raise.
 
 ## Exact next steps
 
 The daily-frequency rule family is closed. Do not deploy `d_rs_leader` or `h5_gap_down`. Do not move a rule threshold after seeing +$350 or +$302. Do not add an IBKR commission column.
 
-The intraday model is also closed. `ml_lgb_60m` failed the promotion gate (1/12) and failed `passes_costs_and_random` (holdout bootstrap p 0.197). Stay on v0.1. Do not deploy the files in `models/ml/`. Do not open look 5. Bonferroni denominator is 54. Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
+The intraday model and the profit search are both closed. Stay on v0.1. Do not deploy `models/ml/`. Look count is 7. Look 5 is invalid. Do not open look 8. Bonferroni denominator for the old gate is 54. Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
 
 Nothing further is authorized until the owner asks. No new data and no Gateway socket.
 
