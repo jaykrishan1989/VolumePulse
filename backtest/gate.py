@@ -69,8 +69,17 @@ def ideas_tried(extra: int = 0) -> int:
     from backtest.areas import AREA_REGISTRY
     from backtest.daily import DAILY_REGISTRY
     from backtest.hypotheses import REGISTRY
+    from backtest.ml_registry import ML_REGISTRY
 
-    return BRACKET_TRIALS + ROUNDTRIP_TRIALS + len(REGISTRY) + len(AREA_REGISTRY) + len(DAILY_REGISTRY) + extra
+    return (
+        BRACKET_TRIALS
+        + ROUNDTRIP_TRIALS
+        + len(REGISTRY)
+        + len(AREA_REGISTRY)
+        + len(DAILY_REGISTRY)
+        + len(ML_REGISTRY)
+        + extra
+    )
 
 
 def bonferroni_alpha(tried: int) -> float:
@@ -538,8 +547,10 @@ def preserve_gate_section(new_log: str, old_log: str) -> str:
     from backtest.areas import AREAS_BEGIN, AREAS_END
     from backtest.costs import COSTS_BEGIN, COSTS_END
     from backtest.daily import DAILY_BEGIN, DAILY_END
+    from backtest.ml_registry import ML_BEGIN, ML_END
 
     kept = preserve_marked_section(new_log, old_log, GATE_BEGIN, GATE_END)
     kept = preserve_marked_section(kept, old_log, AREAS_BEGIN, AREAS_END)
     kept = preserve_marked_section(kept, old_log, DAILY_BEGIN, DAILY_END)
-    return preserve_marked_section(kept, old_log, COSTS_BEGIN, COSTS_END)
+    kept = preserve_marked_section(kept, old_log, COSTS_BEGIN, COSTS_END)
+    return preserve_marked_section(kept, old_log, ML_BEGIN, ML_END)

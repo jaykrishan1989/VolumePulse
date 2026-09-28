@@ -86,8 +86,8 @@ class GateRuleTests(unittest.TestCase):
         self.assertEqual(len(REGISTRY), 6)
         self.assertEqual(len(AREA_REGISTRY), 15)
         self.assertEqual(len(DAILY_REGISTRY), 5)
-        self.assertEqual(ideas_tried(), 15 + 12 + 6 + 15 + 5)
-        self.assertAlmostEqual(bonferroni_alpha(ideas_tried()), 0.05 / 53)
+        self.assertEqual(ideas_tried(), 15 + 12 + 6 + 15 + 5 + 1)
+        self.assertAlmostEqual(bonferroni_alpha(ideas_tried()), 0.05 / 54)
 
     def test_regime_labels_use_the_prior_close_and_a_trailing_window(self) -> None:
         closes = []
