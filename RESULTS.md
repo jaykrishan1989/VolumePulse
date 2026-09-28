@@ -2,6 +2,19 @@
 
 Verdict: **do not trade it.** No pre-registered configuration has a cost-inclusive edge on the locked holdout. That includes the live rule and the least-bad filter the validation window could find. This is not a forecast that every future day loses money. It is the out-of-sample result: after commissions and 2 bp of slippage, the average trade lost money, and the loss is not a sampling fluke in the direction of a profit.
 
+## Delayed quotes, 28 Sep 2026
+
+A live check around 13:10 ET found the dashboard on IBKR **delayed** data, about 15 minutes behind. AAPL's real price was already under its stop when the row appeared. XOM filled and stopped within a minute. Both hit the stop and neither hit the target. A delayed row is not a current entry.
+
+The live tab now does four things:
+
+1. A banner across the dashboard when market data type is 3 or 4, or when a Right Time to Buy bar is stale.
+2. A setup is not listed as a buy when its quote is delayed, when the last 5-minute bar closed more than a minute ago, or when the last trade is more than a minute behind the clock. Those rows are shown grey, marked hidden, and are not clickable buys. A forming bar is still fresh: IB stamps the bar at its open, so the check uses the bar's close.
+3. The paper log stores `delayed`, `data_type`, `lag_sec`, and `withhold` on every setup. A withheld row is not an open paper trade and is not marked as a later target.
+4. Before a row is listed, the latest price is checked again. At or through the stop, or at or through the target, the row is dropped.
+
+Demo mode is unchanged unless `RTTB_FORCE_DELAY=1`, which only previews the banner. The backtest numbers below are the historical bars, not this live-tape fix. They already said the rule loses after costs. Delayed data makes that worse, because the stop can be gone before the row is visible.
+
 The app still shows the setups. Each card carries the holdout win rate and expectancy of the rule that is actually on screen (the unmodified baseline). The paper log records live appearances and later marks stop, target, or the 15:55 exit. Nothing in this repo places an order.
 
 ## Account and costs

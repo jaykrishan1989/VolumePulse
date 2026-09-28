@@ -3,6 +3,7 @@ const boardBody = document.getElementById("boardBody");
 const detailEl = document.getElementById("detail");
 const tapeEl = document.getElementById("tape");
 const alertBar = document.getElementById("alertBar");
+const delayBanner = document.getElementById("delayBanner");
 const metaLine = document.getElementById("metaLine");
 const sessionChip = document.getElementById("sessionChip");
 const sessionLabel = document.getElementById("sessionLabel");
@@ -536,6 +537,36 @@ function researchPanel(snap) {
   </section>`;
 }
 
+function withholdLabel(code) {
+  const text = String(code || "");
+  const parts = [];
+  if (text.includes("delayed")) parts.push("Delayed quote");
+  if (text.includes("stale")) parts.push("Bar is over 1 min old");
+  if (text.includes("through_stop")) parts.push("Price already through the stop");
+  if (text.includes("through_target")) parts.push("Price already through the target");
+  if (text.includes("no_price")) parts.push("No live price");
+  return parts.length ? `${parts.join(" · ")} — hidden` : "Hidden";
+}
+
+function withheldCards(rows) {
+  if (!rows || !rows.length) return "";
+  return `<div class="entry-list">${rows.map((row) => `
+    <div class="entry-card withheld">
+      <div class="entry-score">${row.entryScore ?? "—"}<span>score</span></div>
+      <div>
+        <div class="entry-top">
+          <div class="entry-sym">${esc(row.symbol)}${feedMode === "demo" ? " · SIM" : ""}</div>
+          <div class="withhold-tag">${esc(withholdLabel(row.entryWithhold))}</div>
+        </div>
+        <div class="entry-metrics">
+          <div><span>Last</span><b>${fmtNum(row.last)}</b></div>
+          <div class="stop"><span>Stop</span><b>${fmtNum(row.entryStop)}</b></div>
+          <div class="target"><span>Target</span><b>${fmtNum(row.entryTarget)}</b></div>
+        </div>
+      </div>
+    </div>`).join("")}</div>`;
+}
+
 function renderEntryBoard(snap, rows, selectedSymbol) {
   if (!entryBoard) return;
   const cards = rows.length
@@ -559,12 +590,15 @@ function renderEntryBoard(snap, rows, selectedSymbol) {
             ${entryHistLine(row)}
           </div>
         </button>`).join("")}</div>`
-    : `<p class="entry-empty">${esc(snap.entryNote || "No fresh long entry on this tape.")}</p>`;
+    : (snap.entryWithheld || []).length
+      ? ""
+      : `<p class="entry-empty">${esc(snap.entryNote || "No fresh long entry on this tape.")}</p>`;
   entryBoard.innerHTML = `
     <p class="entry-disclaimer">${esc(snap.entryDisclaimer || "Not financial advice. Volume Pulse never places orders.")}</p>
     ${researchPanel(snap)}
-    ${rows.length ? `<p class="entry-note">${esc(snap.entryNote || "")}</p>` : ""}
+    ${rows.length || (snap.entryWithheld || []).length ? `<p class="entry-note">${esc(snap.entryNote || "")}</p>` : ""}
     ${cards}
+    ${withheldCards(snap.entryWithheld)}
   `;
 }
 
@@ -1091,6 +1125,12 @@ function render(snap) {
   sessionLabel.textContent = session.label || "—";
   nyClock.textContent = session.nyTime ? `${session.nyTime} ET` : "";
   sessionChip.className = `session ${snap.mode} ${session.label || ""}`;
+
+  const delay = snap.quoteDelay || {};
+  if (delayBanner) {
+    delayBanner.hidden = !delay.active;
+    delayBanner.textContent = delay.active ? delay.message || "" : "";
+  }
 
   if (snap.mode === "demo") {
     alertBar.hidden = false;

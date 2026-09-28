@@ -26,7 +26,8 @@ except Exception:
     NY = timezone(timedelta(hours=-4), "EDT")
 
 from app.alerts import notify_setups
-from app.entry import DISCLAIMER, build_demo_board, screen_entries, watch_symbols
+from app.entry import DISCLAIMER, ENTRY, build_demo_board, screen_entries, watch_symbols
+from app.freshness import annotate_setup, delay_banner
 from app.outcomes import OutcomeLog
 from app.research import load_research
 from app.etfs import (
@@ -160,6 +161,22 @@ def pick_share_volume(quote: float | None, bar: float | None, avg: float | None)
         if ok(scaled):
             return scaled
     return bar or quote
+
+
+def _market_data_type(ticker: Any) -> int | None:
+    raw = getattr(ticker, "marketDataType", None)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
+def _quote_epoch(ticker: Any) -> int | None:
+    moment = to_et(getattr(ticker, "time", None))
+    if moment is None:
+        return None
+    return int(moment.timestamp())
 
 
 def to_et(value: Any) -> datetime | None:
@@ -1270,6 +1287,7 @@ class VolumeFeed:
             "industryStocks": industry_stocks(self.etf_industry) if self.scan_key == "etfs" else [],
             "sectors": sector_catalog() if self.scan_key == "overview" else [],
             "sector": self.sector_id,
+            "quoteDelay": entry_meta.get("quoteDelay") or self._quote_delay(tickers),
             **entry_meta,
         }
 
@@ -1330,6 +1348,16 @@ class VolumeFeed:
             row["entryHistTrades"] = hold.get("trades")
         return row
 
+    def _quote_delay(self, tickers: list[dict[str, Any]], withheld: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        types = []
+        if self.market_data_type is not None:
+            types.append(int(self.market_data_type))
+        for row in tickers:
+            if row.get("marketDataType") is not None:
+                types.append(int(row["marketDataType"]))
+        data_type = 3 if any(value in (3, 4) for value in types) else (types[0] if types else None)
+        return delay_banner(data_type, withheld or [])
+
     def _apply_signals(self, tickers: list[dict[str, Any]], screened: dict[str, Any]) -> list[dict[str, Any]]:
         by_symbol = {row["symbol"]: row for row in tickers}
         rows = []
@@ -1381,17 +1409,49 @@ class VolumeFeed:
             enforce_clock=True,
         )
         rows = self._apply_signals(tickers, screened)
+        now = datetime.now(NY)
+        books = self._books()
+        annotated = []
+        for row in rows:
+            symbol = row.get("symbol")
+            source = next((item for item in tickers if item.get("symbol") == symbol), {})
+            series = books.get(symbol) or []
+            bar_epoch = series[-1]["t"] if series else None
+            data_type = source.get("marketDataType")
+            if data_type is None:
+                data_type = self.market_data_type
+            annotated.append(
+                annotate_setup(
+                    row,
+                    data_type=int(data_type) if data_type is not None else None,
+                    bar_epoch=bar_epoch,
+                    quote_epoch=source.get("quoteTime"),
+                    now=now,
+                    bar_minutes=ENTRY.bar_minutes,
+                )
+            )
+        listed = [row for row in annotated if not row.get("entryWithhold")]
+        withheld = [row for row in annotated if row.get("entryWithhold")]
         marks = {
             row["symbol"]: float(row["last"])
             for row in tickers
             if row.get("symbol") and row.get("last") is not None
         }
         try:
-            self._outcome_log().observe(rows, marks, datetime.now(NY))
-            notify_setups(rows)
+            self._outcome_log().observe(annotated, marks, now)
+            notify_setups(listed)
         except Exception:
             pass
-        return rows, self._entry_meta(screened)
+        meta = self._entry_meta(screened)
+        meta["entryWithheld"] = withheld
+        meta["quoteDelay"] = self._quote_delay(tickers, withheld)
+        if not listed and withheld:
+            meta["entryNote"] = (
+                f"{len(withheld)} setup{'s' if len(withheld) != 1 else ''} hidden. "
+                "Delayed quotes, a bar more than a minute behind the clock, or a price "
+                "already through the stop or target is not a buy."
+            )
+        return listed, meta
 
     def _demo_entry_snapshot(self, session: dict[str, Any]) -> dict[str, Any]:
         now = time.time()
@@ -1406,6 +1466,23 @@ class VolumeFeed:
             item.setdefault("spark", [])
             item.setdefault("priceSpark", [])
             tickers.append(self._stamp_research(item))
+        withheld: list[dict[str, Any]] = []
+        quote_delay = {"active": False, "kind": None, "message": ""}
+        entry_note = board["note"]
+        # Opt-in preview of the delayed-tape banner. Off unless RTTB_FORCE_DELAY=1.
+        if os.environ.get("RTTB_FORCE_DELAY") == "1":
+            for item in tickers:
+                held = dict(item)
+                held["entryWithhold"] = "delayed"
+                held["entryDelayed"] = 1
+                held["entryDataType"] = 3
+                held["entryLagSec"] = 15 * 60
+                withheld.append(held)
+            tickers = []
+            quote_delay = delay_banner(3, withheld)
+            entry_note = (
+                f"{len(withheld)} setups hidden. Delayed quotes are not a buy."
+            )
         return {
             "mode": "demo",
             "connected": False,
@@ -1429,10 +1506,12 @@ class VolumeFeed:
             "industryStocks": [],
             "sectors": [],
             "sector": None,
-            "entryNote": board["note"],
+            "entryNote": entry_note,
             "entryDisclaimer": DISCLAIMER,
             "entryThreshold": board["threshold"],
             "entryTopN": board["topN"],
+            "entryWithheld": withheld,
+            "quoteDelay": quote_delay,
             **self._research_fields(),
         }
 
@@ -1569,6 +1648,8 @@ class VolumeFeed:
             "dollarVolume": dollar_volume,
             "extended": extended,
             "updated": now,
+            "marketDataType": _market_data_type(ticker),
+            "quoteTime": _quote_epoch(ticker),
             **etf_meta(symbol),
         }
 

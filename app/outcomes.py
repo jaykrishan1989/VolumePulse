@@ -54,11 +54,27 @@ class OutcomeLog:
                 exit_at TEXT,
                 net_dollars REAL,
                 net_bps REAL,
+                delayed INTEGER,
+                data_type INTEGER,
+                lag_sec REAL,
+                withhold TEXT,
                 UNIQUE(symbol, day, stop, target)
             )
             """
         )
+        self._ensure_columns()
         self._conn.commit()
+
+    def _ensure_columns(self) -> None:
+        present = {row[1] for row in self._conn.execute("PRAGMA table_info(setups)")}
+        for name, decl in (
+            ("delayed", "INTEGER"),
+            ("data_type", "INTEGER"),
+            ("lag_sec", "REAL"),
+            ("withhold", "TEXT"),
+        ):
+            if name not in present:
+                self._conn.execute(f"ALTER TABLE setups ADD COLUMN {name} {decl}")
 
     def close(self) -> None:
         self._conn.close()
@@ -71,12 +87,17 @@ class OutcomeLog:
             target = _num(row.get("entryTarget"))
             if not symbol or stop is None or target is None:
                 continue
+            withhold = row.get("entryWithhold") or None
+            delayed = 1 if row.get("entryDelayed") else 0
+            if withhold and ("delayed" in str(withhold) or "stale" in str(withhold)):
+                delayed = 1
+            status = "withheld" if withhold else "open"
             self._conn.execute(
                 """
                 INSERT OR IGNORE INTO setups (
                     symbol, day, stop, target, entry_low, entry_high, score, rr,
-                    reasons, appeared_at, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+                    reasons, appeared_at, status, delayed, data_type, lag_sec, withhold
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     symbol,
@@ -89,6 +110,11 @@ class OutcomeLog:
                     _num(row.get("entryRR")),
                     ", ".join(row.get("entryReasons") or []),
                     now.isoformat(timespec="seconds"),
+                    status,
+                    delayed,
+                    _num(row.get("entryDataType")),
+                    _num(row.get("entryLagSec")),
+                    withhold,
                 ),
             )
         self._mark_open(marks, now)
@@ -139,7 +165,7 @@ class OutcomeLog:
         rows = self._conn.execute(
             "SELECT status, net_dollars, net_bps FROM setups"
         ).fetchall()
-        closed = [row for row in rows if row[0] != "open"]
+        closed = [row for row in rows if row[0] in ("stop", "target", "time")]
         wins = [row for row in closed if (row[1] or 0) > 0]
         by_status: dict[str, int] = {}
         for status, _net, _bps in rows:

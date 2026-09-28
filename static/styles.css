@@ -210,6 +210,16 @@ input[type="search"] { width: 160px; }
   font-size: 13px;
 }
 
+.alert.delay {
+  margin-top: 0;
+  border: 1px solid rgba(224, 122, 122, 0.85);
+  background: rgba(139, 26, 26, 0.35);
+  color: #ffd7d2;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
@@ -663,6 +673,20 @@ input[type="search"] { width: 160px; }
 }
 
 .entry-card:hover { border-color: #3a4a60; }
+
+.entry-card.withheld {
+  opacity: 0.55;
+  border-style: dashed;
+  cursor: default;
+  background: #0d1218;
+}
+
+.entry-card.withheld:hover { border-color: var(--line); }
+
+.withhold-tag {
+  color: #e07a7a;
+  font: 600 12px var(--mono);
+}
 
 .entry-card.selected {
   border-color: rgba(231, 184, 74, 0.7);

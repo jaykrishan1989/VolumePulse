@@ -94,6 +94,8 @@ On the stored 5-minute bars, no. `RESULTS.md` is the locked test: train through 
 
 The tab shows that holdout expectancy on each card, keeps a local paper log (`data/outcomes.sqlite`) of live setups, and can POST a notice to `ALERT_WEBHOOK_URL` or an ntfy topic in `ALERT_NTFY_TOPIC`. The notice is not an order. Gateway stays read-only.
 
+If Gateway is on delayed data (market data type 3 or 4), or the last bar is more than a minute behind the clock, a banner says so and Right Time to Buy does not list that setup. A last price already through the stop or the target is dropped too. The paper log records the delay on each row. On 28 Sep 2026 the delayed tape showed AAPL and XOM after the real price had already stopped out.
+
 ```powershell
 python -m unittest tests.test_entry tests.test_harness tests.test_outcomes
 python -m backtest.scan

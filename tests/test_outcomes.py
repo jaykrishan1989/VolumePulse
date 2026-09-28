@@ -65,6 +65,32 @@ class OutcomeTests(unittest.TestCase):
         finally:
             fresh.close()
 
+    def test_records_delay_and_does_not_treat_it_as_an_open_trade(self) -> None:
+        self.log.observe(
+            [
+                _setup(
+                    entryDelayed=1,
+                    entryDataType=3,
+                    entryLagSec=900,
+                    entryWithhold="delayed+through_stop",
+                )
+            ],
+            {"AAPL": 98.0},
+            self.now,
+        )
+        row = self.log._conn.execute(
+            "SELECT status, delayed, data_type, lag_sec, withhold FROM setups"
+        ).fetchone()
+        self.assertEqual(row[0], "withheld")
+        self.assertEqual(row[1], 1)
+        self.assertEqual(row[2], 3)
+        self.assertEqual(row[3], 900)
+        self.assertEqual(row[4], "delayed+through_stop")
+        summary = self.log.summary()
+        self.assertEqual(summary["open"], 0)
+        self.assertEqual(summary["closed"], 0)
+        self.assertEqual(summary["byStatus"].get("withheld"), 1)
+
 
 class AlertTests(unittest.TestCase):
     def tearDown(self) -> None:
