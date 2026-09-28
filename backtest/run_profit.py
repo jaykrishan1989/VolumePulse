@@ -62,6 +62,8 @@ SELECTION_PATH = RESEARCH / "profit_selection.json"
 SUMMARY_PATH = RESEARCH / "profit_summary.json"
 GRID_PATH = RESEARCH / "profit_grid.csv"
 MODEL_DIR = ROOT / "models" / "ml" / "profit_ml"
+LOOKAHEAD_SUMMARY = RESEARCH / "profit_lookahead_summary.json"
+ML_LOOK_ID = "profit_ml_causal"
 
 # Published slippage-only validation net for the frozen down-gap rule.
 H5_VALIDATION_NET = 194.14669214287954
@@ -410,7 +412,9 @@ def _markdown(summary: dict[str, Any]) -> str:
         "## Profit search",
         "",
         "Candidates were ranked on validation net dollars after 2 bp slippage. "
-        f"The minimum was {MIN_TRADES} trades. The holdout was read after `research/profit_selection.json` was written. "
+        f"The minimum was {MIN_TRADES} trades. One name a day means the first bar that qualifies, not a later peak. "
+        "Look 5 used the later peak and is not a tradable result. "
+        "The holdout below was read after `research/profit_selection.json` was written. "
         f"Headline is the validation winner's holdout: `{summary['finalist']}`, {_money(summary['headline_net'])}. "
         f"{summary['recommendation']} `models/ACTIVE` stays `v0.1`.",
         "",
@@ -495,11 +499,23 @@ def main() -> None:
     print("building holdout features", flush=True)
     full = add_return_lags(build_frame(book))
     holdout_ml, models, extra = _holdout_ml(book, full, frozen["best_ml"], oos)
-    holdout_rule = _holdout_rule(book, frozen["best_rule"])
-    ml_look = record_look("profit_ml", f"Validation winner among models: {frozen['best_ml']['id']}. Not used to choose it.")
-    rule_look = record_look("profit_rule", f"Validation winner among rules: {frozen['best_rule']['id']}. Not used to choose it.")
-    if _look_count() != looks_before + 2:
-        raise SystemExit("holdout looks were not the two new rows")
+    archived = json.loads(LOOKAHEAD_SUMMARY.read_text(encoding="utf-8")) if LOOKAHEAD_SUMMARY.exists() else None
+    reuse_rule = (
+        archived is not None
+        and archived.get("best_rule", {}).get("id") == frozen["best_rule"]["id"]
+        and _look_for("profit_rule") is not None
+    )
+    if reuse_rule:
+        holdout_rule = archived["holdout_rule"]
+        rule_look = _look_for("profit_rule")
+        new_looks = 1
+    else:
+        holdout_rule = _holdout_rule(book, frozen["best_rule"])
+        rule_look = record_look("profit_rule", f"Validation winner among rules: {frozen['best_rule']['id']}. Not used to choose it.")
+        new_looks = 2
+    ml_look = record_look(ML_LOOK_ID, f"Validation winner among models after the same-day top1 leak was removed: {frozen['best_ml']['id']}.")
+    if _look_count() != looks_before + new_looks:
+        raise SystemExit("holdout looks were not the expected new rows")
     if models:
         MODEL_DIR.mkdir(parents=True, exist_ok=True)
         for index, model in enumerate(models):

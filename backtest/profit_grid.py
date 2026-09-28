@@ -235,14 +235,27 @@ def with_size(spells: list[dict[str, Any]], size: float) -> list[dict[str, Any]]
 
 
 def take_spells(spells: list[dict[str, Any]], book_mode: str) -> list[dict[str, Any]]:
-    """Drop same-name overlaps, or keep only the strongest signal of each day."""
+    """One name at a time, or the first bar of the day that qualifies.
+
+    ``top1`` does not look ahead to a later, stronger signal. At the first
+    entry time with any name above the threshold, it buys the strongest name
+    at that time and ignores the rest of the day.
+    """
     if book_mode == "top1":
-        best: dict[date, dict[str, Any]] = {}
-        for spell in spells:
-            current = best.get(spell["day"])
-            if current is None or float(spell["priority"]) > float(current["priority"]):
-                best[spell["day"]] = spell
-        return list(best.values())
+        ordered = sorted(spells, key=lambda spell: (spell["day"], int(spell["entry_t"]), -float(spell["priority"]), spell["symbol"]))
+        taken = []
+        index = 0
+        while index < len(ordered):
+            day = ordered[index]["day"]
+            when = int(ordered[index]["entry_t"])
+            cohort = []
+            while index < len(ordered) and ordered[index]["day"] == day and int(ordered[index]["entry_t"]) == when:
+                cohort.append(ordered[index])
+                index += 1
+            taken.append(max(cohort, key=lambda spell: (float(spell["priority"]), spell["symbol"])))
+            while index < len(ordered) and ordered[index]["day"] == day:
+                index += 1
+        return taken
     if book_mode != "concurrent":
         raise ValueError(book_mode)
     ordered = sorted(spells, key=lambda spell: (int(spell["entry_t"]), -float(spell["priority"]), spell["symbol"]))

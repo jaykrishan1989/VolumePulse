@@ -16,6 +16,7 @@ from backtest.profit_grid import (
     gap_spells,
     ml_spells,
     stack_oos,
+    take_spells,
 )
 from tests.test_ml import _book, _row, _weekdays
 
@@ -104,6 +105,18 @@ class ProfitSelectionTests(unittest.TestCase):
         frame.loc[frame["day"] == test_day, "fwd_flat"] = -0.3
         second = stack_oos(frame, ["pred_h3", "pred_h6", "pred_h12"], "fwd_flat", [test_day], min_rows=5)
         self.assertTrue(first.dropna().equals(second.dropna()))
+
+    def test_top1_acts_on_the_first_bar_not_a_later_peak(self) -> None:
+        day = date(2024, 1, 2)
+        early = {"day": day, "entry_t": 100, "exit_t": 200, "priority": 0.01, "symbol": "AAPL"}
+        later = {"day": day, "entry_t": 300, "exit_t": 400, "priority": 0.09, "symbol": "NVDA"}
+        taken = take_spells([later, early], "top1")
+        self.assertEqual([spell["symbol"] for spell in taken], ["AAPL"])
+        same_time = [
+            {"day": day, "entry_t": 100, "exit_t": 200, "priority": 0.01, "symbol": "AAPL"},
+            {"day": day, "entry_t": 100, "exit_t": 200, "priority": 0.02, "symbol": "MSFT"},
+        ]
+        self.assertEqual(take_spells(same_time, "top1")[0]["symbol"], "MSFT")
 
     def test_ml_spells_reject_holdout_rows(self) -> None:
         frame = pd.DataFrame(
