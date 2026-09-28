@@ -118,4 +118,4 @@ The same gate rejected fifteen further overlays: 1% and 0.5% risk to the stop, o
 
 The live list loads `models/ACTIVE`. That pointer is `v0.1`, a baseline, because the holdout lost money and did not beat a random entry. A passing rule would be tagged `v1.0` and up. `models/CHANGELOG.md` is the history. `python -m models.cli list`, `show`, and `restore` are the checkpoint commands. The paper log is watched against the checkpoint expectancy; the rule is in `models/ROLLBACK.md`.
 
-Bar files live in `data/raw5/<SYMBOL>/*.parquet` (or `RTTB_RAW`). They are not committed.
+Bar files live in `data/raw5/<SYMBOL>/*.parquet` (or `RTTB_RAW`). They are not committed. A wider 5-minute request, for the owner's PC only, is `scripts/fetch_history.py` and `DATA_REQUEST.md`. It reads historical bars and does not place orders.
