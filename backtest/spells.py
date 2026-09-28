@@ -267,6 +267,39 @@ def simulate_spell(
     }
 
 
+def _spell_slip(spell: dict[str, Any], default: float) -> float:
+    if spell.get("slip_bps") is None:
+        return default
+    return float(spell["slip_bps"])
+
+
+def _sized_shares(
+    spell: dict[str, Any],
+    entry: float,
+    cash: float,
+    open_cost: float,
+    schedule: str,
+    risk_fraction: float | None,
+) -> int:
+    """Whole shares. Full ticket unless a risk or invest fraction is set."""
+    equity_now = cash + open_cost
+    if spell.get("invest_fraction") is not None:
+        fraction = float(spell["invest_fraction"])
+        if fraction <= 0 or equity_now <= 0:
+            return 0
+        shares = int((equity_now * fraction) // entry)
+    elif risk_fraction is not None:
+        distance = entry - float(spell["stop"])
+        if distance <= 0 or equity_now <= 0:
+            return 0
+        shares = int((equity_now * float(risk_fraction)) // distance)
+    else:
+        shares = int(cash // entry)
+    while shares >= 1 and (shares * entry + commission(shares, entry, "buy", schedule)) > cash + 1e-9:
+        shares -= 1
+    return shares
+
+
 def portfolio(
     spells: list[dict[str, Any]],
     *,
@@ -274,8 +307,17 @@ def portfolio(
     slip_bps: float = SLIP_BPS,
     schedule: str = "tiered",
     equity: float = ACCOUNT_USD,
+    risk_fraction: float | None = None,
+    max_concurrent: int | None = None,
+    daily_loss_fraction: float | None = None,
+    max_consecutive_losses: int | None = None,
 ) -> dict[str, Any]:
-    """Spend remaining cash on each new spell. Concurrent when a share still fits."""
+    """Spend remaining cash on each new spell. Concurrent when a share still fits.
+
+    Optional controls are off unless a caller sets them. A risk fraction sizes
+    off the stop distance. ``invest_fraction`` on a spell sizes off equity.
+    The daily loss and the consecutive-loss count reset each session.
+    """
     # Higher priority spends scarce cash first. Equal priority keeps symbol order.
     ordered = sorted(
         spells,
@@ -299,6 +341,9 @@ def portfolio(
     max_dd = 0.0
     taken: list[dict[str, Any]] = []
     pending: dict[int, dict[str, Any]] = {}
+    day_start: dict[Any, float] = {}
+    day_realized: dict[Any, float] = {}
+    day_losses: dict[Any, int] = {}
     for _when, kind, index in events:
         if kind == 0:
             trade = pending.pop(index, None)
@@ -306,21 +351,38 @@ def portfolio(
                 continue
             cash += trade["exit"] * trade["shares"] - commission(trade["shares"], trade["exit"], "sell", schedule)
             open_cost -= trade["notional"]
+            day = trade["day"]
+            day_realized[day] = day_realized.get(day, 0.0) + float(trade["net"])
+            if float(trade["net"]) < 0:
+                day_losses[day] = day_losses.get(day, 0) + 1
+            else:
+                day_losses[day] = 0
             mark = cash + open_cost
             peak = max(peak, mark)
             max_dd = max(max_dd, peak - mark)
             continue
         spell = planned[index][0]
-        entry = apply_slip(float(spell["entry_bar"]["open"]), "buy", slip_bps)
+        day = spell["day"]
+        if day not in day_start:
+            day_start[day] = cash + open_cost
+        if max_concurrent is not None and len(pending) >= max_concurrent:
+            continue
+        if (
+            daily_loss_fraction is not None
+            and day_realized.get(day, 0.0) <= -float(daily_loss_fraction) * day_start[day] + 1e-9
+        ):
+            continue
+        if max_consecutive_losses is not None and day_losses.get(day, 0) >= max_consecutive_losses:
+            continue
+        slip = _spell_slip(spell, slip_bps)
+        entry = apply_slip(float(spell["entry_bar"]["open"]), "buy", slip)
         if entry <= 0:
             continue
-        shares = int(cash // entry)
-        while shares >= 1 and (shares * entry + commission(shares, entry, "buy", schedule)) > cash + 1e-9:
-            shares -= 1
+        shares = _sized_shares(spell, entry, cash, open_cost, schedule, risk_fraction)
         if shares < 1:
             continue
         trade = simulate_spell(
-            spell, use_stop=use_stop, slip_bps=slip_bps, schedule=schedule, equity=equity, shares=shares
+            spell, use_stop=use_stop, slip_bps=slip, schedule=schedule, equity=equity, shares=shares
         )
         if trade is None:
             continue

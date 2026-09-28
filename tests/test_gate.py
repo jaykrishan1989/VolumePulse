@@ -19,6 +19,7 @@ from backtest.gate import (
     preserve_gate_section,
     promote,
 )
+from backtest.areas import AREA_REGISTRY, AREAS_BEGIN, AREAS_END
 from backtest.grid import SPECS
 from backtest.hypotheses import REGISTRY
 from backtest.periods import HOLDOUT_START
@@ -82,8 +83,9 @@ class GateRuleTests(unittest.TestCase):
         self.assertEqual(len(SPECS), 15)
         self.assertEqual(len(PASS1), 8)
         self.assertEqual(len(REGISTRY), 6)
-        self.assertEqual(ideas_tried(), 15 + 12 + 6)
-        self.assertAlmostEqual(bonferroni_alpha(ideas_tried()), 0.05 / 33)
+        self.assertEqual(len(AREA_REGISTRY), 15)
+        self.assertEqual(ideas_tried(), 15 + 12 + 6 + 15)
+        self.assertAlmostEqual(bonferroni_alpha(ideas_tried()), 0.05 / 48)
 
     def test_regime_labels_use_the_prior_close_and_a_trailing_window(self) -> None:
         closes = []
@@ -227,6 +229,23 @@ class GateRuleTests(unittest.TestCase):
         self.assertIn("kept", new)
         self.assertIn("# Research log", new)
         self.assertLess(new.index("# Research log"), new.index("kept"))
+
+    def test_areas_section_survives_a_rewritten_log(self) -> None:
+        old = (
+            "hypothesis log\n\n"
+            + GATE_BEGIN
+            + "\ngate\n"
+            + GATE_END
+            + "\n"
+            + AREAS_BEGIN
+            + "\nareas\n"
+            + AREAS_END
+            + "\n"
+        )
+        new = preserve_gate_section("# Research log\n\nbody\n", old)
+        self.assertIn("gate", new)
+        self.assertIn("areas", new)
+        self.assertLess(new.index("gate"), new.index("areas"))
 
 
 if __name__ == "__main__":

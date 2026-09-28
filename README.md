@@ -97,14 +97,14 @@ The tab shows that holdout on each card. A name that joins the list raises a **B
 If Gateway is on delayed data (market data type 3 or 4), or the last bar is more than a minute behind the clock, a banner says so and Right Time to Buy does not list that setup. A last price already through the stop or the target is dropped too. The paper log records the delay on each row. On 28 Sep 2026 the delayed tape showed AAPL and XOM after the real price had already stopped out.
 
 ```powershell
-python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals
+python -m unittest tests.test_entry tests.test_harness tests.test_outcomes tests.test_freshness tests.test_spells tests.test_signals tests.test_hypotheses tests.test_gate tests.test_areas tests.test_models
 python -m backtest.scan
 python -m backtest.run_search
 python -m backtest.run_roundtrip select
 python -m backtest.run_roundtrip holdout
 ```
 
-New ideas are registered in `backtest/hypotheses.py` and scored with `python -m backtest.run_hypotheses`. The write-up is `research/RESEARCH_LOG.md`, with `research/hypotheses.csv` beside it. Replacing the live champion is a separate check, `python -m backtest.run_gate`, specified in `research/GATE.md`: a challenger has to beat the current rule across half-years, market regimes, and ticker groups, with the improvement surviving a top-five-day removal and a multiple-testing correction. The holdout has been read twice (the bracket, then the appear-to-disappear rule). A research run does not read it again unless one challenger has already passed every earlier promotion bar alone.
+New ideas are registered in `backtest/hypotheses.py` and scored with `python -m backtest.run_hypotheses`. The write-up is `research/RESEARCH_LOG.md`, with `research/hypotheses.csv` beside it. Replacing the live champion is a separate check, `python -m backtest.run_gate`, specified in `research/GATE.md`: a challenger has to beat the current rule across half-years, market regimes, and ticker groups, with the improvement surviving a top-five-day removal and a multiple-testing correction. Position size, time of day, liquidity, and market regime are the fifteen overlays in `backtest/areas.py`, scored with `python -m backtest.run_areas` on that same gate. The holdout has been read twice (the bracket, then the appear-to-disappear rule). A research run does not read it again unless one challenger has already passed every earlier promotion bar alone.
 
 The live list loads `models/ACTIVE`. That pointer is `v0.1`, a baseline, because the holdout lost money and did not beat a random entry. A passing rule would be tagged `v1.0` and up. `models/CHANGELOG.md` is the history. `python -m models.cli list`, `show`, and `restore` are the checkpoint commands. The paper log is watched against the checkpoint expectancy; the rule is in `models/ROLLBACK.md`.
 

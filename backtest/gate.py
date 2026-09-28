@@ -66,9 +66,10 @@ GATE_END = "<!-- GATE_END -->"
 
 def ideas_tried(extra: int = 0) -> int:
     """Bonferroni denominator: every idea already scored, plus any new ids."""
+    from backtest.areas import AREA_REGISTRY
     from backtest.hypotheses import REGISTRY
 
-    return BRACKET_TRIALS + ROUNDTRIP_TRIALS + len(REGISTRY) + extra
+    return BRACKET_TRIALS + ROUNDTRIP_TRIALS + len(REGISTRY) + len(AREA_REGISTRY) + extra
 
 
 def bonferroni_alpha(tried: int) -> float:
@@ -515,17 +516,25 @@ def promote(verdict: GateVerdict, champion_record: dict[str, Any]) -> dict[str, 
     return updated
 
 
-def preserve_gate_section(new_log: str, old_log: str) -> str:
-    """Keep an existing gate write-up when the hypothesis log is regenerated."""
-    begin = old_log.find(GATE_BEGIN)
-    end = old_log.find(GATE_END)
-    if begin < 0 or end < 0 or end < begin:
+def preserve_marked_section(new_log: str, old_log: str, begin: str, end: str) -> str:
+    """Keep one marked block when a log is regenerated."""
+    old_start = old_log.find(begin)
+    old_stop = old_log.find(end)
+    if old_start < 0 or old_stop < old_start:
         return new_log
-    block = old_log[begin : end + len(GATE_END)]
-    if GATE_BEGIN in new_log:
-        start = new_log.find(GATE_BEGIN)
-        stop = new_log.find(GATE_END)
-        if stop < 0:
+    block = old_log[old_start : old_stop + len(end)]
+    new_start = new_log.find(begin)
+    if new_start >= 0:
+        new_stop = new_log.find(end)
+        if new_stop < 0:
             return new_log
-        return new_log[:start] + block + new_log[stop + len(GATE_END) :]
+        return new_log[:new_start] + block + new_log[new_stop + len(end) :]
     return new_log.rstrip() + "\n\n" + block + "\n"
+
+
+def preserve_gate_section(new_log: str, old_log: str) -> str:
+    """Keep the gate and research-area write-ups when the hypothesis log is regenerated."""
+    from backtest.areas import AREAS_BEGIN, AREAS_END
+
+    kept = preserve_marked_section(new_log, old_log, GATE_BEGIN, GATE_END)
+    return preserve_marked_section(kept, old_log, AREAS_BEGIN, AREAS_END)

@@ -57,7 +57,7 @@ All of these have to be true on the pre-holdout sample:
 
 ## Multiple comparisons
 
-The family-wise alpha is 0.05 divided by the number of ideas already tried. That count is the bracket grid (15 specs in `backtest/grid.py`) plus the 12 appear-to-disappear validation trials plus every id in `backtest/hypotheses.py`, plus any new challenger that is not already in that list. The first batch of six hypotheses is already inside the registry count, so the denominator is 33 and the line is 0.05 / 33. Adding an idea later raises the denominator. The line is not refit after seeing a p-value.
+The family-wise alpha is 0.05 divided by the number of ideas already tried. That count is the bracket grid (15 specs in `backtest/grid.py`) plus the 12 appear-to-disappear validation trials plus every id in `backtest/hypotheses.py` plus every id in `backtest/areas.py`, plus any new challenger that is not already in those lists. The six hypotheses and the fifteen area overlays are already inside the registries, so the denominator is 15 + 12 + 6 + 15 = 48 and the line is 0.05 / 48. Adding an idea later raises the denominator. The line is not refit after seeing a p-value. The six-hypothesis table in `research/gate_results.csv` was scored when the denominator was 33. Those rows are not rewritten.
 
 Draws default to 5,000, and rise if that would leave the smallest reportable p-value above the Bonferroni line. The smallest p-value is `1 / (draws + 1)`. The draw formula is fixed before the run.
 
