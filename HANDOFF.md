@@ -56,7 +56,7 @@ Tests last run: `python -m unittest discover -s tests -q` — 97 tests, OK. The 
 
 ## What's in progress
 
-Nothing. The slippage-only rerank is scored and not deployed.
+The slippage-only rule ranking is finished and pushed. The owner then switched the goal: train one intraday machine-learning model on the stored 5-minute bars. That work starts after this handoff commit. It does not retune the frozen rules.
 
 The live cost is schedule `zero` in `app/cost_model.json` and `backtest/costs.py`: US$0 commission, no regulatory fee, 2 bp slippage on the next bar's open. `python -m backtest.run_costs` writes `research/cost_rerank.csv`, `research/cost_summary.json`, and `research/cost_selection.json`. The selection file is written from validation nets before either holdout restatement is loaded. Look count is still 3. Do not append look 4. There is no IBKR commission column.
 
@@ -109,20 +109,19 @@ Not started, and not authorized as a silent next search:
 
 ## Exact next steps
 
-Stop. The slippage-only rerank is finished. Two pooled nets are above zero and neither passed the gate. Do not deploy `d_rs_leader` or `h5_gap_down`. Do not open the holdout. Do not move a threshold after seeing +$350 or +$302. Do not add an IBKR commission column.
+The daily-frequency rule family is closed. Do not deploy `d_rs_leader` or `h5_gap_down`. Do not move a rule threshold after seeing +$350 or +$302. Do not add an IBKR commission column.
 
-The Bonferroni denominator is 53. Do not rewrite `research/gate_results.csv` (scored at 33) or `research/areas.csv` (scored at 48).
+The authorized task is one intraday model, id `ml_lgb_60m`, written down before the fit:
 
-Only if the owner adds a further pre-registered idea:
+- Data: the stored 5-minute bars for AAPL, AMD, AMZN, GOOGL, META, MSFT, NVDA, TSLA, SPY, QQQ. No new download and no Gateway socket.
+- Cost: `app/cost_model.json`. No commission. 2 bp slippage per side. Next bar's open. Flat by 15:55. US$2,120. Long only.
+- Label: 60-minute forward return from the next bar's open, vol-scaled. LightGBM regression, three frozen seeds averaged. Features use only information known at the signal bar's close.
+- Walk-forward: expanding train, one-day embargo, quarterly test folds. The probability stand-in is the predicted return. The entry threshold is chosen on 2024-07-01..2026-03-31 only, from the frozen set 0, 10, 20, 30 bp.
+- Holdout from 2026-04-01 is look 4, one read, after that threshold is written to disk. It is not used to pick the threshold or the features.
+- Promotion gate against the live midmorning book, same zero-commission cost. Bonferroni denominator becomes 54 when this one id is counted. Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
+- A v1 checkpoint only if the gate passes and `passes_costs_and_random` passes. Otherwise stay on v0.1. No orders.
 
-1. Add one frozen id. A threshold tweak is a new id, written down before the run. Do not edit the champion in place.
-2. `ideas_tried()` already counts `AREA_REGISTRY`. A new id raises the denominator. Update `tests/test_gate.py` to the new total. Do not rewrite old rows in `research/gate_results.csv` or `research/areas.csv`.
-3. Score it with the promotion gate on 2023-01-01..2026-03-31 only. Require a better net, better dollars per trade, and better basis points per trade in at least 9 of 12 windows, no severe regression, the edge surviving the top 5 days, and both paired p-values under 0.05/ideas_tried.
-4. Do not open the holdout in the batch command. It opens only when exactly one challenger has already passed the other bars alone, as a separate milestone, and that read appends `research/holdout_looks.csv`.
-5. A v1 checkpoint also has to pass `passes_costs_and_random` in `models/registry.py` (holdout net > 0, bootstrap p < 0.05, random-entry p < 0.05). Failing that stays v0.x. `create_passing_checkpoint` refuses v0.1's published results.
-6. Commit and push after every meaningful step. Update PR #1 with `ManagePullRequest` (`branch_name` `cursor/right-time-to-buy-79f9`, `base_branch` `main`). Do not put agent metadata or cursor.com links in the PR body.
-
-After `research/daily_summary.json` exists, stop. Do not fish a new threshold. Do not add an idea unless the owner registers one.
+The Bonferroni denominator before this id is 53.
 
 ## Commands to resume
 
