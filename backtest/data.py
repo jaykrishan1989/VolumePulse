@@ -51,18 +51,25 @@ def bars_from_frame(frame: pd.DataFrame) -> list[dict]:
         moment = row.date.to_pydatetime()
         if moment.tzinfo is None:
             moment = moment.replace(tzinfo=NY)
-        out.append(
-            {
-                "t": int(moment.timestamp()),
-                "dt": moment,
-                "open": float(row.open),
-                "high": float(row.high),
-                "low": float(row.low),
-                "close": float(row.close),
-                "volume": float(row.volume),
-                "minute": moment.hour * 60 + moment.minute,
-            }
-        )
+        bar = {
+            "t": int(moment.timestamp()),
+            "dt": moment,
+            "open": float(row.open),
+            "high": float(row.high),
+            "low": float(row.low),
+            "close": float(row.close),
+            "volume": float(row.volume),
+            "minute": moment.hour * 60 + moment.minute,
+        }
+        average = getattr(row, "average", None)
+        if average is not None:
+            try:
+                value = float(average)
+            except (TypeError, ValueError):
+                value = float("nan")
+            if value == value:
+                bar["average"] = value
+        out.append(bar)
     return out
 
 

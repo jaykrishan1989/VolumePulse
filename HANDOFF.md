@@ -52,7 +52,7 @@ Findings worth keeping:
 
 Write-ups: `research/RESEARCH_LOG.md` (marked `<!-- AREAS_BEGIN -->`), `research/areas.csv`, `research/area_folds.csv`, `research/area_summary.json`, `RESULTS.md`, `README.md`, `models/CHANGELOG.md` (marked `<!-- AREAS_CHANGELOG_BEGIN -->`). `backtest/run_hypotheses.py` preserves both the gate section and the areas section via `preserve_gate_section`.
 
-Tests last run: `python -m unittest discover -s tests -q` — 121 tests, OK. The model does not change the dashboard, so no new browser pass was required.
+Tests last run: `python -m unittest discover -s tests -q` — 130 tests, OK. The model does not change the dashboard, so no new browser pass was required.
 
 ## What's in progress
 
@@ -119,7 +119,9 @@ The daily-frequency rule family is closed. Do not deploy `d_rs_leader` or `h5_ga
 
 The intraday model and the profit search are both closed. Stay on v0.1. Do not deploy `models/ml/`. Look count is 7. Look 5 is invalid. Do not open look 8. Bonferroni denominator for the old gate is 54. Do not rewrite `research/gate_results.csv` or `research/areas.csv`.
 
-The current 5-minute book is too thin for that profit result (19 holdout trades, one name a day). More bars are requested in `DATA_REQUEST.md`. The owner runs `scripts/fetch_history.py` on the PC that hosts Gateway. This VM must not open the socket. Do not start the next fit, and do not open look 8, until those files are uploaded.
+The current 5-minute book is too thin for that profit result (19 holdout trades, one name a day). More bars are requested in `DATA_REQUEST.md`. The owner runs `scripts/fetch_history.py` on the PC that hosts Gateway. This VM must not open the socket.
+
+`backtest/next_batch.py` freezes four new books (same-clock continuation, opening-range failure, prior-day reversal, WAP pressure). `python -m backtest.run_next_batch` scores validation dollars only. On this machine `data/raw5` is absent, so that command exited without a P&L and without look 8. Do not open look 8 unless one of those ids first beats the published $1,261 validation net. `models/ACTIVE` stays `v0.1`.
 
 ## Commands to resume
 

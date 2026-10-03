@@ -329,6 +329,10 @@ Nothing was deployed. `models/ACTIVE` stays `v0.1`. The three boosters are in `m
 
 The holdout book traded 19 times because the eight names often never cleared 20 bp. `DATA_REQUEST.md` asks for twelve more liquid names a US$2,120 account can buy several shares of (JPM, BAC, V, XOM, CVX, JNJ, UNH, WMT, PG, HON, NFLX, ORCL), 5-minute regular-hours bars from 2021-12-23 through 2026-09-25, plus a backfill of the current files to 2018-01-02 and six sector ETFs as context. `scripts/fetch_history.py` is the read-only fetch. It was not run here. No new holdout was opened.
 
+## Next batch
+
+Four books are frozen in `backtest/next_batch.py`: yesterday's same half-hour winner held for the first half-hour (`n_clock`), a failed opening-range breakdown held to the close (`n_orb_fail`), yesterday's worst close-to-close loser held to the close (`n_prior_reversal`), and the name whose first half-hour closes sit furthest above bar WAP (`n_flow`). They were not scored. The 5-minute files are not on this machine, so there is no new validation P&L and no new holdout P&L. The published figures above are unchanged. `models/ACTIVE` stays `v0.1`.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
