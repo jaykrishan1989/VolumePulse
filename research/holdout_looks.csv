@@ -1,0 +1,8 @@
+look,date,rules,note
+1,2026-09-28,bracket baseline and morning filter,Read together after the bracket validation pick. Baseline holdout -5.9 bp. Morning holdout -1.7 bp.
+2,2026-09-28,appear-disappear midmorning,One frozen spec after 12 validation trials. Holdout portfolio -$268 (-12.7%).
+3,2026-09-28,d_rs_leader,One read of the daily-frequency finalist. Chosen on validation coverage and validation net. Not used to pick.
+4,2026-09-28,ml_lgb_60m,One read after the validation threshold was frozen. Not used to pick the threshold.
+5,2026-09-28,profit_ml,Validation winner among models: ml:stack:flat:1atr:top1:1:10. Not used to choose it.
+6,2026-09-28,profit_rule,Validation winner among rules: gap:-0.015:1atr:flat:1. Not used to choose it.
+7,2026-09-28,profit_ml_causal,Validation winner among models after the same-day top1 leak was removed: ml:flat:flat:1atr:top1:1:20.

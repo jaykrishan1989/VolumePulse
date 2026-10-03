@@ -1,0 +1,28 @@
+{
+  "id": "ml_lgb_60m",
+  "threshold_bps": 20.0,
+  "thresholds": [
+    {
+      "threshold_bps": 0.0,
+      "net": -1436.20341157134,
+      "trades": 2348
+    },
+    {
+      "threshold_bps": 10.0,
+      "net": -93.91626157140627,
+      "trades": 344
+    },
+    {
+      "threshold_bps": 20.0,
+      "net": -93.03195342856407,
+      "trades": 126
+    },
+    {
+      "threshold_bps": 30.0,
+      "net": -195.80642599999692,
+      "trades": 79
+    }
+  ],
+  "holdout_used": false,
+  "chosen_on": "validation net, 2024-07-01..2026-03-31"
+}

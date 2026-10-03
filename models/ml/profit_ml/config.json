@@ -1,0 +1,11 @@
+{
+  "id": "ml:flat:flat:1atr:top1:1:20",
+  "schedule": "zero",
+  "slip_bps": 2.0,
+  "train_last_day": "2026-03-31",
+  "holdout_used_to_train": false,
+  "stack_coef": null,
+  "features": ["ret_1", "ret_3", "ret_6", "ret_12", "rv_12", "rv_36", "rvol", "vwap_dist", "session_pos", "tod", "dow", "gap", "prior_ret", "prior_range_atr", "dist_ma5", "xs_rank_ret12", "xs_rank_vwap", "spy_from_open", "spy_vwap_dist", "spy_prior_ret", "qqq_from_open", "qqq_vwap_dist", "qqq_prior_ret", "resid_12"],
+  "label": "fwd_flat",
+  "note": "Three seeds. Predicts the return from the next open to the 15:50 close. Entry is the first bar whose prediction is at least 20 bp; the strongest name at that minute is bought."
+}

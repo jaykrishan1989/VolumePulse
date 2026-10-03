@@ -1,0 +1,41 @@
+{
+  "finalist": "d_rs_leader",
+  "frequencyMin": 0.95,
+  "window": [
+    "2024-07-01",
+    "2026-03-31"
+  ],
+  "chosenWithoutHoldout": true,
+  "candidates": [
+    {
+      "id": "d_rs_leader",
+      "signal_day_frac": 1.0,
+      "net": -366.5425487823776,
+      "bps": -4.545302755816081
+    },
+    {
+      "id": "d_vwap_stretch",
+      "signal_day_frac": 1.0,
+      "net": -760.7046843185303,
+      "bps": -11.08778263788016
+    },
+    {
+      "id": "d_orb",
+      "signal_day_frac": 0.9384965831435079,
+      "net": -1012.9761845988465,
+      "bps": -16.93255761480474
+    },
+    {
+      "id": "d_pullback",
+      "signal_day_frac": 1.0,
+      "net": -478.11179966861476,
+      "bps": -6.004073998440872
+    },
+    {
+      "id": "d_vwap_reclaim",
+      "signal_day_frac": 0.9977220956719818,
+      "net": -989.4579819008871,
+      "bps": -15.969910050173382
+    }
+  ]
+}

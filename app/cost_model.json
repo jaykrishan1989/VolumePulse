@@ -1,0 +1,9 @@
+{
+  "ibkrRole": "market data only",
+  "execution": "A different platform from IBKR. That platform charges no commission.",
+  "schedule": "zero",
+  "commissionPerTradeUsd": 0,
+  "regulatoryFees": false,
+  "slipBpsPerSide": 2,
+  "fill": "next bar open"
+}
