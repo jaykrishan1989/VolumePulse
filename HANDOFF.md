@@ -121,7 +121,7 @@ The intraday model and the profit search are both closed. Stay on v0.1. Do not d
 
 The current 5-minute book is too thin for that profit result (19 holdout trades, one name a day). More bars are requested in `DATA_REQUEST.md`. The owner runs `scripts/fetch_history.py` on the PC that hosts Gateway. This VM must not open the socket.
 
-`backtest/next_batch.py` freezes four new books (same-clock continuation, opening-range failure, prior-day reversal, WAP pressure). `python -m backtest.run_next_batch` scores validation dollars only. On this machine `data/raw5` is absent, so that command exited without a P&L and without look 8. Do not open look 8 unless one of those ids first beats the published $1,261 validation net. `models/ACTIVE` stays `v0.1`.
+`backtest/next_batch.py` freezes four new books (same-clock continuation, opening-range failure, prior-day reversal, WAP pressure). `python -m backtest.run_next_batch` scores validation dollars only. Rechecked 2026-10-10: `data/raw5` is still absent, so that command exited without a P&L and without look 8. Do not open look 8 unless one of those ids first beats the published $1,261 validation net. `models/ACTIVE` stays `v0.1`.
 
 ## Commands to resume
 

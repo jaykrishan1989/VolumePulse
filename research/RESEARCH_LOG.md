@@ -1119,7 +1119,7 @@ Candidates were ranked on validation net dollars after 2 bp slippage. The minimu
 
 Four books were written down in `backtest/next_batch.py` before any fill. Costs stay no commission and 2 bp per side on a US$2,120 ticket, one name a day, flat by 15:55. Selection would be validation net dollars from 2024-07-01 through 2026-03-31. A new holdout look is allowed only if that net beats the published hold-to-close model ($1,261 on 85 validation trades). `models/ACTIVE` stays `v0.1`. These ids are not in the promotion-gate registries, so the Bonferroni denominator stays 54.
 
-They were not scored. `data/raw5` is not on this machine: the ten existing symbol folders are gone with the gitignored files, and none of the twelve names in `DATA_REQUEST.md` have arrived. No validation P&L and no pooled P&L were computed. The holdout was not opened. Nothing was adopted. Nothing was rejected on dollars, because a missing file is not a loss.
+They were not scored. `data/raw5` is not on this machine: the ten existing symbol folders are gone with the gitignored files, and none of the twelve names in `DATA_REQUEST.md` have arrived. Rechecked 2026-10-10: still no parquet bars anywhere on the machine, and no new commit added them. No validation P&L and no pooled P&L were computed. The holdout was not opened. Nothing was adopted. Nothing was rejected on dollars, because a missing file is not a loss.
 
 | Id | Economic source | What would be tested | Decision |
 | --- | --- | --- | --- |
