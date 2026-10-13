@@ -1,4 +1,4 @@
-"""Score the four pre-registered books on validation dollars.
+"""Score the pre-registered books on validation dollars.
 
 ``python -m backtest.run_next_batch`` does not open the locked holdout.
 A milestone would be a validation net above the published hold-to-close
@@ -165,20 +165,24 @@ def render_section(rows: list[dict[str, Any]], chosen: dict[str, Any] | None) ->
         BEGIN,
         "## Next batch",
         "",
-        "Four books were written down before the run. Costs are no commission and 2 bp per side "
+        f"{len(rows)} books were written down before the run. Costs are no commission and 2 bp per side "
         f"on a US${ACCOUNT_USD:.0f} ticket, one name a day, flat by 15:55. "
         "Selection is validation net dollars from 2024-07-01 through 2026-03-31. "
         "The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.",
         "",
-        "| Id | Validation trades | Validation net | Pooled net | Decision |",
-        "| --- | ---: | ---: | ---: | --- |",
+        "| Id | Validation trades | Win | Validation net | bp | Pooled net | Decision |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     chosen_id = None if chosen is None else chosen["id"]
     for row in rows:
         decision = decision_for(row, chosen_id)
+        win = row["validate_win_rate"]
+        win_text = "n/a" if win is None else f"{100 * float(win):.1f}%"
+        bps = row["validate_bps"]
+        bps_text = "n/a" if bps is None else f"{float(bps):.1f}"
         lines.append(
-            f"| `{row['id']}` | {row['validate_trades']} | {_money(row['validate_net'])} | "
-            f"{_money(row['pooled_net'])} | {decision} |"
+            f"| `{row['id']}` | {row['validate_trades']} | {win_text} | {_money(row['validate_net'])} | "
+            f"{bps_text} | {_money(row['pooled_net'])} | {decision} |"
         )
     lines.append("")
     for row in rows:

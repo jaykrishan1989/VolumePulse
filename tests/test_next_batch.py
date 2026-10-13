@@ -13,8 +13,11 @@ from backtest.next_batch import (
     NEXT_REGISTRY,
     clock_continuation,
     is_milestone,
+    late_reversal,
     opening_range_failure,
     prior_day_reversal,
+    residual_reversal,
+    volume_reversal,
     wap_pressure,
 )
 from backtest.periods import HOLDOUT_START
@@ -57,7 +60,18 @@ def _at(bars: list[dict], minute: int) -> dict:
 
 class NextBatchTests(unittest.TestCase):
     def test_registry_is_not_a_new_gate_idea(self) -> None:
-        self.assertEqual([idea.id for idea in NEXT_REGISTRY], ["n_clock", "n_orb_fail", "n_prior_reversal", "n_flow"])
+        self.assertEqual(
+            [idea.id for idea in NEXT_REGISTRY],
+            [
+                "n_clock",
+                "n_orb_fail",
+                "n_prior_reversal",
+                "n_flow",
+                "n_volume_reversal",
+                "n_residual",
+                "n_late_reversal",
+            ],
+        )
         self.assertTrue(all(idea.id not in {item.id for item in REGISTRY} for idea in NEXT_REGISTRY))
         self.assertEqual(ideas_tried(), 54)
 
@@ -161,6 +175,58 @@ class NextBatchTests(unittest.TestCase):
         _at(missing[("AAPL", days[1])], 9 * 60 + 35)["average"] = None
         _at(missing[("MSFT", days[1])], 9 * 60 + 35)["average"] = None
         self.assertEqual(wap_pressure(missing), [])
+
+    def test_volume_gate_ignores_today_and_a_quiet_down_day(self) -> None:
+        days = _weekdays(date(2024, 1, 2), 24)
+        book = {("AAPL", day): _bars(day, price=100.0) for day in days}
+        for day in days[:-2]:
+            for bar in book[("AAPL", day)]:
+                bar["volume"] = 1_000.0
+        quiet = book[("AAPL", days[-2])]
+        for bar in quiet:
+            bar["volume"] = 500.0
+        _at(quiet, 15 * 60 + 50)["close"] = 90.0
+        self.assertEqual(volume_reversal(book), [])
+
+        loud = {key: [dict(bar) for bar in bars] for key, bars in book.items()}
+        for bar in loud[("AAPL", days[-2])]:
+            bar["volume"] = 5_000.0
+        spells = volume_reversal(loud)
+        self.assertEqual([spell["day"] for spell in spells], [days[-1]])
+        leaked = {key: [dict(bar) for bar in bars] for key, bars in loud.items()}
+        for bar in leaked[("AAPL", days[-1])]:
+            bar["volume"] = 9_000_000.0
+        again = volume_reversal(leaked)
+        self.assertEqual(again[0]["priority"], spells[0]["priority"])
+
+    def test_residual_skips_a_name_that_only_fell_with_spy(self) -> None:
+        days = _weekdays(date(2024, 1, 2), 3)
+        book = {}
+        for symbol in ("AAPL", "MSFT", "SPY"):
+            for day in days:
+                book[(symbol, day)] = _bars(day, price=100.0)
+        for symbol in ("AAPL", "MSFT", "SPY"):
+            _at(book[(symbol, days[1])], 15 * 60 + 50)["close"] = 90.0
+        _at(book[("MSFT", days[1])], 15 * 60 + 50)["close"] = 80.0
+        spells = residual_reversal(book)
+        self.assertEqual([spell["day"] for spell in spells], [days[2]])
+        self.assertEqual(spells[0]["symbol"], "MSFT")
+
+    def test_late_reversal_uses_the_1455_close(self) -> None:
+        day = _weekdays(date(2024, 1, 2), 1)[0]
+        aapl = _bars(day, price=100.0)
+        msft = _bars(day, price=100.0)
+        _at(aapl, 14 * 60 + 55)["close"] = 98.0
+        _at(msft, 14 * 60 + 55)["close"] = 95.0
+        spells = late_reversal({("AAPL", day): aapl, ("MSFT", day): msft})
+        self.assertEqual(len(spells), 1)
+        self.assertEqual(spells[0]["symbol"], "MSFT")
+        self.assertEqual(spells[0]["buy_minute"], 15 * 60)
+        leaked = {"AAPL": [dict(bar) for bar in aapl], "MSFT": [dict(bar) for bar in msft]}
+        book = {("AAPL", day): leaked["AAPL"], ("MSFT", day): leaked["MSFT"]}
+        _at(book[("MSFT", day)], 15 * 60 + 30)["close"] = 50.0
+        again = late_reversal(book)
+        self.assertEqual(again[0]["priority"], spells[0]["priority"])
 
     def test_holdout_day_is_refused(self) -> None:
         day = HOLDOUT_START
