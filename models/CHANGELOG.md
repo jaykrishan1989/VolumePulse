@@ -107,5 +107,23 @@ IBKR is data only. The same frozen rules were re-scored with no commission and 2
 Validation dollars picked `ml:flat:flat:1atr:top1:1:20`. Holdout look 7: +$297 on 19 trades. The best rule, a 1.5% down gap, made +$210 on look 6. The model made more. Look 5 is an invalid same-day peek. ACTIVE stays v0.1. No order was placed.
 <!-- PROFIT_CHANGELOG_END -->
 
+<!-- NEXT_CHANGELOG_BEGIN -->
+## Next batch — 2026-10-13 — no checkpoint
+
+Seven books, frozen before the fill, scored on validation only (2024-07-01 through 2026-03-31). Costs: no commission, 2 bp per side, one US$2,120 name, flat by 15:55. The holdout was not loaded. Look count stays 7.
+
+| Id | Trades | Win | Net | bp | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| n_clock | 410 | 15.9% | −$132 | −1.5 | rejected |
+| n_orb_fail | 407 | 31.4% | +$186 | +3.1 | not adopted |
+| n_prior_reversal | 373 | 13.1% | +$936 | +11.3 | not adopted |
+| n_flow | 410 | 26.1% | +$288 | +4.0 | not adopted |
+| n_volume_reversal | 308 | 12.7% | +$493 | +7.9 | not adopted |
+| n_residual | 415 | 13.5% | +$1,007 | +10.7 | not adopted |
+| n_late_reversal | 401 | 27.7% | −$303 | −4.1 | rejected |
+
+`n_residual` is the best of the seven and is $254 short of the published model validation net of $1,261. Its five largest trades made $1,081 and the other 410 trades lost $75. Those five trades are the same sessions as `n_prior_reversal`, including AMD on 2025-04-09 for $464. Removing the five largest trades leaves every book negative. The promotion gate was not run. Look 8 was not opened. The published holdout stays look 7 +$297 on 19 trades and look 6 +$210 on 52 trades. ACTIVE stays v0.1. No order was placed.
+<!-- NEXT_CHANGELOG_END -->
+
 
 

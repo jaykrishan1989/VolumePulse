@@ -21,7 +21,7 @@ from backtest.next_batch import (
     wap_pressure,
 )
 from backtest.periods import HOLDOUT_START
-from backtest.run_next_batch import choose, data_ready, main
+from backtest.run_next_batch import _reading, choose, data_ready, main
 
 
 def _weekdays(start: date, count: int) -> list[date]:
@@ -254,13 +254,34 @@ class NextBatchTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             choose([row])
 
+    def test_reading_names_the_shortfall_and_a_shared_payday(self) -> None:
+        def row(idea: str, net: float, keys: list[tuple[str, str]]) -> dict:
+            return {
+                "id": idea,
+                "validate_trades": 100,
+                "validate_net": net,
+                "validate_rest_net": -1.0,
+                "validate_top5_keys": keys,
+            }
+
+        keys = [("2025-04-09", "AMD")]
+        text = _reading([row("n_prior_reversal", 900.0, keys), row("n_residual", 1000.0, keys)])
+        self.assertIn("`n_residual`", text)
+        self.assertIn("short of $1,261", text)
+        self.assertIn("look 8 stays closed", text)
+        self.assertIn("`n_prior_reversal` and `n_residual`", text)
+        self.assertIn("every book on this page is negative", text)
+
     def test_missing_bars_do_not_write_a_result(self) -> None:
+        path = Path("research/next_batch_summary.json")
+        before = path.read_bytes() if path.exists() else None
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.assertFalse(data_ready(root))
             code = main(["--root", str(root)])
         self.assertEqual(code, 2)
-        self.assertFalse(Path("research/next_batch_summary.json").exists())
+        after = path.read_bytes() if path.exists() else None
+        self.assertEqual(before, after)
 
 
 if __name__ == "__main__":

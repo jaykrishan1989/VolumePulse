@@ -331,7 +331,21 @@ The holdout book traded 19 times because the eight names often never cleared 20 
 
 ## Next batch
 
-Four books are frozen in `backtest/next_batch.py`: yesterday's same half-hour winner held for the first half-hour (`n_clock`), a failed opening-range breakdown held to the close (`n_orb_fail`), yesterday's worst close-to-close loser held to the close (`n_prior_reversal`), and the name whose first half-hour closes sit furthest above bar WAP (`n_flow`). They were not scored. The 5-minute files are not on this machine, so there is no new validation P&L and no new holdout P&L. The published figures above are unchanged. `models/ACTIVE` stays `v0.1`.
+Seven books were scored on the validation window only, 2024-07-01 through 2026-03-31, after the original 5-minute files were restored. Costs are no commission and 2 bp per side on one US$2,120 name, flat by 15:55. The locked holdout was not loaded.
+
+| Id | Trades | Win | Validation net | bp | Pooled net | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `n_clock` | 410 | 15.9% | −$132 | −1.5 | −$568 | rejected |
+| `n_orb_fail` | 407 | 31.4% | +$186 | +3.1 | +$287 | not adopted |
+| `n_prior_reversal` | 373 | 13.1% | +$936 | +11.3 | +$758 | not adopted |
+| `n_flow` | 410 | 26.1% | +$288 | +4.0 | +$392 | not adopted |
+| `n_volume_reversal` | 308 | 12.7% | +$493 | +7.9 | +$722 | not adopted |
+| `n_residual` | 415 | 13.5% | +$1,007 | +10.7 | +$845 | not adopted |
+| `n_late_reversal` | 401 | 27.7% | −$303 | −4.1 | −$745 | rejected |
+
+Nothing was adopted. `n_clock` is Heston, Korajczyk, and Sadka same-clock continuation and lost money. `n_late_reversal` fades the day's worst name into the last half hour, the other side of the Gao continuation that was already rejected, and lost money. The five positive books are a few holds to the close. `n_residual` (Lo and MacKinlay: yesterday's return minus SPY) is the highest at +$1,007, still short of the published model's +$1,261 validation net. Its five largest trades made +$1,081 and the rest lost $75. Those five sessions are the same ones `n_prior_reversal` caught, so subtracting SPY did not change the days that paid. The Campbell, Grossman, and Wang volume gate (`n_volume_reversal`) made less than the plain loser. After the five largest trades are removed, every book is negative. The promotion gate was not run. Look 8 was not opened.
+
+The published holdout is unchanged: look 7 +$297 on 19 trades, and the 1.5% gap rule on look 6 +$210 on 52 trades. `models/ACTIVE` stays `v0.1`. The twelve extra names and the six sector ETFs in `DATA_REQUEST.md` are still absent, so a sector residual was not scored. No order was placed.
 
 ## Versions
 

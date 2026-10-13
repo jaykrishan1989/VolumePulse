@@ -214,8 +214,8 @@ Semi-annual folds, same costs:
 
 These stay queued because the bars on hand cannot support them, or because this batch already had six frozen tests.
 
-- Same clock-time continuation from Heston, Korajczyk, and Sadka: yesterday's return at a given half hour predicts today's return at that half hour. Needs a wider cross-section than eight names to match their sort.
-- Order-flow imbalance and signed volume. These files are five-minute OHLC, not aggressor prints, so a flow hypothesis would be invented rather than measured.
+- Same clock-time continuation from Heston, Korajczyk, and Sadka: yesterday's return at a given half hour predicts today's return at that half hour. Needs a wider cross-section than eight names to match their sort. Scored later as `n_clock`. Validation lost $132 on 410 trades, so the thin cross-section did not pay.
+- Order-flow imbalance and signed volume. These files are five-minute OHLC, not aggressor prints, so a flow hypothesis would be invented rather than measured. The later `n_flow` row is the close-versus-WAP proxy, not signed volume. It was not adopted. True aggressor prints are still absent.
 - A short book. The account is a small Canadian cash account and the prior brief kept it long-only.
 
 <!-- GATE_BEGIN -->
@@ -1117,20 +1117,38 @@ Candidates were ranked on validation net dollars after 2 bp slippage. The minimu
 <!-- NEXT_BEGIN -->
 ## Next batch
 
-Four books were written down in `backtest/next_batch.py` before any fill. Costs stay no commission and 2 bp per side on a US$2,120 ticket, one name a day, flat by 15:55. Selection would be validation net dollars from 2024-07-01 through 2026-03-31. A new holdout look is allowed only if that net beats the published hold-to-close model ($1,261 on 85 validation trades). `models/ACTIVE` stays `v0.1`. These ids are not in the promotion-gate registries, so the Bonferroni denominator stays 54.
+7 books were written down before the run. Costs are no commission and 2 bp per side on a US$2120 ticket, one name a day, flat by 15:55. Selection is validation net dollars from 2024-07-01 through 2026-03-31. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
 
-They were not scored. `data/raw5` is not on this machine: the ten existing symbol folders are gone with the gitignored files, and none of the twelve names in `DATA_REQUEST.md` have arrived. Rechecked 2026-10-10: still no parquet bars anywhere on the machine, and no new commit added them. No validation P&L and no pooled P&L were computed. The holdout was not opened. Nothing was adopted. Nothing was rejected on dollars, because a missing file is not a loss.
+| Id | Validation trades | Win | Validation net | bp | Pooled net | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `n_clock` | 410 | 15.9% | $-132 | -1.5 | $-568 | rejected |
+| `n_orb_fail` | 407 | 31.4% | $186 | 3.1 | $287 | not_adopted |
+| `n_prior_reversal` | 373 | 13.1% | $936 | 11.3 | $758 | not_adopted |
+| `n_flow` | 410 | 26.1% | $288 | 4.0 | $392 | not_adopted |
+| `n_volume_reversal` | 308 | 12.7% | $493 | 7.9 | $722 | not_adopted |
+| `n_residual` | 415 | 13.5% | $1,007 | 10.7 | $845 | not_adopted |
+| `n_late_reversal` | 401 | 27.7% | $-303 | -4.1 | $-745 | rejected |
 
-| Id | Economic source | What would be tested | Decision |
-| --- | --- | --- | --- |
-| `n_clock` | Heston, Korajczyk, and Sadka, Journal of Finance 2010 | Yesterday's 9:30–10:00 winner, bought at today's 9:30 open and sold at 10:00 | not scored |
-| `n_orb_fail` | Crabel 1990, the failed breakdown rather than the breakout already rejected | First close back inside the opening range after a close below it, held to 15:55 | not scored |
-| `n_prior_reversal` | Jegadeesh, Journal of Finance 1990; Lehmann, Quarterly Journal of Economics 1990 | Yesterday's worst close-to-close loser, bought at today's 9:30 open and held to 15:55 | not scored |
-| `n_flow` | Chordia, Roll, and Subrahmanyam, Journal of Finance 2002 | Strongest 9:30–10:00 close-above-WAP, bought at 10:00 and held to 15:55 | not scored |
+`n_clock` — Validation net was $-132 after 2 bp. A loss is not a candidate. Holdout was not opened. Stops 344 of 410. Max drawdown $496. Five largest trades $405; the rest $-537. Largest trade 2025-04-07 AMZN $112.
+`n_orb_fail` — Validation net was $186 on 407 trades. That does not clear the published model validation net of $1,261. Holdout was not opened. Stops 256 of 407. Max drawdown $428. Five largest trades $706; the rest $-520. Largest trade 2025-04-09 META $316.
+`n_prior_reversal` — Validation net was $936 on 373 trades. That does not clear the published model validation net of $1,261. Holdout was not opened. Stops 324 of 373. Max drawdown $456. Five largest trades $1,081; the rest $-146. Largest trade 2025-04-09 AMD $464.
+`n_flow` — Validation net was $288 on 410 trades. That does not clear the published model validation net of $1,261. Holdout was not opened. Stops 293 of 410. Max drawdown $338. Five largest trades $696; the rest $-408. Largest trade 2025-04-09 AAPL $263.
+`n_volume_reversal` — Validation net was $493 on 308 trades. That does not clear the published model validation net of $1,261. Holdout was not opened. Stops 269 of 308. Max drawdown $340. Five largest trades $962; the rest $-469. Largest trade 2025-04-09 AMD $464.
+`n_residual` — Validation net was $1007 on 415 trades. That does not clear the published model validation net of $1,261. Holdout was not opened. Stops 359 of 415. Max drawdown $424. Five largest trades $1,081; the rest $-75. Largest trade 2025-04-09 AMD $464.
+`n_late_reversal` — Validation net was $-303 after 2 bp. A loss is not a candidate. Holdout was not opened. Stops 272 of 401. Max drawdown $312. Five largest trades $157; the rest $-460. Largest trade 2025-04-30 TSLA $33.
 
-Sector-relative strength was not scored either. The six sector ETFs in `DATA_REQUEST.md` (XLK, XLF, XLE, XLV, XLP, XLI) are not on disk. Ranking the eight growth names against each other is the prior-day reversal above, not a sector residual.
+Reading. `n_residual` is the highest validation net at $1,007 on 415 trades. It is short of $1,261, so look 8 stays closed and the promotion gate was not run. A positive total in this batch is a few holds to the close. After those five trades are removed, every book on this page is negative. The five-day drop is the concentration bar in `research/GATE.md`, reported here as a description, not as a gate pass. `n_prior_reversal` and `n_residual` have the same five largest trades, so the second filter did not change the days that paid.
 
-`python -m backtest.run_next_batch` exits without writing a summary when the bars are missing. Restore `data/raw5` and run that command. It still will not open look 8 unless a frozen id first beats $1,261 on validation.
+Sources, frozen before the fill:
+- `n_clock`: Heston, S. L., Korajczyk, R. A., and Sadka, R. (2010). Intraday patterns in the cross-section of stock returns. Journal of Finance, 65(4), 1369–1407.
+- `n_orb_fail`: Crabel, T. (1990). Day Trading With Short Term Price Patterns and Opening Range Breakout. The breakout direction was already rejected here as h4_opening_range and d_orb. This row is the failed-breakdown long.
+- `n_prior_reversal`: Jegadeesh, N. (1990). Evidence of predictable behavior of security returns. Journal of Finance, 45(3), 881–898. Lehmann, B. N. (1990). Fads, martingales, and market efficiency. Quarterly Journal of Economics, 105(1), 1–28.
+- `n_flow`: Chordia, T., Roll, R., and Subrahmanyam, A. (2002). Order imbalance, liquidity, and market returns. Journal of Finance, 57(1), 111–137.
+- `n_volume_reversal`: Campbell, J. Y., Grossman, S. J., and Wang, J. (1993). Trading volume and serial correlation in stock returns. Journal of Finance, 48(3), 905–939.
+- `n_residual`: Lo, A. W., and MacKinlay, A. C. (1990). When are contrarian profits due to stock market overreaction? Review of Financial Studies, 3(2), 175–205.
+- `n_late_reversal`: Gao, L., Han, Y., Li, S. Z., and Zhou, G. (2018). Market intraday momentum. Journal of Financial Economics, 129(2), 394–414. This row is the reverse of their last-half-hour continuation, which was already rejected here as h1_stocks.
+
+Sector-relative strength was not scored. XLK, XLF, XLE, XLV, XLP, and XLI are not in `data/raw5`. The twelve extra names in `DATA_REQUEST.md` are not on disk either. Both requests stay blocked. The published holdout is unchanged: look 7 is +$297 on 19 trades, and the 1.5% gap rule on look 6 is +$210 on 52 trades. No order was placed.
 <!-- NEXT_END -->
 
 

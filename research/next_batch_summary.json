@@ -1,0 +1,148 @@
+{
+  "holdout_used": false,
+  "active": "v0.1",
+  "chosen_id": "n_residual",
+  "milestone": false,
+  "rows": [
+    {
+      "id": "n_clock",
+      "decision": "rejected",
+      "reason": "Validation net was $-132 after 2 bp. A loss is not a candidate. Holdout was not opened.",
+      "validate_trades": 410,
+      "validate_net": -131.92389371424815,
+      "validate_bps": -1.4904744715054183,
+      "validate_win_rate": 0.15853658536585366,
+      "validate_max_drawdown": 496.3805477142737,
+      "validate_stop_trades": 344,
+      "validate_top5_net": 404.86370600000043,
+      "validate_rest_net": -536.7875997142486,
+      "validate_largest": {
+        "day": "2025-04-07",
+        "symbol": "AMZN",
+        "net": 112.00094399999978
+      },
+      "pooled_trades": 764,
+      "pooled_net": -567.9103341428008
+    },
+    {
+      "id": "n_orb_fail",
+      "decision": "not_adopted",
+      "reason": "Validation net was $186 on 407 trades. That does not clear the published model validation net of $1,261. Holdout was not opened.",
+      "validate_trades": 407,
+      "validate_net": 186.05121500004088,
+      "validate_bps": 3.0810386678375057,
+      "validate_win_rate": 0.3144963144963145,
+      "validate_max_drawdown": 427.7715672856989,
+      "validate_stop_trades": 256,
+      "validate_top5_net": 705.8266180000003,
+      "validate_rest_net": -519.7754029999594,
+      "validate_largest": {
+        "day": "2025-04-09",
+        "symbol": "META",
+        "net": 316.32553600000006
+      },
+      "pooled_trades": 758,
+      "pooled_net": 286.6165372857904
+    },
+    {
+      "id": "n_prior_reversal",
+      "decision": "not_adopted",
+      "reason": "Validation net was $936 on 373 trades. That does not clear the published model validation net of $1,261. Holdout was not opened.",
+      "validate_trades": 373,
+      "validate_net": 935.7424888571777,
+      "validate_bps": 11.291433355237125,
+      "validate_win_rate": 0.13136729222520108,
+      "validate_max_drawdown": 455.98808628570305,
+      "validate_stop_trades": 324,
+      "validate_top5_net": 1081.4456380000008,
+      "validate_rest_net": -145.70314914282312,
+      "validate_largest": {
+        "day": "2025-04-09",
+        "symbol": "AMD",
+        "net": 464.2230840000002
+      },
+      "pooled_trades": 690,
+      "pooled_net": 758.4609134286407
+    },
+    {
+      "id": "n_flow",
+      "decision": "not_adopted",
+      "reason": "Validation net was $288 on 410 trades. That does not clear the published model validation net of $1,261. Holdout was not opened.",
+      "validate_trades": 410,
+      "validate_net": 288.0531175714641,
+      "validate_bps": 3.9819442444574302,
+      "validate_win_rate": 0.26097560975609757,
+      "validate_max_drawdown": 338.3458467142823,
+      "validate_stop_trades": 293,
+      "validate_top5_net": 695.7528540000001,
+      "validate_rest_net": -407.69973642853597,
+      "validate_largest": {
+        "day": "2025-04-09",
+        "symbol": "AAPL",
+        "net": 263.09568000000013
+      },
+      "pooled_trades": 762,
+      "pooled_net": 392.0232704286441
+    },
+    {
+      "id": "n_volume_reversal",
+      "decision": "not_adopted",
+      "reason": "Validation net was $493 on 308 trades. That does not clear the published model validation net of $1,261. Holdout was not opened.",
+      "validate_trades": 308,
+      "validate_net": 492.5472831428915,
+      "validate_bps": 7.915590201300329,
+      "validate_win_rate": 0.1266233766233766,
+      "validate_max_drawdown": 340.18639771427615,
+      "validate_stop_trades": 269,
+      "validate_top5_net": 961.9625900000008,
+      "validate_rest_net": -469.4153068571093,
+      "validate_largest": {
+        "day": "2025-04-09",
+        "symbol": "AMD",
+        "net": 464.2230840000002
+      },
+      "pooled_trades": 552,
+      "pooled_net": 721.7576897143554
+    },
+    {
+      "id": "n_residual",
+      "decision": "not_adopted",
+      "reason": "Validation net was $1007 on 415 trades. That does not clear the published model validation net of $1,261. Holdout was not opened.",
+      "validate_trades": 415,
+      "validate_net": 1006.5851871428954,
+      "validate_bps": 10.679708270685708,
+      "validate_win_rate": 0.13493975903614458,
+      "validate_max_drawdown": 424.06571742855976,
+      "validate_stop_trades": 359,
+      "validate_top5_net": 1081.4456380000008,
+      "validate_rest_net": -74.86045085710543,
+      "validate_largest": {
+        "day": "2025-04-09",
+        "symbol": "AMD",
+        "net": 464.2230840000002
+      },
+      "pooled_trades": 769,
+      "pooled_net": 844.7649280000724
+    },
+    {
+      "id": "n_late_reversal",
+      "decision": "rejected",
+      "reason": "Validation net was $-303 after 2 bp. A loss is not a candidate. Holdout was not opened.",
+      "validate_trades": 401,
+      "validate_net": -302.86641957139864,
+      "validate_bps": -4.1079001664828185,
+      "validate_win_rate": 0.27680798004987534,
+      "validate_max_drawdown": 311.8591298571132,
+      "validate_stop_trades": 272,
+      "validate_top5_net": 157.13376000000073,
+      "validate_rest_net": -460.00017957139937,
+      "validate_largest": {
+        "day": "2025-04-30",
+        "symbol": "TSLA",
+        "net": 33.44352200000003
+      },
+      "pooled_trades": 730,
+      "pooled_net": -744.7699464285188
+    }
+  ]
+}

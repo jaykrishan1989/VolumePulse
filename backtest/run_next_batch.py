@@ -62,6 +62,17 @@ def _score(spells: list[dict[str, Any]], sessions: int) -> dict[str, Any]:
         raise RuntimeError("a next-batch spell reached the holdout")
     result = portfolio(spells, use_stop=True, slip_bps=SLIP_BPS, schedule="zero", equity=ACCOUNT_USD)
     stats = summarize_portfolio(result, sessions or 1)
+    trades = result["trades"]
+    ordered = sorted(trades, key=lambda trade: float(trade["net"]), reverse=True)
+    top = ordered[:5]
+    top5 = sum(float(trade["net"]) for trade in top)
+    largest = None
+    if top:
+        largest = {
+            "day": top[0]["day"].isoformat(),
+            "symbol": str(top[0]["symbol"]),
+            "net": float(top[0]["net"]),
+        }
     return {
         "trades": int(stats["trades"]),
         "net": float(stats["net"]),
@@ -70,6 +81,11 @@ def _score(spells: list[dict[str, Any]], sessions: int) -> dict[str, Any]:
         "win_rate": stats["winRate"],
         "max_drawdown": stats["maxDrawdown"],
         "trades_per_day": stats["tradesPerDay"],
+        "stop_trades": sum(1 for trade in trades if trade["reason"] == "stop"),
+        "top5_net": top5,
+        "rest_net": float(stats["net"]) - top5,
+        "largest": largest,
+        "top5_keys": [(trade["day"].isoformat(), str(trade["symbol"])) for trade in top],
     }
 
 
@@ -97,9 +113,15 @@ def score_ideas(book: dict[tuple[str, date], list[dict[str, Any]]]) -> list[dict
                 "validate_win_rate": validate["win_rate"],
                 "validate_max_drawdown": validate["max_drawdown"],
                 "validate_trades_per_day": validate["trades_per_day"],
+                "validate_stop_trades": validate["stop_trades"],
+                "validate_top5_net": validate["top5_net"],
+                "validate_rest_net": validate["rest_net"],
+                "validate_largest": validate["largest"],
+                "validate_top5_keys": validate["top5_keys"],
                 "pooled_trades": pooled["trades"],
                 "pooled_net": pooled["net"],
                 "pooled_bps": pooled["bps"],
+                "pooled_max_drawdown": pooled["max_drawdown"],
                 "window_start": VALIDATE_START.isoformat(),
                 "window_end": VALIDATE_END.isoformat(),
             }
@@ -154,6 +176,46 @@ def reason_for(row: dict[str, Any], chosen: dict[str, Any] | None) -> str:
 PUBLISHED_TEXT = "1,261"
 
 
+def _concentration(row: dict[str, Any]) -> str:
+    stops = int(row["validate_stop_trades"])
+    trades = int(row["validate_trades"])
+    largest = row["validate_largest"]
+    largest_text = "no trade"
+    if largest:
+        largest_text = f"{largest['day']} {largest['symbol']} {_money(largest['net'])}"
+    return (
+        f"Stops {stops} of {trades}. Max drawdown {_money(row['validate_max_drawdown'])}. "
+        f"Five largest trades {_money(row['validate_top5_net'])}; the rest {_money(row['validate_rest_net'])}. "
+        f"Largest trade {largest_text}."
+    )
+
+
+def _reading(rows: list[dict[str, Any]]) -> str:
+    best = max(rows, key=lambda row: float(row["validate_net"]))
+    shared = [
+        (left["id"], right["id"])
+        for index, left in enumerate(rows)
+        for right in rows[index + 1 :]
+        if left["validate_top5_keys"] and left["validate_top5_keys"] == right["validate_top5_keys"]
+    ]
+    share_text = ""
+    if shared:
+        pairs = ", ".join(f"`{left}` and `{right}`" for left, right in shared)
+        share_text = f" {pairs} have the same five largest trades, so the second filter did not change the days that paid."
+    if rows and all(float(row["validate_rest_net"]) < 0 for row in rows):
+        tail = "After those five trades are removed, every book on this page is negative. "
+    else:
+        tail = ""
+    return (
+        f"Reading. `{best['id']}` is the highest validation net at {_money(best['validate_net'])} "
+        f"on {best['validate_trades']} trades. It is short of ${PUBLISHED_TEXT}, so look 8 stays closed "
+        "and the promotion gate was not run. A positive total in this batch is a few holds to the close. "
+        f"{tail}"
+        "The five-day drop is the concentration bar in `research/GATE.md`, reported here as a description, "
+        f"not as a gate pass.{share_text}"
+    )
+
+
 def _money(value: float | None) -> str:
     if value is None:
         return "n/a"
@@ -186,11 +248,19 @@ def render_section(rows: list[dict[str, Any]], chosen: dict[str, Any] | None) ->
         )
     lines.append("")
     for row in rows:
-        lines.append(f"`{row['id']}` — {reason_for(row, chosen)}")
+        lines.append(f"`{row['id']}` — {reason_for(row, chosen)} {_concentration(row)}")
+    lines.append("")
+    lines.append(_reading(rows))
+    lines.append("")
+    lines.append("Sources, frozen before the fill:")
+    for row in rows:
+        lines.append(f"- `{row['id']}`: {row['source']}")
     lines.append("")
     lines.append(
         "Sector-relative strength was not scored. XLK, XLF, XLE, XLV, XLP, and XLI are not in `data/raw5`. "
-        "That request is priority 4 in `DATA_REQUEST.md`."
+        "The twelve extra names in `DATA_REQUEST.md` are not on disk either. Both requests stay blocked. "
+        "The published holdout is unchanged: look 7 is +$297 on 19 trades, and the 1.5% gap rule on look 6 "
+        "is +$210 on 52 trades. No order was placed."
     )
     lines.append(END)
     return "\n".join(lines) + "\n"
@@ -223,6 +293,14 @@ def write_outputs(rows: list[dict[str, Any]], chosen: dict[str, Any] | None) -> 
                 "reason": reason_for(row, chosen),
                 "validate_trades": row["validate_trades"],
                 "validate_net": row["validate_net"],
+                "validate_bps": row["validate_bps"],
+                "validate_win_rate": row["validate_win_rate"],
+                "validate_max_drawdown": row["validate_max_drawdown"],
+                "validate_stop_trades": row["validate_stop_trades"],
+                "validate_top5_net": row["validate_top5_net"],
+                "validate_rest_net": row["validate_rest_net"],
+                "validate_largest": row["validate_largest"],
+                "pooled_trades": row["pooled_trades"],
                 "pooled_net": row["pooled_net"],
             }
             for row in rows
@@ -241,6 +319,10 @@ def write_outputs(rows: list[dict[str, Any]], chosen: dict[str, Any] | None) -> 
                 "validate_net",
                 "validate_bps",
                 "validate_win_rate",
+                "validate_max_drawdown",
+                "validate_stop_trades",
+                "validate_top5_net",
+                "validate_rest_net",
                 "pooled_trades",
                 "pooled_net",
             ],
@@ -255,6 +337,10 @@ def write_outputs(rows: list[dict[str, Any]], chosen: dict[str, Any] | None) -> 
                     "validate_net": row["validate_net"],
                     "validate_bps": row["validate_bps"],
                     "validate_win_rate": row["validate_win_rate"],
+                    "validate_max_drawdown": row["validate_max_drawdown"],
+                    "validate_stop_trades": row["validate_stop_trades"],
+                    "validate_top5_net": row["validate_top5_net"],
+                    "validate_rest_net": row["validate_rest_net"],
                     "pooled_trades": row["pooled_trades"],
                     "pooled_net": row["pooled_net"],
                 }
