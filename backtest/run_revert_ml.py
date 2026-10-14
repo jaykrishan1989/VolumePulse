@@ -314,6 +314,36 @@ def _holdout_predictions(frame: pd.DataFrame) -> pd.DataFrame:
     return chunk
 
 
+def _cents(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    sign = "−" if value < 0 else ""
+    return f"{sign}${abs(value):.2f}"
+
+
+def _reading(chosen: dict[str, Any], importance: list[dict[str, float]]) -> str:
+    stats = chosen["stats"]
+    early = sum(int(month["trades"]) for month in chosen["months"] if str(month["month"]) < "2025-01")
+    names = [row["feature"] for row in importance[:8]]
+    market = sum(1 for name in names if name.startswith("spy_") or name.startswith("qqq_"))
+    if names and market == len(names):
+        who = "The eight largest gains are all SPY or QQQ."
+    else:
+        who = f"{market} of the eight largest gains are SPY or QQQ."
+    return (
+        f"Reading. Win rate {100 * float(stats['win_rate']):.1f}%. "
+        f"Average win {_cents(stats['avg_win'])}, average loss {_cents(stats['avg_loss'])}. "
+        "One ATR up and one ATR down are the same distance before costs. "
+        "A stop that gaps, plus 2 bp on each side, makes the loss larger than the win, "
+        "so a bounce that is only a coin flip does not pay. "
+        f"The five best days add only {_money(float(stats['net']) - float(chosen['ex_top5_net']))} together, "
+        "and dropping them makes the total worse. This loss is not a crash-day lottery. "
+        f"{early} of {stats['trades']} fills are in 2024. Later validation months are mostly quiet, "
+        "so 1.75 a day is an average, not a trade every session. "
+        f"{who} The name's own oscillation rate is not one of them."
+    )
+
+
 def _money(value: float | None) -> str:
     if value is None:
         return "n/a"
@@ -368,8 +398,8 @@ def render_section(
         lines.append(
             f"Chosen probability {chosen['threshold']:.2f}: {stats['trades']} fills, "
             f"{stats['fills_per_day']:.2f} a day, win {100 * stats['win_rate']:.1f}%, "
-            f"net {_money(stats['net'])}, average win {_money(stats['avg_win'])}, "
-            f"average loss {_money(stats['avg_loss'])}, max drawdown {_money(stats['max_drawdown'])}. "
+            f"net {_money(stats['net'])}, average win {_cents(stats['avg_win'])}, "
+            f"average loss {_cents(stats['avg_loss'])}, max drawdown {_money(stats['max_drawdown'])}. "
             f"Without the five best days: {_money(chosen['ex_top5_net'])} on {chosen['ex_top5_trades']} fills. "
             f"Decision: {decision}."
         )
@@ -383,6 +413,8 @@ def render_section(
             lines.append("")
             dropped = ", ".join(f"{row['day']} {_money(row['net'])}" for row in chosen["dropped_days"])
             lines.append(f"Five largest validation days: {dropped}.")
+        lines.append("")
+        lines.append(_reading(chosen, importance))
     if importance:
         top = ", ".join(f"{row['feature']} ({row['gain']:.0f})" for row in importance[:8])
         lines.append("")

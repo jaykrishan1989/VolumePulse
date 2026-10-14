@@ -139,5 +139,13 @@ Three books, frozen before the fill, scored on validation only. They were built 
 All three lost money. `n_intraday_cont` did fire more often (1.64 fills a day, 722 against 85) and the dollars were not a crash-day lottery. The book still lost, with 649 of 722 trades stopped. Noon reversal and the last-25-minute reversal, both short holds, also lost. Nothing was adopted. The promotion gate was not run. Look 8 was not opened. The published holdout stays look 7 +$297 on 19 trades and look 6 +$210 on 52 trades. ACTIVE stays v0.1. No order was placed.
 <!-- NEXT2_CHANGELOG_END -->
 
+<!-- REVERT_CHANGELOG_BEGIN -->
+## Trough model — 2026-10-14 — no checkpoint
+
+LightGBM on multi-timeframe troughs. A row is a new 30-minute low under VWAP in the bottom 40% of the day's range. Label: plus one ATR before minus one ATR or the 15:55 flat. Four names can be open, each a quarter of US$2,120. Thresholds 0.55, 0.60, 0.65, 0.70 were frozen. Selection is the best validation net inside 1.5 to 8 fills a day. The holdout was not loaded.
+
+The unconditional trough hits the target 50.2% of the time. The chosen probability, 0.55, filled 767 times (1.75 a day), won 51.1%, and lost $146. Average win $1.01, average loss $1.44, max drawdown $173. Without the five best days the loss is $177. Those five days made $31 together. This is not a crash-day lottery. 0.60 and above are too rare to be the 2–6 fill book, and they lose too. A sequence model was not fit. ACTIVE stays v0.1. No order was placed.
+<!-- REVERT_CHANGELOG_END -->
+
 
 

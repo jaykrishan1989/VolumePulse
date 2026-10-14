@@ -359,6 +359,19 @@ Three more books were frozen before the fill and scored on the same validation w
 
 All three are rejected. `n_intraday_cont` is the Lou, Polk, and Skouras intraday-continuation leg (h5 already tested the overnight reversal). It buys up to two equal-weight names that were up from open to close yesterday. It filled 722 times, against 85 for the published model, and the largest validation trade was $63. That is the frequency the earlier books did not have, and it is also a loss: 649 of 722 trades hit the one-ATR stop. `n_mid_reversal` fades the noon hour and exits at 14:00. It is not a retune of h2's −0.50% open gate, and it lost $488. `n_close_reversal` buys yesterday's weak last 25 minutes and exits at 10:00. The largest trade was $80. It still lost $154. The promotion gate was not run. Look 8 was not opened. The published holdout figures above are unchanged. No order was placed.
 
+## Trough model
+
+A LightGBM book buys a new 30-minute low when price is under VWAP and in the bottom 40% of the session range. Features mix the daily regime (trend, 20-day volatility, where the prior close sits in its 20-day range, how often the name has closed back off its low, yesterday's intraday autocorrelation) with the 5-minute state (RSI, z-score, VWAP distance, volume surge, swing size) and SPY/QQQ. The label is whether the next open reaches plus one ATR before minus one ATR or the 15:55 flat. Up to four symbols can be open, each with a quarter of the US$2,120 ticket. One position per symbol. Thresholds were frozen at 0.55, 0.60, 0.65, and 0.70 before the fit. The locked holdout was not loaded.
+
+| Probability | Fills | Fills/day | Win | Validation net | Without top 5 days | Decision |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 0.55 | 767 | 1.75 | 51.1% | −$146 | −$177 | rejected |
+| 0.60 | 130 | 0.30 | 50.8% | −$33 | −$46 | too rare |
+| 0.65 | 15 | 0.03 | 60.0% | −$2 | $0 | too rare |
+| 0.70 | 0 | 0.00 | n/a | $0 | $0 | no trades |
+
+About half of all troughs hit the target before the stop (50.2%). The model, at the only threshold that trades often enough, wins 51.1%. Average win $1.01, average loss $1.44, max drawdown $173. The loss is larger because a gap through the stop and 2 bp of slippage on each side break the symmetry. A coin-flip bounce does not pay. The five best days made $31 in total, and removing them deepens the loss to $177, so this is not another crash-day pileup. 680 of the 767 fills are in the second half of 2024. Many later months are empty. The largest feature gains are SPY and QQQ, not the name's own record of oscillating. A sequence model was not fit. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.

@@ -1177,3 +1177,41 @@ Sources, frozen before the fill:
 
 The twelve extra names and XLK, XLF, XLE, XLV, XLP, and XLI are still absent, so a sector residual was not scored. The published holdout is unchanged: look 7 is +$297 on 19 trades, and the 1.5% gap rule on look 6 is +$210 on 52 trades. No order was placed.
 <!-- NEXT2_END -->
+
+<!-- REVERT_BEGIN -->
+## Trough model
+
+LightGBM, three frozen seeds, probabilities calibrated on the last 40 training days of each fold. A row is a new 30-minute low under VWAP in the bottom 40% of the session range. The label is a hit of plus one ATR before minus one ATR or the 15:55 flat. Each fill takes 25% of the US$2120 ticket, one position per symbol. Costs are no commission and 2 bp per side, next-bar fills. The threshold is the best validation net inside 1.5 to 8 fills a day. A sequence model was not fit. `models/ACTIVE` stays `v0.1`.
+
+| Probability | Fills | Fills/day | Win | Net | Ex top 5 | Eligible |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 0.55 | 767 | 1.75 | 51.1% | −$146 | −$177 | yes |
+| 0.60 | 130 | 0.30 | 50.8% | −$33 | −$46 | no |
+| 0.65 | 15 | 0.03 | 60.0% | −$2 | $0 | no |
+| 0.70 | 0 | 0.00 | n/a | $0 | $0 | no |
+
+Chosen probability 0.55: 767 fills, 1.75 a day, win 51.1%, net −$146, average win $1.01, average loss −$1.44, max drawdown $173. Without the five best days: −$177 on 715 fills. Decision: rejected.
+
+| Month | Fills | Win | Net |
+| --- | ---: | ---: | ---: |
+| 2024-07 | 141 | 48.2% | −$31 |
+| 2024-08 | 106 | 58.5% | $3 |
+| 2024-09 | 136 | 58.1% | −$2 |
+| 2024-10 | 113 | 51.3% | −$13 |
+| 2024-11 | 103 | 53.4% | −$28 |
+| 2024-12 | 81 | 37.0% | −$49 |
+| 2025-01 | 1 | 100.0% | $1 |
+| 2025-03 | 7 | 57.1% | $0 |
+| 2025-04 | 49 | 32.7% | −$36 |
+| 2025-05 | 11 | 54.5% | −$4 |
+| 2025-10 | 3 | 100.0% | $4 |
+| 2025-11 | 16 | 62.5% | $9 |
+
+Five largest validation days: 2025-11-20 $9, 2024-07-18 $8, 2024-10-15 $6, 2024-08-23 $5, 2024-08-09 $4.
+
+Reading. Win rate 51.1%. Average win $1.01, average loss −$1.44. One ATR up and one ATR down are the same distance before costs. A stop that gaps, plus 2 bp on each side, makes the loss larger than the win, so a bounce that is only a coin flip does not pay. The five best days add only $31 together, and dropping them makes the total worse. This loss is not a crash-day lottery. 680 of 767 fills are in 2024. Later validation months are mostly quiet, so 1.75 a day is an average, not a trade every session. The eight largest gains are all SPY or QQQ. The name's own oscillation rate is not one of them.
+
+Largest average gains: spy_prior_ret (7801), qqq_from_open (7359), spy_rv_20 (6167), qqq_rv_20 (5478), qqq_vwap_dist (5334), qqq_prior_ret (5259), spy_vwap_dist (4946), spy_from_open (4830).
+
+The published holdout is unchanged: look 7 is +$297 on 19 trades, and the 1.5% gap rule on look 6 is +$210 on 52 trades. This run did not open look 8. No order was placed.
+<!-- REVERT_END -->

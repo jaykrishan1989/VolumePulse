@@ -52,7 +52,7 @@ Findings worth keeping:
 
 Write-ups: `research/RESEARCH_LOG.md` (marked `<!-- AREAS_BEGIN -->`), `research/areas.csv`, `research/area_folds.csv`, `research/area_summary.json`, `RESULTS.md`, `README.md`, `models/CHANGELOG.md` (marked `<!-- AREAS_CHANGELOG_BEGIN -->`). `backtest/run_hypotheses.py` preserves both the gate section and the areas section via `preserve_gate_section`.
 
-Tests last run: `python -m unittest discover -s tests -q` — 142 tests, OK. The model does not change the dashboard, so no new browser pass was required.
+Tests last run: `python -m unittest discover -s tests -q` — 151 tests, OK. The model does not change the dashboard, so no new browser pass was required.
 
 ## What's in progress
 
@@ -125,7 +125,9 @@ The current 5-minute book is too thin for that profit result (19 holdout trades,
 
 `backtest/next_batch2.py` freezes three ordinary-session books. Scored the same day: `n_intraday_cont` −$312 on 722 fills, `n_mid_reversal` −$488 on 388, `n_close_reversal` −$154 on 386. All rejected. The continuation book did trade more often than the 85-trade model, and it still lost. Do not retune the two-name weight or add a magnitude gate after seeing those losses.
 
-Look count stays 7. Do not open look 8 unless a new frozen id first beats $1,261 on validation and then passes `research/GATE.md` before any holdout read. `models/ACTIVE` stays `v0.1`. The twelve names and six sector ETFs in `DATA_REQUEST.md` are still absent.
+`backtest/revert_ml.py` is the trough LightGBM. Scored 2026-10-14 on validation only. Probability 0.55 is the only threshold inside the fill-rate band: 767 fills, 1.75 a day, win 51.1%, −$146. Average win $1.01, average loss $1.44. Without the five best days, −$177. Higher probabilities barely trade and also lose. Do not retune the ATR multiple or the 0.40 session-position gate after seeing that. A sequence model was not fit.
+
+Look count stays 7. Do not open look 8 unless a new frozen id first beats $1,261 on validation, stays positive with its five best days removed, and then passes `research/GATE.md` before any holdout read. `models/ACTIVE` stays `v0.1`. The twelve names and six sector ETFs in `DATA_REQUEST.md` are still absent.
 
 ## Commands to resume
 
