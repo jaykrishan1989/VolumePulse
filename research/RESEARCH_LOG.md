@@ -1215,3 +1215,52 @@ Largest average gains: spy_prior_ret (7801), qqq_from_open (7359), spy_rv_20 (61
 
 The published holdout is unchanged: look 7 is +$297 on 19 trades, and the 1.5% gap rule on look 6 is +$210 on 52 trades. This run did not open look 8. No order was placed.
 <!-- REVERT_END -->
+
+<!-- GRID15_BEGIN -->
+## 15-minute pro-trader grid
+
+The tiers are the practices in `research/RESEARCH_PRO_TRADERS.md`: opening range, session VWAP, relative volume, relative strength versus SPY, a breadth-and-index check, the overnight gap, prior-day levels, the morning clock, a 20-day trend filter, and a frozen FOMC/CPI/employment calendar. Premarket and the tape abstain, because the files have neither. `pro_aplus` is the only adoptable book. It was frozen before this fill. Leave-one-out rows are a report. Costs are no commission and 2 bp per side on US$2,120. Risk is 0.5% of equity at the opening-range low, capped at 25% of equity. Half the position exits at 1R. The runner's stop moves to the entry after 1R, with a 2R target. Morning trades are out at the 12:00 open. The day stops at a realized loss of 1.5%. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
+
+The grid evaluated 26 buckets on each of 8 names across 433 validation sessions (90,064 slot checks). A long is one shot: the first 15-minute close through the 9:30–9:45 high. There were 1,875 such closes. Most were vetoed. Volume vetoed 1,465, the 20-day trend 895, the morning clock 602, the gap 306, internals 282, the stop-distance rule 267, relative strength 235, the event calendar 164, and the chase rule 25. Session VWAP vetoed none. A close through the opening-range high was already above VWAP, so `no_vwap` is the same book as `pro_aplus`.
+
+| Book | Fills | Entries | Fills/day | Win | Net | Ex top 5 | Avg win | Avg loss | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `pro_aplus` | 58 | 29 | 0.13 | 27.6% | −$36 | −$53 | $1.26 | −$1.33 | $43 |
+| `bare_or` | 1,189 | 595 | 2.75 | 46.6% | −$167 | −$238 | $1.09 | −$1.21 | $194 |
+| `no_vwap` | 58 | 29 | 0.13 | 27.6% | −$36 | −$53 | $1.26 | −$1.33 | $43 |
+| `no_volume_rate` | 415 | 208 | 0.96 | 41.7% | −$74 | −$111 | $1.12 | −$1.11 | $83 |
+| `no_relative_strength` | 60 | 30 | 0.14 | 30.0% | −$34 | −$52 | $1.19 | −$1.33 | $43 |
+| `no_internals` | 72 | 36 | 0.17 | 36.1% | −$28 | −$49 | $1.32 | −$1.35 | $41 |
+| `no_gap` | 70 | 35 | 0.16 | 31.4% | −$32 | −$50 | $1.29 | −$1.26 | $41 |
+| `no_prior_levels` | 60 | 30 | 0.14 | 30.0% | −$30 | −$51 | $1.46 | −$1.33 | $37 |
+| `no_events` | 78 | 39 | 0.18 | 35.9% | −$43 | −$61 | $0.97 | −$1.40 | $52 |
+| `no_trend` | 106 | 53 | 0.24 | 34.0% | −$71 | −$93 | $0.96 | −$1.51 | $78 |
+| `pro_vwap` | 60 | 30 | 0.14 | 40.0% | −$9 | −$15 | $0.45 | −$0.55 | $10 |
+| `pro_short` | 138 | 138 | 0.32 | 44.2% | −$31 | −$84 | $2.32 | −$2.25 | $38 |
+
+`pro_aplus` fill counts across 433 sessions: 405 days with none, 27 days with two fills (the scale and the runner), one day with four. That is not 2–6 fills a day. Entries were 27 single names and one day with two names. Decision: rejected. It does not clear $1,261, and dropping the five best days makes it worse.
+
+`pro_aplus` months:
+
+| Month | Fills | Win | Net |
+| --- | ---: | ---: | ---: |
+| 2024-08 | 2 | 0.0% | −$0.01 |
+| 2024-09 | 4 | 0.0% | −$5 |
+| 2024-10 | 4 | 50.0% | $2 |
+| 2024-11 | 4 | 50.0% | $5 |
+| 2024-12 | 10 | 20.0% | −$10 |
+| 2025-01 | 6 | 66.7% | −$0.29 |
+| 2025-06 | 4 | 0.0% | −$10 |
+| 2025-07 | 16 | 12.5% | −$9 |
+| 2025-09 | 2 | 0.0% | −$3 |
+| 2025-10 | 2 | 0.0% | −$10 |
+| 2026-01 | 4 | 100.0% | $4 |
+
+The other validation months had no `pro_aplus` fill. Five largest days: 2024-11-06 $6.27, 2026-01-06 $3.37, 2025-01-06 $3.16, 2024-10-11 $2.65, 2025-01-22 $2.03. Together about $17. Removing them leaves −$53.
+
+`bare_or` is the same break, stop, scale-out, and noon exit with the eight optional tiers off. It does trade often: 2.75 fills a day, 595 entries. It loses $167, and $238 without its five best days. This is the same opening-range idea already rejected as `h4_opening_range` and `d_orb`, now under the live cost model and a noon time stop. It loses again. The checklist does not fix it. The filtered book wins 27.6% against 46.6% for the bare break, so the gates kept the worse trades and threw out frequency.
+
+`pro_vwap` is the afternoon reclaim. It loses $9, and $15 without its five best days. The tickets are small because the stop is the reclaim bar's low. It is not a candidate. `pro_short` sells the failed morning break. Average win $2.32, average loss $2.25, win 44.2%, net −$31. Without the five best days, −$84. The cash account cannot short, and the column would not be taken if it could.
+
+Reading. On these ten names the professional checklist mostly sits out, and when it trades the stop is the usual result. Relative volume is doing the sitting-out: a mega-cap opening print is rarely 1.2 times its own recent open. Turning that gate off loses more dollars, not less. No tier's removal produces a profit. Do not lower 1.2, widen the morning window, or adopt `no_internals` because −$28 is the least-bad long row. Look 8 stays closed. No order was placed.
+<!-- GRID15_END -->

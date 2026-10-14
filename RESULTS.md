@@ -372,6 +372,23 @@ A LightGBM book buys a new 30-minute low when price is under VWAP and in the bot
 
 About half of all troughs hit the target before the stop (50.2%). The model, at the only threshold that trades often enough, wins 51.1%. Average win $1.01, average loss $1.44, max drawdown $173. The loss is larger because a gap through the stop and 2 bp of slippage on each side break the symmetry. A coin-flip bounce does not pay. The five best days made $31 in total, and removing them deepens the loss to $177, so this is not another crash-day pileup. 680 of the 767 fills are in the second half of 2024. Many later months are empty. The largest feature gains are SPY and QQQ, not the name's own record of oscillating. A sequence model was not fit. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
 
+## 15-minute pro-trader grid
+
+The book is a 15-minute decision grid. The tiers are written up in `research/RESEARCH_PRO_TRADERS.md` from prop-desk and published discretionary practice, then cut down to what these regular-hours bars can measure. There is no premarket and no tape, and those two tiers abstain. The adoptable rule, `pro_aplus`, buys the first close through the 9:30–9:45 high only when the other gates agree, risks 0.5% of the US$2,120 at the range low, sells half at 1R, and is out at noon. Costs are no commission and 2 bp a side. The rules were frozen before the run. The locked holdout was not loaded.
+
+| Book | Fills | Entries | Fills/day | Win | Validation net | Without top 5 days | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `pro_aplus` | 58 | 29 | 0.13 | 27.6% | −$36 | −$53 | rejected |
+| `bare_or` | 1,189 | 595 | 2.75 | 46.6% | −$167 | −$238 | report only |
+| `no_volume_rate` | 415 | 208 | 0.96 | 41.7% | −$74 | −$111 | report only |
+| `no_trend` | 106 | 53 | 0.24 | 34.0% | −$71 | −$93 | report only |
+| `no_events` | 78 | 39 | 0.18 | 35.9% | −$43 | −$61 | report only |
+| `no_vwap` | 58 | 29 | 0.13 | 27.6% | −$36 | −$53 | same as full |
+| `pro_vwap` | 60 | 30 | 0.14 | 40.0% | −$9 | −$15 | report only |
+| `pro_short` | 138 | 138 | 0.32 | 44.2% | −$31 | −$84 | cash account cannot short |
+
+`pro_aplus` average win $1.26, average loss $1.33, max drawdown $43. Across 433 sessions the fill counts were 405 days with zero, 27 days with two, and one day with four. That is the opposite of a 2–6 fill day. Of 1,875 first breaks, relative volume blocked 1,465 and session VWAP blocked none. The bare break trades 2.75 times a day and loses $167. The same opening-range idea was already rejected as `h4_opening_range` and `d_orb`. The checklist made the win rate worse, 27.6% against 46.6%, and did not make a profit. No ablation is positive. Do not retune the 1.2 volume multiple after seeing this. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
@@ -393,6 +410,7 @@ python -m backtest.run_areas
 python -m backtest.run_daily
 python -m backtest.run_costs
 python -m backtest.run_ml
+python -m backtest.run_grid15
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again. `run_grid15` scores the frozen 15-minute books on validation only and does not open the holdout.

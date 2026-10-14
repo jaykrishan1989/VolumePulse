@@ -147,5 +147,13 @@ LightGBM on multi-timeframe troughs. A row is a new 30-minute low under VWAP in 
 The unconditional trough hits the target 50.2% of the time. The chosen probability, 0.55, filled 767 times (1.75 a day), won 51.1%, and lost $146. Average win $1.01, average loss $1.44, max drawdown $173. Without the five best days the loss is $177. Those five days made $31 together. This is not a crash-day lottery. 0.60 and above are too rare to be the 2–6 fill book, and they lose too. A sequence model was not fit. ACTIVE stays v0.1. No order was placed.
 <!-- REVERT_CHANGELOG_END -->
 
+<!-- GRID15_CHANGELOG_BEGIN -->
+## 15-minute pro-trader grid — 2026-10-14 — no checkpoint
+
+The stack in `backtest/grid15.py` follows `research/RESEARCH_PRO_TRADERS.md`. `pro_aplus` buys the first 15-minute close through the opening range only when VWAP, relative volume, relative strength, internals, the gap, prior-day extension, the morning clock, the 20-day trend, and the event calendar all agree. Risk is 0.5% at the range low. Half exits at 1R and the runner aims at 2R. Flat by lunch or 15:55. The thresholds were frozen before the fill. The holdout was not loaded.
+
+Validation, 2024-07-01 through 2026-03-31: 58 fills, 29 entries, 0.13 fills a day, win 27.6%, −$36. Average win $1.26, average loss $1.33, max drawdown $43. Without the five best days, −$53. Of 433 sessions, 405 had no fill. The bare opening-range break, same costs and exits, lost $167 on 1,189 fills (2.75 a day) and $238 without its five best days. Removing any one tier left a loss. The afternoon VWAP book lost $9. The short failed-break lost $31, and $84 without its five best days. Session VWAP never vetoed a break that the range itself had not already put above VWAP. ACTIVE stays v0.1. No order was placed.
+<!-- GRID15_CHANGELOG_END -->
+
 
 

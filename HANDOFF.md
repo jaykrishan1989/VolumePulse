@@ -127,6 +127,8 @@ The current 5-minute book is too thin for that profit result (19 holdout trades,
 
 `backtest/revert_ml.py` is the trough LightGBM. Scored 2026-10-14 on validation only. Probability 0.55 is the only threshold inside the fill-rate band: 767 fills, 1.75 a day, win 51.1%, −$146. Average win $1.01, average loss $1.44. Without the five best days, −$177. Higher probabilities barely trade and also lose. Do not retune the ATR multiple or the 0.40 session-position gate after seeing that. A sequence model was not fit.
 
+`backtest/grid15.py` is the 15-minute grid. The source note is `research/RESEARCH_PRO_TRADERS.md`. Scored 2026-10-14 on validation only, after the rules were committed. `pro_aplus`: 58 fills, 29 entries, 0.13 fills a day, win 27.6%, −$36, and −$53 without the five best days. 405 of 433 sessions had no fill. The bare opening-range break lost $167 on 1,189 fills. Every leave-one-out book lost. The afternoon VWAP book lost $9. The short failed-break lost $31, and $84 without its five best days. Session VWAP never blocked a range break. Do not lower the 1.2 opening-volume multiple, widen the morning window, or promote the least-bad ablation. `python -m backtest.run_grid15` does not open the holdout.
+
 Look count stays 7. Do not open look 8 unless a new frozen id first beats $1,261 on validation, stays positive with its five best days removed, and then passes `research/GATE.md` before any holdout read. `models/ACTIVE` stays `v0.1`. The twelve names and six sector ETFs in `DATA_REQUEST.md` are still absent.
 
 ## Commands to resume
