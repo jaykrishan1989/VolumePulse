@@ -95,7 +95,9 @@ def _reading(rows: list[dict[str, Any]]) -> str:
         tail = "After those five trades are removed, every book on this page is negative. "
     else:
         tail = ""
-    if is_milestone(float(best["validate_net"]), int(best["validate_trades"])):
+    if float(best["validate_net"]) <= 0:
+        gate = "The best net is a loss, so nothing is a candidate. Look 8 stays closed and the promotion gate was not run. "
+    elif is_milestone(float(best["validate_net"]), int(best["validate_trades"])):
         gate = "The best net clears the published model. This command did not open the holdout and did not run the promotion gate. "
     else:
         gate = "The best net is short of $1,261, so look 8 stays closed and the promotion gate was not run. "
@@ -247,6 +249,8 @@ def main(argv: list[str] | None = None) -> int:
     book = load_preholdout(root)
     rows = score_ideas(book)
     chosen = choose(rows)
+    if chosen is not None and float(chosen["validate_net"]) <= 0:
+        chosen = None
     if chosen and is_milestone(float(chosen["validate_net"]), int(chosen["validate_trades"])):
         print(
             f"{chosen['id']} beat the published validation net. Look 8 was not opened by this command.",

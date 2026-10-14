@@ -125,5 +125,19 @@ Seven books, frozen before the fill, scored on validation only (2024-07-01 throu
 `n_residual` is the best of the seven and is $254 short of the published model validation net of $1,261. Its five largest trades made $1,081 and the other 410 trades lost $75. Those five trades are the same sessions as `n_prior_reversal`, including AMD on 2025-04-09 for $464. Removing the five largest trades leaves every book negative. The promotion gate was not run. Look 8 was not opened. The published holdout stays look 7 +$297 on 19 trades and look 6 +$210 on 52 trades. ACTIVE stays v0.1. No order was placed.
 <!-- NEXT_CHANGELOG_END -->
 
+<!-- NEXT2_CHANGELOG_BEGIN -->
+## Ordinary sessions — 2026-10-13 — no checkpoint
+
+Three books, frozen before the fill, scored on validation only. They were built to trade more often than the 85-trade hold-to-close model without buying yesterday's loser into the close. Costs: no commission, 2 bp per side, US$2,120, flat by 15:55. The holdout was not loaded. Look count stays 7.
+
+| Id | Fills | Win | Net | bp | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| n_intraday_cont | 722 | 9.7% | −$312 | −4.6 | rejected |
+| n_mid_reversal | 388 | 31.7% | −$488 | −7.3 | rejected |
+| n_close_reversal | 386 | 15.0% | −$154 | −2.1 | rejected |
+
+All three lost money. `n_intraday_cont` did fire more often (1.64 fills a day, 722 against 85) and the dollars were not a crash-day lottery. The book still lost, with 649 of 722 trades stopped. Noon reversal and the last-25-minute reversal, both short holds, also lost. Nothing was adopted. The promotion gate was not run. Look 8 was not opened. The published holdout stays look 7 +$297 on 19 trades and look 6 +$210 on 52 trades. ACTIVE stays v0.1. No order was placed.
+<!-- NEXT2_CHANGELOG_END -->
+
 
 

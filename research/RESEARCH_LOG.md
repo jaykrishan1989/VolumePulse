@@ -1152,3 +1152,28 @@ Sector-relative strength was not scored. XLK, XLF, XLE, XLV, XLP, and XLI are no
 <!-- NEXT_END -->
 
 
+
+<!-- NEXT2_BEGIN -->
+## Next batch, ordinary sessions
+
+3 books were written down before the run. They are built to trade ordinary sessions, not yesterday's loser held to the close. Costs are no commission and 2 bp per side on a US$2120 ticket, flat by 15:55. Selection is validation net dollars from 2024-07-01 through 2026-03-31. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
+
+| Id | Signals | Fills | Win | Validation net | bp | Fills/day | Pooled net | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `n_intraday_cont` | 722 | 722 | 9.7% | $-312 | -4.6 | 1.64 | $-399 | rejected |
+| `n_mid_reversal` | 388 | 388 | 31.7% | $-488 | -7.3 | 0.88 | $-546 | rejected |
+| `n_close_reversal` | 386 | 386 | 15.0% | $-154 | -2.1 | 0.88 | $-602 | rejected |
+
+`n_intraday_cont` — Validation net was $-312 after 2 bp. A loss is not a candidate. Holdout was not opened. Stops 649 of 722. Max drawdown $528. Five largest trades $267; the rest $-579. Largest trade 2025-04-07 AMZN $63.
+`n_mid_reversal` — Validation net was $-488 after 2 bp. A loss is not a candidate. Holdout was not opened. Stops 233 of 388. Max drawdown $556. Five largest trades $200; the rest $-688. Largest trade 2025-04-07 AMD $67.
+`n_close_reversal` — Validation net was $-154 after 2 bp. A loss is not a candidate. Holdout was not opened. Stops 322 of 386. Max drawdown $411. Five largest trades $329; the rest $-484. Largest trade 2025-11-19 GOOGL $80.
+
+Reading. `n_close_reversal` is the highest validation net at $-154 on 386 fills (386 signals). `n_intraday_cont` is the busiest, at 722 fills against 85 for the published hold-to-close model. The best net is a loss, so nothing is a candidate. Look 8 stays closed and the promotion gate was not run. After those five trades are removed, every book on this page is negative. The five-day drop is the concentration bar in `research/GATE.md`, reported here as a description, not as a gate pass.
+
+Sources, frozen before the fill:
+- `n_intraday_cont`: Lou, D., Polk, C., and Skouras, S. (2019). A tug of war: Overnight versus intraday expected returns. Journal of Financial Economics, 134(1), 192–213. The overnight-reversal leg was already tested as h5_gap_down.
+- `n_mid_reversal`: Heston, S. L., Korajczyk, R. A., and Sadka, R. (2010). Intraday patterns in the cross-section of stock returns. Journal of Finance, 65(4), 1369–1407. The open, with a −0.50% gate, was already rejected as h2_opening_reversal.
+- `n_close_reversal`: Cushing, D., and Madhavan, A. (2000). Stock returns and trading at the close. Journal of Financial Markets, 3(1), 45–67. The files have no closing auction, so the last 25 regular-hours minutes stand in for the close.
+
+The twelve extra names and XLK, XLF, XLE, XLV, XLP, and XLI are still absent, so a sector residual was not scored. The published holdout is unchanged: look 7 is +$297 on 19 trades, and the 1.5% gap rule on look 6 is +$210 on 52 trades. No order was placed.
+<!-- NEXT2_END -->

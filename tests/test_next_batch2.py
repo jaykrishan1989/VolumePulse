@@ -18,7 +18,7 @@ from backtest.next_batch2 import (
     midday_reversal,
 )
 from backtest.periods import HOLDOUT_START
-from backtest.run_next_batch2 import main
+from backtest.run_next_batch2 import _reading, main
 
 
 def _weekdays(start: date, count: int) -> list[date]:
@@ -149,6 +149,18 @@ class NextBatch2Tests(unittest.TestCase):
         _at(leaked[("AAPL", days[1])], 15 * 60 + 50)["close"] = 50.0
         again = close_reversal(leaked)
         self.assertEqual(again[0]["priority"], spells[0]["priority"])
+
+    def test_a_loss_is_not_described_as_a_near_miss(self) -> None:
+        row = {
+            "id": "n_close_reversal",
+            "validate_net": -154.0,
+            "validate_trades": 386,
+            "validate_signals": 386,
+            "validate_rest_net": -400.0,
+        }
+        text = _reading([row])
+        self.assertIn("The best net is a loss", text)
+        self.assertIn("Look 8 stays closed", text)
 
     def test_holdout_day_is_refused(self) -> None:
         day = HOLDOUT_START

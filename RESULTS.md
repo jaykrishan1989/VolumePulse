@@ -347,6 +347,18 @@ Nothing was adopted. `n_clock` is Heston, Korajczyk, and Sadka same-clock contin
 
 The published holdout is unchanged: look 7 +$297 on 19 trades, and the 1.5% gap rule on look 6 +$210 on 52 trades. `models/ACTIVE` stays `v0.1`. The twelve extra names and the six sector ETFs in `DATA_REQUEST.md` are still absent, so a sector residual was not scored. No order was placed.
 
+## Ordinary sessions
+
+Three more books were frozen before the fill and scored on the same validation window. The aim was a book that trades on ordinary days, more often than the 85-trade hold-to-close model, without buying yesterday's loser and holding the rally. The locked holdout was not loaded.
+
+| Id | Fills | Win | Validation net | bp | Fills/day | Pooled net | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `n_intraday_cont` | 722 | 9.7% | −$312 | −4.6 | 1.64 | −$399 | rejected |
+| `n_mid_reversal` | 388 | 31.7% | −$488 | −7.3 | 0.88 | −$546 | rejected |
+| `n_close_reversal` | 386 | 15.0% | −$154 | −2.1 | 0.88 | −$602 | rejected |
+
+All three are rejected. `n_intraday_cont` is the Lou, Polk, and Skouras intraday-continuation leg (h5 already tested the overnight reversal). It buys up to two equal-weight names that were up from open to close yesterday. It filled 722 times, against 85 for the published model, and the largest validation trade was $63. That is the frequency the earlier books did not have, and it is also a loss: 649 of 722 trades hit the one-ATR stop. `n_mid_reversal` fades the noon hour and exits at 14:00. It is not a retune of h2's −0.50% open gate, and it lost $488. `n_close_reversal` buys yesterday's weak last 25 minutes and exits at 10:00. The largest trade was $80. It still lost $154. The promotion gate was not run. Look 8 was not opened. The published holdout figures above are unchanged. No order was placed.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.

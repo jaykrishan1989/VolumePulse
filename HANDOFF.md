@@ -52,7 +52,7 @@ Findings worth keeping:
 
 Write-ups: `research/RESEARCH_LOG.md` (marked `<!-- AREAS_BEGIN -->`), `research/areas.csv`, `research/area_folds.csv`, `research/area_summary.json`, `RESULTS.md`, `README.md`, `models/CHANGELOG.md` (marked `<!-- AREAS_CHANGELOG_BEGIN -->`). `backtest/run_hypotheses.py` preserves both the gate section and the areas section via `preserve_gate_section`.
 
-Tests last run: `python -m unittest discover -s tests -q` — 134 tests, OK. The model does not change the dashboard, so no new browser pass was required.
+Tests last run: `python -m unittest discover -s tests -q` — 142 tests, OK. The model does not change the dashboard, so no new browser pass was required.
 
 ## What's in progress
 
@@ -107,7 +107,7 @@ Look 3 is the daily finalist. Look 4 is `ml_lgb_60m` and is already written. Do 
 
 Closed, and not authorized as a silent next search:
 
-- Heston same-clock continuation was scored as `n_clock` and lost $132 on validation. Do not retune it.
+- Heston same-clock continuation was scored as `n_clock` and lost $132 on validation. The noon reversal, `n_mid_reversal`, lost $488. Do not retune either.
 - Order-flow imbalance. `n_flow` is a close-versus-WAP proxy and was not adopted. These files are OHLC. There are no aggressor prints.
 - Shorts. Canadian cash account, long-only.
 - Any retune of the frozen thresholds in `backtest/areas.py`, `backtest/hypotheses.py`, or `backtest/daily.py`.
@@ -121,7 +121,11 @@ The intraday model and the profit search are both closed. Stay on v0.1. Do not d
 
 The current 5-minute book is too thin for that profit result (19 holdout trades, one name a day). More bars are requested in `DATA_REQUEST.md`. The owner runs `scripts/fetch_history.py` on the PC that hosts Gateway. This VM must not open the socket.
 
-`backtest/next_batch.py` freezes seven books. They were scored on 2026-10-13 from the restored `data/raw5` files (ten symbols, gitignored). Best validation net is `n_residual` at +$1,007 on 415 trades, short of the published $1,261. `n_clock` (−$132) and `n_late_reversal` (−$303) are rejected. The other four are positive and not adopted: each book's profit sits in its five largest trades, and removing those five leaves a loss. `python -m backtest.run_next_batch` does not open the holdout. Look count stays 7. Do not open look 8 unless a new frozen id first beats $1,261 on validation and then passes `research/GATE.md` before any holdout read. `models/ACTIVE` stays `v0.1`. The twelve names and six sector ETFs in `DATA_REQUEST.md` are still absent.
+`backtest/next_batch.py` freezes seven books. They were scored on 2026-10-13 from the restored `data/raw5` files (ten symbols, gitignored). Best validation net is `n_residual` at +$1,007 on 415 trades, short of the published $1,261. `n_clock` (−$132) and `n_late_reversal` (−$303) are rejected. The other four are positive and not adopted: each book's profit sits in its five largest trades, and removing those five leaves a loss. `python -m backtest.run_next_batch` does not open the holdout.
+
+`backtest/next_batch2.py` freezes three ordinary-session books. Scored the same day: `n_intraday_cont` −$312 on 722 fills, `n_mid_reversal` −$488 on 388, `n_close_reversal` −$154 on 386. All rejected. The continuation book did trade more often than the 85-trade model, and it still lost. Do not retune the two-name weight or add a magnitude gate after seeing those losses.
+
+Look count stays 7. Do not open look 8 unless a new frozen id first beats $1,261 on validation and then passes `research/GATE.md` before any holdout read. `models/ACTIVE` stays `v0.1`. The twelve names and six sector ETFs in `DATA_REQUEST.md` are still absent.
 
 ## Commands to resume
 
