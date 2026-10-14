@@ -201,6 +201,8 @@ def resolve_exit(
     the open and frees cash then; an intrabar stop frees cash at the bar close.
     """
     stop = float(spell["stop"])
+    raw_target = spell.get("target")
+    target = None if raw_target is None else float(raw_target)
     held_bars = list(spell["path"]) + [spell["exit_bar"]]
     for index, bar in enumerate(held_bars):
         is_exit_bar = index == len(held_bars) - 1
@@ -209,6 +211,11 @@ def resolve_exit(
         if use_stop and stop > 0 and float(bar["low"]) <= stop and not sell_at_open:
             free = stamp if float(bar["open"]) < stop else (stamp + 300 if stamp else stamp)
             return _stop_fill(bar, stop, slip_bps), "stop", free
+        if target is not None and not sell_at_open and float(bar["high"]) >= target:
+            opened = float(bar["open"])
+            raw = opened if opened > target else target
+            free = stamp if opened > target else (stamp + 300 if stamp else stamp)
+            return apply_slip(raw, "sell", slip_bps), "target", free
         if is_exit_bar:
             if spell["exit_kind"] == "flat" or int(bar["minute"]) >= FLAT_MINUTE:
                 free = stamp + 300 if stamp else stamp
