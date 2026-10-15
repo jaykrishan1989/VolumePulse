@@ -389,6 +389,35 @@ The book is a 15-minute decision grid. The tiers are written up in `research/RES
 
 `pro_aplus` average win $1.26, average loss $1.33, max drawdown $43. Across 433 sessions the fill counts were 405 days with zero, 27 days with two, and one day with four. That is the opposite of a 2–6 fill day. Of 1,875 first breaks, relative volume blocked 1,465 and session VWAP blocked none. The bare break trades 2.75 times a day and loses $167. The same opening-range idea was already rejected as `h4_opening_range` and `d_orb`. The checklist made the win rate worse, 27.6% against 46.6%, and did not make a profit. No ablation is positive. Do not retune the 1.2 volume multiple after seeing this. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
 
+## Exit tests and a daily top-k rank
+
+The next batch splits the opening-range loss from a frequency book. Both were frozen in `backtest/grid15_next.py` before the fill. Costs are tiered IBKR commission and 2 bp a side on US$2,120, whole shares, four names at most, flat by 15:55. The live app config remains zero commission. The locked holdout was not loaded.
+
+The exit books share the first morning close through the 9:30–9:45 high and the stop at the range low. Only the exit changes. There were 1,097 signals.
+
+| Book | Fills | Fills/day | Days | Win | Validation net | Commission | After slip, before commission | Without top 5 days | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `x_flat` | 793 | 1.83 | 331/433 | 37.3% | −$815 | $563 | −$253 | −$920 | rejected |
+| `x_30` | 814 | 1.88 | 331/433 | 28.9% | −$676 | $578 | −$99 | −$720 | rejected |
+| `x_60` | 799 | 1.85 | 331/433 | 31.4% | −$773 | $567 | −$206 | −$841 | rejected |
+| `x_noon` | 793 | 1.83 | 331/433 | 31.0% | −$811 | $563 | −$249 | −$897 | rejected |
+| `x_trail` | 798 | 1.84 | 331/433 | 30.3% | −$776 | $566 | −$209 | −$875 | rejected |
+
+Average win and average loss: `x_flat` $2.85 / −$3.34, `x_30` $1.34 / −$1.71, `x_60` $1.61 / −$2.15, `x_noon` $2.02 / −$2.39, `x_trail` $2.70 / −$2.57. Max drawdowns are $879, $685, $783, $846, and $820. The trail stopped 518 of 798 trades. `x_flat` had 102 sessions with no fill. Pooled nets are all below −$1,000. The recent slice from 2025-07-01 is negative for each.
+
+The rank books buy the four highest slot scores each day across the ten names. Momentum wants the slot that just rose. Reversion wants the slot that just fell. Stop and target are that slot's own historical standard deviation, and a slot under 20 bp is skipped because the target cannot clear the ticket. The regime rows sit out when both SPY and QQQ closed under their 20-day average.
+
+| Book | Fills | Fills/day | Days | Win | Validation net | Commission | After slip, before commission | Without top 5 days | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `k_mom` | 1,266 | 2.92 | 431/433 | 26.2% | −$1,098 | $898 | −$200 | −$1,110 | rejected |
+| `k_mom_regime` | 970 | 2.24 | 306/433 | 26.1% | −$882 | $688 | −$193 | −$896 | rejected |
+| `k_rev` | 1,304 | 3.01 | 431/433 | 33.9% | −$926 | $925 | −$1 | −$951 | rejected |
+| `k_rev_regime` | 962 | 2.22 | 306/433 | 35.9% | −$679 | $683 | +$4 | −$703 | rejected |
+
+`k_mom` average win $0.66, average loss −$1.41, max drawdown $1,098. `k_rev` average win $0.64, average loss −$1.40, max drawdown $926. Fill counts for `k_rev`: 2 sessions with zero, 13 with one, 93 with two, 195 with three, 130 with four. No rank month was positive. Pooled nets are −$1,481, −$1,336, −$1,403, and −$1,241.
+
+The opening-range price path is negative at 30 minutes, 60 minutes, noon, the close, and with a trail. Commission of about 20 bp is the larger dollar piece, and it sits on top of that negative path. The daily rank does trade almost every session. Reversion after slippage is a wash, and the $0.35 minimum is the loss. Sitting out weak-index days removes trades and does not improve the trade that remains. SPY and META almost never clear one whole share on a quarter of US$2,120, so the fills are the other mega-caps, several of them on the same day. The twelve extra names are not what turns a flat price path into a profit. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
@@ -411,6 +440,7 @@ python -m backtest.run_daily
 python -m backtest.run_costs
 python -m backtest.run_ml
 python -m backtest.run_grid15
+python -m backtest.run_grid15_next
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again. `run_grid15` scores the frozen 15-minute books on validation only and does not open the holdout.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again. `run_grid15` scores the frozen 15-minute books on validation only and does not open the holdout. `run_grid15_next` scores the frozen exit books and the daily top-k books on the tiered commission schedule and does not open the holdout.

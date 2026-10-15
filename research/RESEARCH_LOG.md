@@ -1264,3 +1264,42 @@ The other validation months had no `pro_aplus` fill. Five largest days: 2024-11-
 
 Reading. On these ten names the professional checklist mostly sits out, and when it trades the stop is the usual result. Relative volume is doing the sitting-out: a mega-cap opening print is rarely 1.2 times its own recent open. Turning that gate off loses more dollars, not less. No tier's removal produces a profit. Do not lower 1.2, widen the morning window, or adopt `no_internals` because −$28 is the least-bad long row. Look 8 stays closed. No order was placed.
 <!-- GRID15_END -->
+
+<!-- GRID15_NEXT_BEGIN -->
+## Exit tests and a daily top-k rank
+
+`pro_aplus` was rejected at −$36 on 58 fills. This batch keeps the tier interface and separates two questions that the checklist had mixed together. The rules in `backtest/grid15_next.py` were committed before the fill. Costs are the promotion-gate schedule: tiered IBKR commission and 2 bp of slippage per side, whole shares, US$2,120, at most four names at once, flat by 15:55. The live app file is still zero commission. A pass here would still have needed a read on that file. Nothing passed, so that second read was not run. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
+
+The exit books share one entry: the first morning 15-minute close through the 9:30–9:45 high, stop at the range low, with the range and the stop distance inside 12 bp to 2.5%. `x_flat` holds to 15:55. `x_30` and `x_60` are time stops. `x_noon` sells at the 12:00 open. `x_trail` starts at the range low and, after each bar, ratchets the stop up to the highest high minus one opening-range width. There were 1,097 signals. Equal priority means that when several names break on the same bar, symbol order spends the cash. All five books share that rule, so the difference between them is the exit.
+
+| Book | Fills | /day | Days | Win | Net | Commission | After slip, before commission | Ex top 5 | Avg win | Avg loss | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `x_flat` | 793 | 1.83 | 331/433 | 37.3% | −$815 | $563 | −$253 | −$920 | $2.85 | −$3.34 | $879 |
+| `x_30` | 814 | 1.88 | 331/433 | 28.9% | −$676 | $578 | −$99 | −$720 | $1.34 | −$1.71 | $685 |
+| `x_60` | 799 | 1.85 | 331/433 | 31.4% | −$773 | $567 | −$206 | −$841 | $1.61 | −$2.15 | $783 |
+| `x_noon` | 793 | 1.83 | 331/433 | 31.0% | −$811 | $563 | −$249 | −$897 | $2.02 | −$2.39 | $846 |
+| `x_trail` | 798 | 1.84 | 331/433 | 30.3% | −$776 | $566 | −$209 | −$875 | $2.70 | −$2.57 | $820 |
+
+`x_flat` exits: 579 at the flat, 214 at the stop. `x_30`: 791 at the time stop, 23 at the stop. `x_60`: 741 time, 58 stop. `x_noon`: 693 time, 100 stop. `x_trail`: 518 trail stops, 280 still open at the flat. Fill counts for `x_flat`: 102 sessions with none, 98 with one, 88 with two, 62 with three, 82 with four, one with five. That is 76% of sessions, under the 80% screen. Pooled nets, 2023-01-01 through 2026-03-31, are −$1,023, −$1,146, −$1,137, −$1,031, and −$1,048. The recent slice from 2025-07-01 is negative for each. `x_flat` has one positive half-year of six. The other four have none. One month of `x_60` (2025-03, +$3) and two months of `x_noon` (2024-12 +$3, 2025-08 +$1) are the only positive months. Decision: rejected.
+
+The rank books are a different entry. Each 15-minute slot is scored by its own walk-forward z, using only history through the prior day and only after 40 observations. Momentum takes a positive z. Reversion takes a negative z. The stop and the target are one historical standard deviation of that slot's forward 15-minute return. A slot whose standard deviation is under 20 bp is vetoed, because a one-standard-deviation target cannot clear 4 bp of slippage plus the $0.35 minimum on a quarter ticket. That floor is the commission. One slot per symbol, then the four highest scores, each a quarter of equity, out 30 minutes later or at the stop or the target. The regime tier vetoes the whole day only when both SPY and QQQ closed the prior day under their 20-day average.
+
+| Book | Signals | Fills | /day | Days | Win | Net | Commission | After slip, before commission | Ex top 5 | Avg win | Avg loss | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `k_mom` | 1,732 | 1,266 | 2.92 | 431/433 | 26.2% | −$1,098 | $898 | −$200 | −$1,110 | $0.66 | −$1.41 | $1,098 |
+| `k_mom_regime` | 1,224 | 970 | 2.24 | 306/433 | 26.1% | −$882 | $688 | −$193 | −$896 | $0.71 | −$1.48 | $882 |
+| `k_rev` | 1,732 | 1,304 | 3.01 | 431/433 | 33.9% | −$926 | $925 | −$1 | −$951 | $0.64 | −$1.40 | $926 |
+| `k_rev_regime` | 1,224 | 962 | 2.22 | 306/433 | 35.9% | −$679 | $683 | +$4 | −$703 | $0.71 | −$1.50 | $679 |
+
+`k_mom` reasons: 494 stops, 443 targets, 329 time exits. `k_rev`: 443 stops, 582 targets, 279 time exits. `k_mom` fill counts: 2 sessions with none, 38 with one, 89 with two, 166 with three, 138 with four. `k_rev`: 2, 13, 93, 195, 130. Pooled nets are −$1,481, −$1,336, −$1,403, and −$1,241. The recent slice is negative for each. No rank book has a positive half-year. No rank month is positive. Decision: rejected.
+
+Reading. The opening-range loss is present at every exit. After 2 bp of slippage and before commission, 30 minutes is about −$99 (−3.5 bp on a $349 average ticket) and the hold to 15:55 is about −$253 (−9.5 bp). The trail does not collect the winners: 518 of 798 trades are stopped by the ratchet. Round-trip tiered commission is about $0.71, about 20 bp on these whole-share tickets, and that is most of the dollars. A cheaper schedule would still be filling a negative price path. The earlier `bare_or` loss of $167 used zero commission and a 0.5% risk size, so the dollar totals are a different ticket. The sign did not change.
+
+The daily rank does the thing the checklist did not: 431 of 433 sessions, about three fills a day. Reversion's price path after slippage is −$1 on 1,304 fills. The $925 of commission is the loss. Momentum is about 5 bp negative before its $898 of commission. Ranking the largest z each day did not find a move that clears the minimum ticket. The 20 bp floor was not lowered after seeing that.
+
+The regime gate removes 127 sessions. Per trade, momentum goes from −$0.87 to −$0.91 and reversion stays at −$0.71. The smaller dollar loss is the smaller book.
+
+Whole shares on a quarter of US$2,120 leave SPY unfilled and META almost unfilled (6 to 12 trades). QQQ fills 9 to 13 times. `k_rev` fills are AMD 245, AAPL 214, GOOGL 204, TSLA 195, NVDA 184, AMZN 177, MSFT 60. On 418 of 431 reversion days two or more of those names are open together. They are one growth tape. That concentration is measured, and it is not what makes reversion flat before commission. Another name with the same near-zero slot move would add another $0.35 ticket. The twelve extra names and the six sector ETFs are not the binding constraint for this result. SPY and QQQ were on disk and were the regime gate. A later book that needs a bank, an oil major, or a staples name still uses `DATA_REQUEST.md`: on the Gateway PC, `pip install ib-insync pandas pyarrow tzdata`, then `python scripts/fetch_history.py --dry-run`, then `python scripts/fetch_history.py --max-priority 3`. Client id 19. Read-only. About 17.5 hours for priorities 1–3. This VM did not open the socket.
+
+No book cleared the frozen screen: positive validation, pooled, and recent nets, at least four of six half-years, a positive net with the five best days removed, and fills on at least 80% of validation sessions. The promotion gate was not run. Look 8 stays closed. Do not adopt `x_30` or `k_rev_regime` because they lost the least. Do not change K, the 20 bp floor, the 40-day history, or the 20-day average after seeing these losses. No order was placed.
+<!-- GRID15_NEXT_END -->

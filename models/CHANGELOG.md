@@ -155,5 +155,13 @@ The stack in `backtest/grid15.py` follows `research/RESEARCH_PRO_TRADERS.md`. `p
 Validation, 2024-07-01 through 2026-03-31: 58 fills, 29 entries, 0.13 fills a day, win 27.6%, −$36. Average win $1.26, average loss $1.33, max drawdown $43. Without the five best days, −$53. Of 433 sessions, 405 had no fill. The bare opening-range break, same costs and exits, lost $167 on 1,189 fills (2.75 a day) and $238 without its five best days. Removing any one tier left a loss. The afternoon VWAP book lost $9. The short failed-break lost $31, and $84 without its five best days. Session VWAP never vetoed a break that the range itself had not already put above VWAP. ACTIVE stays v0.1. No order was placed.
 <!-- GRID15_CHANGELOG_END -->
 
+<!-- GRID15_NEXT_CHANGELOG_BEGIN -->
+## Exit tests and daily top-k — 2026-10-14 — no checkpoint
+
+`backtest/grid15_next.py` freezes five exits of the same opening-range break, and a separate book that buys the four highest slot scores each day. Costs are tiered IBKR commission and 2 bp per side on US$2,120. The stop and target on the rank book are that slot's own historical standard deviation, with a 20 bp floor. A regime switch sits out only when both SPY and QQQ closed under their 20-day average. The holdout was not loaded.
+
+Validation: every exit lost. The 30-minute time stop was −$676 on 814 fills (1.88 a day). Holding to 15:55 was −$815 on 793 fills. The trail was −$776. After slippage and before commission the price path was still negative, from −$99 to −$253. The rank book traded 431 of 433 sessions. Momentum lost $1,098 on 1,266 fills (2.92 a day). Reversion lost $926 on 1,304 fills (3.01 a day); after slippage and before commission that book was −$1, so the $925 of commission is the loss. Gating on the two indexes cut the dollar loss in proportion to the trades removed. No book cleared the frozen screen. ACTIVE stays v0.1. No order was placed.
+<!-- GRID15_NEXT_CHANGELOG_END -->
+
 
 
