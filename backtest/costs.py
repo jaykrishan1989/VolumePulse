@@ -1,16 +1,14 @@
 """Execution costs for the owner's account.
 
-IBKR is the market-data source. It is not the broker. Fills are assumed on a
-zero-commission platform. The only cost in the default model is slippage of at
-least 2 bp per side, charged by worsening the next bar's open.
+Jay trades through IBKR. The live schedule is tiered: US$0.35 minimum per
+side, or US$0.0035 per share, capped at 1% of notional, plus SEC and FINRA
+on sells. Slippage of at least 2 bp per side is charged by worsening the
+next bar's open. ``apply_slip`` does the slippage. ``commission`` does the
+broker fee.
 
-``app/cost_model.json`` is the config. ``schedule`` there is ``zero``, which
-charges no broker commission and no regulatory fee. Slippage is applied by
-``apply_slip``, not inside ``commission``.
-
-``tiered`` and ``fixed`` remain as explicit historical schedules from the
-earlier IBKR-assumption notes. They are not the default and they are not a
-reported column.
+``app/cost_model.json`` is the config. ``schedule`` there is ``tiered``.
+``zero`` and ``fixed`` remain so an older run can be restated. They are not
+the live model.
 """
 
 from __future__ import annotations

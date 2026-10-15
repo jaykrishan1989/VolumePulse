@@ -1268,7 +1268,7 @@ Reading. On these ten names the professional checklist mostly sits out, and when
 <!-- GRID15_NEXT_BEGIN -->
 ## Exit tests and a daily top-k rank
 
-`pro_aplus` was rejected at −$36 on 58 fills. This batch keeps the tier interface and separates two questions that the checklist had mixed together. The rules in `backtest/grid15_next.py` were committed before the fill. Costs are the promotion-gate schedule: tiered IBKR commission and 2 bp of slippage per side, whole shares, US$2,120, at most four names at once, flat by 15:55. The live app file is still zero commission. A pass here would still have needed a read on that file. Nothing passed, so that second read was not run. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
+`pro_aplus` was rejected at −$36 on 58 fills. This batch keeps the tier interface and separates two questions that the checklist had mixed together. The rules in `backtest/grid15_next.py` were committed before the fill. Costs are the promotion-gate schedule: tiered IBKR commission and 2 bp of slippage per side, whole shares, US$2,120, at most four names at once, flat by 15:55. The live app file was still zero commission when these rows were scored. It is tiered now. These rows were not recomputed. Nothing passed. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
 
 The exit books share one entry: the first morning 15-minute close through the 9:30–9:45 high, stop at the range low, with the range and the stop distance inside 12 bp to 2.5%. `x_flat` holds to 15:55. `x_30` and `x_60` are time stops. `x_noon` sells at the 12:00 open. `x_trail` starts at the range low and, after each bar, ratchets the stop up to the highest high minus one opening-range width. There were 1,097 signals. Equal priority means that when several names break on the same bar, symbol order spends the cash. All five books share that rule, so the difference between them is the exit.
 
@@ -1303,3 +1303,26 @@ Whole shares on a quarter of US$2,120 leave SPY unfilled and META almost unfille
 
 No book cleared the frozen screen: positive validation, pooled, and recent nets, at least four of six half-years, a positive net with the five best days removed, and fills on at least 80% of validation sessions. The promotion gate was not run. Look 8 stays closed. Do not adopt `x_30` or `k_rev_regime` because they lost the least. Do not change K, the 20 bp floor, the 40-day history, or the 20-day average after seeing these losses. No order was placed.
 <!-- GRID15_NEXT_END -->
+
+<!-- GRID15_COST_BEGIN -->
+## Cost hurdle: one name, a larger move
+
+Jay confirmed he trades through IBKR. `app/cost_model.json` is now the tiered schedule: US$0.35 minimum per side, SEC and FINRA on sells, and 2 bp of slippage. The previous batch already used that cost on the research books. A quarter of US$2,120 paid about 20 bp round trip, and the reversion rank's price path was about zero, so the ticket was the loss. This batch asks whether a larger ticket and a larger move can clear that 20 bp. The rules were frozen before the fill. Costs are tiered commission and 2 bp. Whole shares. Flat by 15:55. The locked holdout was not loaded. `models/ACTIVE` stays `v0.1`.
+
+`c_ticket` buys the single most negative slot, the full US$2,120. `c_two` buys the two most negative, half each. `c_vol` keeps the four-name book and raises the slot-volatility floor from 20 bp to 40 bp, so a one-standard-deviation target is twice the cost. `c_move` keeps the four-name book and requires the slot to be down at least 1.5 of its own standard deviations. `c_edge` keeps the four-name book and trades a slot only when its own prior down days were followed by a forward return above 20 bp. `c_primary` is the package: one full ticket, the 40 bp floor, the 1.5 sigma dislocation, and the 20 bp historical edge, ranked by that edge times today's z. Only `c_primary` may open the holdout. The screen drops the 80% day rule, because fewer trades are the point, and it still requires a positive validation, pooled, and recent net, four of six half-years, a positive net without the five best days, at least 80 trades, and a positive average basis-point result after costs.
+
+| Book | Fills | /day | Days | Win | Net | bp | Commission | Ex top 5 | Avg win | Avg loss | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `c_ticket` | 433 | 1.00 | 433/433 | 52.4% | −$383 | −4.9 | $324 | −$449 | $4.84 | −$7.20 | $454 |
+| `c_two` | 866 | 2.00 | 433/433 | 50.9% | −$587 | −9.2 | $625 | −$635 | $1.80 | −$3.25 | $592 |
+| `c_vol` | 1,352 | 3.12 | 433/433 | 46.7% | −$812 | −18.5 | $959 | −$848 | $0.86 | −$1.88 | $812 |
+| `c_move` | 1,003 | 2.32 | 395/433 | 38.3% | −$724 | −22.1 | $712 | −$747 | $0.67 | −$1.59 | $725 |
+| `c_edge` | 0 | 0.00 | 0/433 | n/a | $0 | 0 | $0 | $0 | n/a | n/a | $0 |
+| `c_primary` | 0 | 0.00 | 0/433 | n/a | $0 | 0 | $0 | $0 | n/a | n/a | $0 |
+
+`c_ticket` exits: 209 targets, 167 stops, 57 time exits. Pooled −$662 on 805 trades. Recent, from 2025-07-01, −$13 on 186. No half-year is positive. Eight validation months are positive and the rest are not. Five largest days: 2024-08-14 $15, 2025-06-26 $13, 2025-02-27 $13, 2025-06-02 $12, 2025-01-28 $12. `c_vol` and `c_move` have no positive month. Every book fails the screen. Decision: rejected.
+
+Reading. One full ticket is the only lever that changes the cost rate. Commission falls to about 4 bp on an $1,800 average fill, and the win rate crosses 50%. The average loss is still larger than the average win, $7.20 against $4.84. After slippage and before commission the book is about −$59, roughly 1 bp the wrong way. Commission then takes $324. Two names pay a higher commission rate and lose 9 bp. Raising the volatility floor to 40 bp does not find a better fade: −18.5 bp, and the book still trades every day. Requiring a 1.5 sigma drop makes the win rate worse, 38.3%. The large move continues more often than it reverts.
+
+The 20 bp historical filter never fires in the validation window, so `c_primary` does not trade. Across 263,814 slot checks that already had 40 down days, one check cleared 20 bp, on NVDA's 14:15 slot on 2022-05-24, and it was 20.02 bp. By the end of the sample the best slot is AAPL's opening bucket at 4.6 bp. The median slot is about zero. A 4.6 bp historical fade does not clear a 20 bp round trip, and it barely clears 4 bp of slippage. The hurdle was not lowered after seeing that. The twelve extra names were not fetched. This tape's own slots are the measurement. A name that is not here might have a larger fade, and that was not tested. It is not a reason to treat −$383 as a data problem. Look 8 stays closed. Do not adopt `c_ticket` because −4.9 bp is the smallest loss. Do not lower 1.5 sigma, the 40 bp floor, or the 20 bp historical hurdle. No order was placed.
+<!-- GRID15_COST_END -->

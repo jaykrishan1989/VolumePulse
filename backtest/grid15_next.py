@@ -10,10 +10,10 @@ A book can reach the promotion gate only if the screen below is true. The
 screen was written before the fill. Two passes do not open the holdout.
 Nothing here places an order.
 
-Costs for this batch are the promotion-gate schedule: tiered IBKR commission
-and 2 bp of slippage per side, on US$2,120. The live app config is still zero
-commission. A pass here would still have to be read on that config before it
-could change the list.
+Jay trades through IBKR. The decision cost is tiered commission and 2 bp of
+slippage per side, on US$2,120. The cost-clearing books below are a later
+batch: fewer names, a larger ticket, and a slot whose own move can clear a
+20 bp round trip. Only ``c_primary`` may open the holdout.
 """
 
 from __future__ import annotations
@@ -52,6 +52,11 @@ SMA_DAYS = 20
 SCREEN_MIN_TRADES = 80
 SCREEN_MIN_DAY_SHARE = 0.80
 SCREEN_MIN_HALVES = 4
+# A quarter ticket paid about 20 bp round trip. A 20 bp target only ties that.
+# The higher floor makes the target twice the cost. Neither number is a search.
+COST_HURDLE = 0.0020
+VOL_FLOOR = 0.0040
+DISLOCATION_Z = 1.5
 
 ENTRY_CUTOFF = 15 * 60 + 15
 TRADE_STARTS = tuple(start for start in SLOT_STARTS if signal_minute(start) + 5 <= ENTRY_CUTOFF)
@@ -74,6 +79,12 @@ class BookSpec:
     exit: str = ""
     side: str = ""
     regime: bool = False
+    min_z: float = 0.0
+    require_edge: bool = False
+    rank_by_edge: bool = False
+    min_std: float = MIN_STD
+    top_k: int = TOP_K
+    invest_fraction: float = INVEST_FRACTION
 
 
 # Exit books share one entry. Rank books share one sizer. Regime is a switch.
@@ -88,6 +99,29 @@ BOOKS = (
     BookSpec("k_rev", "rank", side="rev"),
     BookSpec("k_rev_regime", "rank", side="rev", regime=True),
 )
+
+
+# One lever each, plus the package. Only c_primary may open the holdout.
+# The levers are a report. They are not a menu.
+COST_BOOKS = (
+    BookSpec("c_ticket", "rank", side="rev", top_k=1, invest_fraction=1.0),
+    BookSpec("c_two", "rank", side="rev", top_k=2, invest_fraction=0.5),
+    BookSpec("c_vol", "rank", side="rev", min_std=VOL_FLOOR),
+    BookSpec("c_move", "rank", side="rev", min_z=DISLOCATION_Z),
+    BookSpec("c_edge", "rank", side="rev", require_edge=True),
+    BookSpec(
+        "c_primary",
+        "rank",
+        side="rev",
+        top_k=1,
+        invest_fraction=1.0,
+        min_z=DISLOCATION_Z,
+        require_edge=True,
+        rank_by_edge=True,
+        min_std=VOL_FLOOR,
+    ),
+)
+ADOPTABLE = frozenset({"c_primary"})
 
 
 @dataclass
@@ -114,6 +148,7 @@ class Running:
 class SymbolMemory:
     buckets: dict[int, Running] = field(default_factory=dict)
     forwards: dict[int, Running] = field(default_factory=dict)
+    down_forwards: dict[int, Running] = field(default_factory=dict)
     closes: list[float] = field(default_factory=list)
 
     def bucket(self, start: int) -> Running:
@@ -121,6 +156,9 @@ class SymbolMemory:
 
     def forward(self, start: int) -> Running:
         return self.forwards.setdefault(start, Running())
+
+    def down_forward(self, start: int) -> Running:
+        return self.down_forwards.setdefault(start, Running())
 
     def z(self, start: int, value: float) -> float | None:
         stats = self.buckets.get(start)
@@ -136,6 +174,16 @@ class SymbolMemory:
         if stats is None:
             return None
         return stats.std()
+
+    def down_forward_mean(self, start: int) -> float | None:
+        """Mean forward return on days this slot's own bucket was down.
+
+        The mean is prior days only. The caller adds today's return after the decision.
+        """
+        stats = self.down_forwards.get(start)
+        if stats is None or stats.n < MIN_HISTORY:
+            return None
+        return stats.mean
 
     def below_average(self) -> bool | None:
         if len(self.closes) < SMA_DAYS:
@@ -155,18 +203,46 @@ def vote_impulse(z: float | None, side: str) -> TierVote:
     raise ValueError(side)
 
 
-def vote_slot_scale(scale: float | None) -> TierVote:
+def vote_slot_scale(scale: float | None, floor: float = MIN_STD) -> TierVote:
     """One historical standard deviation is the stop and the target.
 
-    Below 20 bp the target cannot clear 4 bp of slippage plus the $0.35
-    minimum on a quarter of a US$2,120 ticket. That floor is the commission,
-    not a fitted edge.
+    The original books keep the 20 bp floor. A caller can pass a higher floor.
+    The number is an argument, not a search.
     """
     if scale is None:
         return TierVote("slot_scale", 0.0, True, 1.0, "thin forward history")
-    if scale < MIN_STD:
+    if scale < floor:
         return TierVote("slot_scale", scale, True, 1.0, f"std {scale:.4f} below the cost floor")
     return TierVote("slot_scale", scale, False, 1.0, f"std {scale:.4f}")
+
+
+def vote_dislocation(z: float | None, side: str, min_z: float) -> TierVote:
+    """A one-sigma move is a dislocation. Zero means the impulse vote is enough."""
+    if min_z <= 0:
+        return TierVote("dislocation", 1.0, False, 1.0, "no dislocation floor")
+    if z is None:
+        return TierVote("dislocation", 0.0, True, 1.0, "thin slot history")
+    if side == "rev" and z > -min_z:
+        return TierVote("dislocation", -z, True, 1.0, f"z {z:.3f} inside {min_z:.1f} sigma")
+    if side == "mom" and z < min_z:
+        return TierVote("dislocation", z, True, 1.0, f"z {z:.3f} inside {min_z:.1f} sigma")
+    return TierVote("dislocation", abs(z), False, 1.0, f"z {z:.3f}")
+
+
+def vote_historical_edge(mean: float | None, *, mode: str) -> TierVote:
+    """The slot's own average forward return after a down bucket.
+
+    ``rank`` keeps a slot whose history reverted at all. ``clear`` keeps a
+    slot whose history cleared the 20 bp round trip. ``off`` does not vote.
+    """
+    if mode == "off":
+        return TierVote("hist_edge", 0.0, False, 1.0, "historical edge off")
+    if mean is None:
+        return TierVote("hist_edge", 0.0, True, 1.0, "thin down-slot history")
+    floor = COST_HURDLE if mode == "clear" else 0.0
+    if mean <= floor:
+        return TierVote("hist_edge", mean, True, 1.0, f"down-slot mean {mean:.5f} does not clear {floor:.5f}")
+    return TierVote("hist_edge", mean, False, 1.0, f"down-slot mean {mean:.5f}")
 
 
 def vote_regime(spy_below: bool | None, qqq_below: bool | None, *, enabled: bool) -> TierVote:
@@ -229,6 +305,39 @@ def screen_failures(
     return reasons
 
 
+def cost_screen_failures(
+    *,
+    validate_net: float,
+    pooled_net: float,
+    recent_net: float,
+    validate_trades: int,
+    positive_halves: int,
+    ex_top5: float,
+    avg_bps: float,
+) -> list[str]:
+    """Frozen before the fill. Fewer trades are allowed. The edge still has to clear costs.
+
+    A day-share rule would reject the larger-move book this batch is testing.
+    The fill rate is reported. It is not a pass condition.
+    """
+    reasons = []
+    if validate_net <= 0:
+        reasons.append("validation net is not positive")
+    if pooled_net <= 0:
+        reasons.append("pooled net from 2023-01-01 is not positive")
+    if recent_net <= 0:
+        reasons.append("recent net from 2025-07-01 is not positive")
+    if validate_trades < SCREEN_MIN_TRADES:
+        reasons.append("fewer than 80 validation trades")
+    if positive_halves < SCREEN_MIN_HALVES:
+        reasons.append("fewer than 4 of 6 half-years are positive")
+    if ex_top5 <= 0:
+        reasons.append("validation net without the five best days is not positive")
+    if avg_bps <= 0:
+        reasons.append("average net basis points do not clear the round-trip cost")
+    return reasons
+
+
 def _stamp(bar: dict[str, Any], *, flat: bool) -> int:
     stamp = int(bar.get("t") or 0)
     if flat and stamp:
@@ -236,7 +345,15 @@ def _stamp(bar: dict[str, Any], *, flat: bool) -> int:
     return stamp
 
 
-def _finish(spell: dict[str, Any], *, symbol: str, day: date, entry: dict[str, Any], score: float) -> dict[str, Any]:
+def _finish(
+    spell: dict[str, Any],
+    *,
+    symbol: str,
+    day: date,
+    entry: dict[str, Any],
+    score: float,
+    invest_fraction: float = INVEST_FRACTION,
+) -> dict[str, Any]:
     spell.update(
         {
             "symbol": symbol,
@@ -245,7 +362,7 @@ def _finish(spell: dict[str, Any], *, symbol: str, day: date, entry: dict[str, A
             "entry_t": int(entry.get("t") or 0),
             "score": score,
             "priority": score,
-            "invest_fraction": INVEST_FRACTION,
+            "invest_fraction": invest_fraction,
             "side": "long",
         }
     )
@@ -408,8 +525,17 @@ def _rank_rows(
             z = mem.z(start, impulse)
             scale = mem.forward_std(start)
             impulse_vote = vote_impulse(z, spec.side)
-            scale_vote = vote_slot_scale(scale)
-            veto = regime.veto or impulse_vote.veto or scale_vote.veto
+            scale_vote = vote_slot_scale(scale, spec.min_std)
+            disloc_vote = vote_dislocation(z, spec.side, spec.min_z)
+            if spec.require_edge:
+                edge_mode = "clear"
+            elif spec.rank_by_edge:
+                edge_mode = "rank"
+            else:
+                edge_mode = "off"
+            edge_mean = mem.down_forward_mean(start) if edge_mode != "off" else None
+            edge_vote = vote_historical_edge(edge_mean, mode=edge_mode)
+            veto = regime.veto or impulse_vote.veto or scale_vote.veto or disloc_vote.veto or edge_vote.veto
             if veto:
                 continue
             entry_minute = signal_minute(start) + 5
@@ -424,7 +550,17 @@ def _rank_rows(
             planned = fixed_spell(view, entry_index, stop, target, entry_minute + 30)
             if planned is None:
                 continue
-            _finish(planned, symbol=symbol, day=day, entry=view.ordered[entry_index], score=impulse_vote.score)
+            score = impulse_vote.score
+            if spec.rank_by_edge:
+                score = float(edge_vote.score) * float(impulse_vote.score)
+            _finish(
+                planned,
+                symbol=symbol,
+                day=day,
+                entry=view.ordered[entry_index],
+                score=score,
+                invest_fraction=spec.invest_fraction,
+            )
             planned["start"] = start
             planned["z"] = z
             rows.append(planned)
@@ -445,6 +581,8 @@ def _update_memory(mem: SymbolMemory, view: DayView) -> None:
         forward = _forward_return(view, start)
         if forward is not None:
             mem.forward(start).add(forward)
+        if impulse is not None and impulse < 0 and forward is not None:
+            mem.down_forward(start).add(forward)
 
 
 @dataclass
@@ -491,7 +629,7 @@ def run_next(
                         spells[spec.name].append(spell)
                 continue
             regime = vote_regime(spy, qqq, enabled=spec.regime)
-            chosen = rank_candidates(_rank_rows(spec, day, prepared, memory, regime), TOP_K, regime.veto)
+            chosen = rank_candidates(_rank_rows(spec, day, prepared, memory, regime), spec.top_k, regime.veto)
             for spell in chosen:
                 spell.pop("start", None)
                 spells[spec.name].append(spell)

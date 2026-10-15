@@ -391,7 +391,7 @@ The book is a 15-minute decision grid. The tiers are written up in `research/RES
 
 ## Exit tests and a daily top-k rank
 
-The next batch splits the opening-range loss from a frequency book. Both were frozen in `backtest/grid15_next.py` before the fill. Costs are tiered IBKR commission and 2 bp a side on US$2,120, whole shares, four names at most, flat by 15:55. The live app config remains zero commission. The locked holdout was not loaded.
+The next batch splits the opening-range loss from a frequency book. Both were frozen in `backtest/grid15_next.py` before the fill. Costs are tiered IBKR commission and 2 bp a side on US$2,120, whole shares, four names at most, flat by 15:55. The live app config was still zero commission when these rows were scored. It is tiered now. These rows were not recomputed. The locked holdout was not loaded.
 
 The exit books share the first morning close through the 9:30–9:45 high and the stop at the range low. Only the exit changes. There were 1,097 signals.
 
@@ -418,6 +418,21 @@ The rank books buy the four highest slot scores each day across the ten names. M
 
 The opening-range price path is negative at 30 minutes, 60 minutes, noon, the close, and with a trail. Commission of about 20 bp is the larger dollar piece, and it sits on top of that negative path. The daily rank does trade almost every session. Reversion after slippage is a wash, and the $0.35 minimum is the loss. Sitting out weak-index days removes trades and does not improve the trade that remains. SPY and META almost never clear one whole share on a quarter of US$2,120, so the fills are the other mega-caps, several of them on the same day. The twelve extra names are not what turns a flat price path into a profit. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
 
+## Cost hurdle
+
+Jay trades through IBKR. The live file `app/cost_model.json` is tiered commission and 2 bp of slippage per side. This batch keeps that cost and asks whether a larger ticket and a larger move can clear the roughly 20 bp round trip that a quarter ticket paid. The rules were frozen before the fill. The locked holdout was not loaded.
+
+| Book | What changed | Fills/day | Days | Win | Validation net | bp after costs | Without top 5 days | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `c_ticket` | one name, full US$2,120 | 1.00 | 433/433 | 52.4% | −$383 | −4.9 | −$449 | rejected |
+| `c_two` | two names, half each | 2.00 | 433/433 | 50.9% | −$587 | −9.2 | −$635 | rejected |
+| `c_vol` | slot volatility floor 40 bp | 3.12 | 433/433 | 46.7% | −$812 | −18.5 | −$848 | rejected |
+| `c_move` | fade only a 1.5 sigma drop | 2.32 | 395/433 | 38.3% | −$724 | −22.1 | −$747 | rejected |
+| `c_edge` | slot history must clear 20 bp | 0.00 | 0/433 | n/a | $0 | 0 | $0 | no trades |
+| `c_primary` | all four of those together | 0.00 | 0/433 | n/a | $0 | 0 | $0 | no trades |
+
+`c_ticket` average win $4.84, average loss −$7.20, commission $324, max drawdown $454. After slippage and before commission it is about −$59. The win rate is above half and the loss is still larger than the win. `c_primary` does not trade: in the validation window no slot's own history of fading a down bucket cleared 20 bp. The best slot at the end of the sample, AAPL's opening bucket, had reverted 4.6 bp. One check in May 2022 printed 20.02 bp and did not last. Look 8 was not opened. `models/ACTIVE` stays `v0.1`. No order was placed.
+
 ## Versions
 
 There is no v1.0. The live rule failed the costs-and-random bar (holdout net −$268, bootstrap p = 0.9995, random-entry p = 0.225), so the checkpoint is **v0.1 baseline**. `models/ACTIVE` points at it. The git tag is `v0.1`. Parameters, windows, and the holdout summary are in `models/checkpoints/v0.1/`. A plain note is `NOTE.md` in that folder. The history of rejected rules is `models/CHANGELOG.md`.
@@ -441,6 +456,7 @@ python -m backtest.run_costs
 python -m backtest.run_ml
 python -m backtest.run_grid15
 python -m backtest.run_grid15_next
+python -m backtest.run_grid15_cost
 ```
 
-`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` re-scores the frozen rules with the live cost model in `app/cost_model.json`: no commission and 2 bp slippage per side. It does not append a holdout look. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again. `run_grid15` scores the frozen 15-minute books on validation only and does not open the holdout. `run_grid15_next` scores the frozen exit books and the daily top-k books on the tiered commission schedule and does not open the holdout.
+`backtest.scan` writes `backtest_cache/signals.pkl` (gitignored). `scan_membership` writes `backtest_cache/membership.pkl`, every on-list bar, which the bracket cache cannot rebuild. `run_roundtrip select` freezes `app/signal_rule.json` without reading the holdout. `holdout` reads that file once and refreshes `app/research_stats.json`. Re-running holdout repeats the same locked window. It does not authorize another grid. `run_hypotheses` rewrites the research log from the frozen registry, keeps the promotion-gate section and the research-areas section, and does not open the holdout. `run_gate` scores the registry against the live champion and does not write `app/signal_rule.json`. `run_areas` scores the fifteen position-size, clock, liquidity, and regime overlays on the same gate and does not open the holdout or move `models/ACTIVE`. `run_daily` scores the five daily-frequency rules and reads the holdout once for the validation finalist. `run_costs` is the earlier zero-commission rerank. The live file is now tiered, and that command refuses to run so it does not overwrite those tables. Do not rerun it. `run_grid15_cost` scores the frozen one-name and large-move books on tiered commission plus 2 bp and does not open the holdout. `run_ml` fits `ml_lgb_60m`. That command has already recorded holdout look 4. Do not run it again. `run_profit` ranks the dollar search and has already recorded the causal holdout. Do not run it again. `run_grid15` scores the frozen 15-minute books on validation only and does not open the holdout. `run_grid15_next` scores the frozen exit books and the daily top-k books on the tiered commission schedule and does not open the holdout.

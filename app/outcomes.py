@@ -3,7 +3,7 @@
 A row is written when a setup first appears. Later marks use the last traded
 price already on the tape: stop if last is at or through the stop, otherwise
 target, otherwise a time exit at 15:55 ET. Dollars use the live cost model:
-no commission, 2 bp of slippage on the fill.
+tiered IBKR commission and 2 bp of slippage on the fill. No order is sent.
 """
 
 from __future__ import annotations

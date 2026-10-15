@@ -163,5 +163,13 @@ Validation, 2024-07-01 through 2026-03-31: 58 fills, 29 entries, 0.13 fills a da
 Validation: every exit lost. The 30-minute time stop was −$676 on 814 fills (1.88 a day). Holding to 15:55 was −$815 on 793 fills. The trail was −$776. After slippage and before commission the price path was still negative, from −$99 to −$253. The rank book traded 431 of 433 sessions. Momentum lost $1,098 on 1,266 fills (2.92 a day). Reversion lost $926 on 1,304 fills (3.01 a day); after slippage and before commission that book was −$1, so the $925 of commission is the loss. Gating on the two indexes cut the dollar loss in proportion to the trades removed. No book cleared the frozen screen. ACTIVE stays v0.1. No order was placed.
 <!-- GRID15_NEXT_CHANGELOG_END -->
 
+<!-- GRID15_COST_CHANGELOG_BEGIN -->
+## Cost hurdle — 2026-10-15 — no checkpoint
+
+Jay trades through IBKR. `app/cost_model.json` is tiered commission plus 2 bp of slippage. The cost-clearing books in `backtest/grid15_next.py` were frozen before the fill: one full ticket, two half tickets, a 40 bp volatility floor, a 1.5 sigma dislocation, and a slot whose own history reverted by more than 20 bp. The package is `c_primary`. The holdout was not loaded.
+
+Validation: one full ticket lost $383 on 433 fills (1.00 a day), win 52.4%, −4.9 bp, and −$449 without the five best days. Two names lost $587, −9.2 bp. The 40 bp floor lost $812, −18.5 bp. The 1.5 sigma fade lost $724, −22.1 bp, win 38.3%. The 20 bp historical filter never qualified a slot in the validation window, so the package did not trade. The best slot at the end of the sample had reverted 4.6 bp. ACTIVE stays v0.1. No order was placed.
+<!-- GRID15_COST_CHANGELOG_END -->
+
 
 

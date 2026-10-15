@@ -98,18 +98,18 @@ class FillTests(unittest.TestCase):
         self.assertGreater(apply_slip(100, "buy", 2), 100)
         self.assertLess(apply_slip(100, "sell", 2), 100)
 
-    def test_default_schedule_is_slippage_only(self) -> None:
+    def test_default_schedule_is_tiered_ibkr(self) -> None:
         from backtest.costs import PRIMARY_SCHEDULE, SLIP_BPS_MIN, load_cost_model
         from backtest.periods import SLIP_BPS
 
         model = load_cost_model()
-        self.assertEqual(model["schedule"], "zero")
-        self.assertEqual(model["commissionPerTradeUsd"], 0)
-        self.assertFalse(model["regulatoryFees"])
-        self.assertEqual(PRIMARY_SCHEDULE, "zero")
+        self.assertEqual(model["schedule"], "tiered")
+        self.assertEqual(model["commissionPerTradeUsd"], 0.35)
+        self.assertTrue(model["regulatoryFees"])
+        self.assertEqual(PRIMARY_SCHEDULE, "tiered")
         self.assertGreaterEqual(SLIP_BPS, SLIP_BPS_MIN)
-        self.assertEqual(commission(10, 50, "buy"), 0.0)
-        self.assertEqual(commission(10, 50, "sell"), 0.0)
+        self.assertEqual(commission(1, 100, "buy"), 0.35)
+        self.assertGreater(commission(1, 100, "sell"), 0.35)
         self.assertLess(commission(10, 50, "sell", "tiered"), commission(10, 50, "sell", "fixed"))
 
     def test_buy_slippage_is_in_the_entry(self) -> None:

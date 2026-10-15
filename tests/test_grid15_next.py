@@ -8,15 +8,23 @@ from datetime import date, timedelta
 
 from backtest.gate import ideas_tried
 from backtest.grid15_next import (
+    ADOPTABLE,
     BOOKS,
+    COST_BOOKS,
+    COST_HURDLE,
+    DISLOCATION_Z,
     MIN_HISTORY,
     TOP_K,
+    VOL_FLOOR,
     Running,
     SymbolMemory,
+    cost_screen_failures,
     rank_candidates,
     run_next,
     screen_failures,
     trail_spell,
+    vote_dislocation,
+    vote_historical_edge,
     vote_impulse,
     vote_regime,
     vote_slot_scale,
@@ -77,6 +85,22 @@ class NextGridTests(unittest.TestCase):
         self.assertEqual(ideas_tried(), 54)
         self.assertEqual(TOP_K, 4)
         self.assertEqual(len(BOOKS), 9)
+        self.assertEqual(ADOPTABLE, frozenset({"c_primary"}))
+        primary = next(spec for spec in COST_BOOKS if spec.name == "c_primary")
+        self.assertEqual(primary.top_k, 1)
+        self.assertEqual(primary.invest_fraction, 1.0)
+        self.assertEqual(primary.min_z, DISLOCATION_Z)
+        self.assertEqual(primary.min_std, VOL_FLOOR)
+        self.assertTrue(primary.require_edge)
+        self.assertTrue(primary.rank_by_edge)
+        self.assertEqual(cost_screen_failures(
+            validate_net=1, pooled_net=1, recent_net=1, validate_trades=80,
+            positive_halves=4, ex_top5=1, avg_bps=1,
+        ), [])
+        self.assertTrue(cost_screen_failures(
+            validate_net=1, pooled_net=1, recent_net=1, validate_trades=80,
+            positive_halves=4, ex_top5=1, avg_bps=-1,
+        ))
         self.assertEqual(screen_failures(
             validate_net=1, pooled_net=1, recent_net=1, validate_trades=80,
             positive_halves=4, ex_top5=1, days_with_fill=80, sessions=100,
@@ -98,6 +122,11 @@ class NextGridTests(unittest.TestCase):
         self.assertTrue(blocked.veto)
         self.assertFalse(vote_regime(True, False, enabled=True).veto)
         self.assertFalse(vote_regime(True, True, enabled=False).veto)
+        self.assertTrue(vote_dislocation(-1.0, "rev", DISLOCATION_Z).veto)
+        self.assertFalse(vote_dislocation(-1.5, "rev", DISLOCATION_Z).veto)
+        self.assertTrue(vote_historical_edge(0.001, mode="clear").veto)
+        self.assertFalse(vote_historical_edge(COST_HURDLE + 0.0001, mode="clear").veto)
+        self.assertFalse(vote_historical_edge(None, mode="off").veto)
 
     def test_slot_memory_does_not_include_the_observation_just_scored(self) -> None:
         memory = SymbolMemory()
@@ -186,6 +215,14 @@ class NextGridTests(unittest.TestCase):
         self.assertIsNone(stats.std())
         stats.add(0.01)
         self.assertIsNotNone(stats.std())
+
+    def test_down_slot_mean_waits_for_its_own_history(self) -> None:
+        memory = SymbolMemory()
+        for _ in range(MIN_HISTORY - 1):
+            memory.down_forward(600).add(0.01)
+        self.assertIsNone(memory.down_forward_mean(600))
+        memory.down_forward(600).add(0.01)
+        self.assertAlmostEqual(memory.down_forward_mean(600), 0.01)
 
 
 if __name__ == "__main__":
