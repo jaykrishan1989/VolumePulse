@@ -171,5 +171,13 @@ Jay trades through IBKR. `app/cost_model.json` is tiered commission plus 2 bp of
 Validation: one full ticket lost $383 on 433 fills (1.00 a day), win 52.4%, −4.9 bp, and −$449 without the five best days. Two names lost $587, −9.2 bp. The 40 bp floor lost $812, −18.5 bp. The 1.5 sigma fade lost $724, −22.1 bp, win 38.3%. The 20 bp historical filter never qualified a slot in the validation window, so the package did not trade. The best slot at the end of the sample had reverted 4.6 bp. ACTIVE stays v0.1. No order was placed.
 <!-- GRID15_COST_CHANGELOG_END -->
 
+<!-- SESSION_EDGE_CHANGELOG_BEGIN -->
+## Session edge — 2026-10-16 — no checkpoint
+
+`backtest/session_edge.py` freezes six long-only books before the fill. The primary buys the name at least 30 bp behind its walk-forward beta to SPY, one full ticket, held 60 minutes. The other books are a 15 bp SPY impulse, a 40 bp bar fade, a 40 bp bar continuation, a 30 bp VWAP discount, and the Gao, Han, Li, and Zhou last half-hour as a time exit. Costs are tiered IBKR commission and 2 bp. The holdout was not loaded.
+
+Validation, 439 SPY sessions: the residual book lost $681 on 431 fills (0.98 a day), win 43.6%, −9.5 bp, and −$896 without the five best days. After slippage and before commission it was −$359. The impulse slice lost $358, −11.2 bp, on 176 fills. The down-bar fade lost $746. The up-bar lost $479, −6.2 bp. The VWAP discount lost $659. The last half-hour lost $479, −6.9 bp, with the 100 bp stop binding 21 times. The median day's worst residual was −178 bp, so the 30 bp band was not a rare dislocation. ACTIVE stays v0.1. No order was placed.
+<!-- SESSION_EDGE_CHANGELOG_END -->
+
 
 
