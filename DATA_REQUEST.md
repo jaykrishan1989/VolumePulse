@@ -113,3 +113,57 @@ Add a separate file, `data/events/earnings.csv`, with one row per announcement t
 Cover 2018-01-02 through 2026-09-25. The timestamp has to be the one known before the entry, not a later correction.
 
 This is not a daily book on eight names. Four announcements a year is about 32 sessions, which fails the near-daily requirement by itself. The calendar is useful in two ways once it exists: sit those sessions out of a rule that was not built for a gap, and, on the wider universe, test whether announcement volume has a drift the ordinary price path does not (Bernard and Thomas, Journal of Accounting and Economics, 1989). FOMC, CPI, and payroll dates are already coded and are just as sparse. They were not fetched because they are not missing.
+
+## Closing imbalances, index lists, and dealer gamma
+
+`research/ECONOMIC_HYPOTHESES.md` is the reason these three are separate from the bar request. The 5-minute files cannot sign them. Do not substitute a Friday, a quarter-end, or a guessed strike. A wrong sign is worse than a missing file. None of this is fetched by `scripts/fetch_history.py`.
+
+### Market-on-close imbalance
+
+Cushing and Madhavan (Journal of Financial Markets, 2000): the signed closing imbalance moves the auction, and part of that move reverses. The account is flat at 15:55, so it cannot hold the auction. It could hold the half hour before the auction if the sign were known before the entry.
+
+Add `data/events/moc.csv`, one row per name per session, known before 15:30 ET:
+
+| column | meaning |
+| --- | --- |
+| symbol | SPY plus the eight names on disk. The twelve priority-1 names when those bars exist. |
+| session | `YYYY-MM-DD` |
+| side | `buy` or `sell`, the imbalance direction |
+| shares | imbalance size, if the feed publishes it |
+| asof | the timestamp the print was public, ET |
+| source | NYSE or Nasdaq imbalance feed |
+
+Cover 2018-01-02 through 2026-09-25. A row that was revised after 15:30 is not usable.
+
+### Index additions and deletions
+
+Chang, Hong, and Liskovich (Journal of Finance, 2015) and Madhavan (Financial Analysts Journal, 2003): the addition is demanded because of the list. The eight names already on disk are incumbents. They are not the test. The test is the name that changes membership, on the effective date, and only if that name also has bars and fits a US$2,120 ticket.
+
+Add `data/events/index_changes.csv`:
+
+| column | meaning |
+| --- | --- |
+| symbol | the addition or the deletion |
+| index | `SPX`, `NDX`, `RUT`, or the Russell band the paper uses |
+| action | `add` or `delete` |
+| announced | the session the change was public before the open, `YYYY-MM-DD` |
+| effective | the session the membership change takes effect |
+| source | the index publisher's list, not a secondary write-up |
+
+Do not type a partial list from memory. Official effective dates only.
+
+### Dealer gamma
+
+Ni, Pearson, and Poteshman (Journal of Financial Economics, 2005) and Baltussen, Da, Lammers, and Martens (Journal of Finance, 2021): the hedge sign comes from open interest by strike. Expiration Friday without that sign is a clock, and it is not a registered book.
+
+Add `data/events/gamma.csv`, one row per underlying per session, known before 9:30 ET:
+
+| column | meaning |
+| --- | --- |
+| symbol | SPY, and the eight names if the chain is available |
+| session | `YYYY-MM-DD` |
+| sign | `short` if dealer gamma is negative, `long` if it is positive |
+| asof | the timestamp the open interest was public |
+| source | the open-interest file or the published gamma estimate |
+
+A row built from a close that had not happened yet is not usable. Until this file exists, no expiration-day book is scored.
