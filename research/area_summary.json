@@ -1,0 +1,144 @@
+{
+  "champion": "appear_disappear_midmorning",
+  "activeUnchanged": true,
+  "checkpointIssued": false,
+  "holdoutReadThisBatch": false,
+  "ideasTried": 48,
+  "areas": [
+    {
+      "id": "sz_risk_1pct",
+      "area": "position_sizing",
+      "decision": "rejected",
+      "trades": 1243,
+      "net": -1477.2594282119312,
+      "bps": -16.488393820466072,
+      "windowsWon": 4
+    },
+    {
+      "id": "sz_risk_half_pct",
+      "area": "position_sizing",
+      "decision": "rejected",
+      "trades": 1342,
+      "net": -1479.9423992149752,
+      "bps": -18.07634837219147,
+      "windowsWon": 0
+    },
+    {
+      "id": "sz_one_position",
+      "area": "position_sizing",
+      "decision": "rejected",
+      "trades": 1115,
+      "net": -1419.6490992104148,
+      "bps": -11.494141693680161,
+      "windowsWon": 0
+    },
+    {
+      "id": "sz_daily_stop",
+      "area": "position_sizing",
+      "decision": "rejected",
+      "trades": 1057,
+      "net": -1339.0315335249995,
+      "bps": -16.91009219773811,
+      "windowsWon": 3
+    },
+    {
+      "id": "sz_kelly_cap",
+      "area": "position_sizing",
+      "decision": "rejected",
+      "trades": 0,
+      "net": 0.0,
+      "bps": null,
+      "windowsWon": 0
+    },
+    {
+      "id": "tod_open",
+      "area": "time_of_day",
+      "decision": "rejected",
+      "trades": 517,
+      "net": -657.3346664197147,
+      "bps": -13.200969353050487,
+      "windowsWon": 4
+    },
+    {
+      "id": "tod_midday",
+      "area": "time_of_day",
+      "decision": "rejected",
+      "trades": 1876,
+      "net": -1998.8333335979826,
+      "bps": -27.56486592307923,
+      "windowsWon": 0
+    },
+    {
+      "id": "tod_afternoon",
+      "area": "time_of_day",
+      "decision": "rejected",
+      "trades": 1719,
+      "net": -1858.5979962903918,
+      "bps": -21.729390656969045,
+      "windowsWon": 0
+    },
+    {
+      "id": "tod_last_hour",
+      "area": "time_of_day",
+      "decision": "rejected",
+      "trades": 1095,
+      "net": -1279.8789023186596,
+      "bps": -15.681859467964653,
+      "windowsWon": 6
+    },
+    {
+      "id": "liq_half_spread",
+      "area": "liquidity",
+      "decision": "rejected",
+      "trades": 1056,
+      "net": -1901.1862147790098,
+      "bps": -32.34417775034429,
+      "windowsWon": 0
+    },
+    {
+      "id": "liq_participation",
+      "area": "liquidity",
+      "decision": "rejected",
+      "trades": 1207,
+      "net": -1517.7962512783838,
+      "bps": -17.667152981012745,
+      "windowsWon": 0
+    },
+    {
+      "id": "liq_dvol",
+      "area": "liquidity",
+      "decision": "rejected",
+      "trades": 1234,
+      "net": -1475.1003167297051,
+      "bps": -16.798516779391946,
+      "windowsWon": 0
+    },
+    {
+      "id": "reg_spy_vwap",
+      "area": "market_regime",
+      "decision": "rejected",
+      "trades": 751,
+      "net": -930.919190625092,
+      "bps": -14.17794956811881,
+      "windowsWon": 4
+    },
+    {
+      "id": "reg_high_range",
+      "area": "market_regime",
+      "decision": "rejected",
+      "trades": 923,
+      "net": -1219.1600191972948,
+      "bps": -16.37190667387728,
+      "windowsWon": 1
+    },
+    {
+      "id": "reg_falling_tape",
+      "area": "market_regime",
+      "decision": "rejected",
+      "trades": 1025,
+      "net": -1256.738530489831,
+      "bps": -14.015025815375907,
+      "windowsWon": 4
+    }
+  ]
+}

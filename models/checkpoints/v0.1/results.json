@@ -1,0 +1,46 @@
+{
+  "passedCostsAndRandom": false,
+  "reasons": [
+    "holdout net after costs is not positive",
+    "holdout profit is not significant at 5 percent versus a flat result",
+    "the rule does not beat random entries of the same length at 5 percent"
+  ],
+  "holdout": {
+    "trades": 191,
+    "winRate": 0.3717277486910995,
+    "net": -268.365512488125,
+    "returnPct": -12.658750589062498,
+    "avgNetDollars": -1.4050550392048429,
+    "avgNetBps": -8.434117953234715,
+    "maxDrawdown": 320.72548873106257,
+    "tradesPerDay": 1.5528455284552845,
+    "profitFactor": 0.5271793798564537,
+    "sessionDays": 123
+  },
+  "validation": {
+    "trades": 628,
+    "winRate": 0.309,
+    "net": -863.99,
+    "returnPct": -40.75,
+    "avgNetBps": -10.76
+  },
+  "gateComparison": {
+    "start": "2023-01-01",
+    "end": "2026-03-31",
+    "trades": 1234,
+    "net": -1475.10,
+    "avgNetDollars": -1.1954,
+    "avgNetBps": -16.80
+  },
+  "bootstrap": {
+    "draws": 2000,
+    "pValue": 0.9995,
+    "note": "Share of day-resamples whose holdout total is <= 0."
+  },
+  "random": {
+    "draws": 200,
+    "pValue": 0.225,
+    "randomMeanBps": -7.91959872143836,
+    "strategyMeanBps": -6.454396002118782
+  }
+}

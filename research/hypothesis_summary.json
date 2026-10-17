@@ -1,0 +1,44 @@
+{
+  "holdoutLooksBeforeThisBatch": 2,
+  "holdoutReadThisBatch": false,
+  "accountUsd": 2120.0,
+  "slipBps": 2.0,
+  "hypotheses": [
+    {
+      "id": "h1_spy",
+      "decision": "rejected",
+      "pooledNet": -618.5260113972058,
+      "trades": 466
+    },
+    {
+      "id": "h1_stocks",
+      "decision": "rejected",
+      "pooledNet": -1187.0382998926054,
+      "trades": 961
+    },
+    {
+      "id": "h2_opening_reversal",
+      "decision": "rejected",
+      "pooledNet": -734.2732452385455,
+      "trades": 766
+    },
+    {
+      "id": "h3_vwap_shortfall",
+      "decision": "rejected",
+      "pooledNet": -1943.1090267264926,
+      "trades": 2044
+    },
+    {
+      "id": "h4_opening_range",
+      "decision": "rejected",
+      "pooledNet": -788.5181090716401,
+      "trades": 1174
+    },
+    {
+      "id": "h5_gap_down",
+      "decision": "rejected",
+      "pooledNet": -182.7267803901609,
+      "trades": 705
+    }
+  ]
+}

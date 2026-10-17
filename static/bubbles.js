@@ -134,9 +134,9 @@ function createBubbleField(canvas) {
   function bubbleFill(changePct, alpha) {
     const t = Math.max(-1, Math.min(1, (changePct || 0) / 3.5));
     if (t >= 0) {
-      return `rgba(61, 214, 140, ${0.42 + t * 0.45})`;
+      return `rgba(77, 159, 255, ${0.42 + t * 0.45})`;
     }
-    return `rgba(255, 93, 108, ${0.42 + Math.abs(t) * 0.45})`;
+    return `rgba(139, 26, 26, ${0.5 + Math.abs(t) * 0.4})`;
   }
 
   function draw() {
@@ -195,7 +195,7 @@ function createBubbleField(canvas) {
       ctx.fillText(node.symbol, x, y - (r > 36 ? 7 : 0));
       if (r > 34) {
         ctx.font = `500 ${Math.max(9, r * 0.18)}px "IBM Plex Mono", monospace`;
-        ctx.fillStyle = row.changePct >= 0 ? "#3dd68c" : "#ff5d6c";
+        ctx.fillStyle = row.changePct >= 0 ? "#4d9fff" : "#c62828";
         ctx.fillText(signedPct(row.changePct), x, y + 10);
       }
       if (r > 48) {

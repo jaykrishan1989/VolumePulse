@@ -1,0 +1,169 @@
+# Data request
+
+The current 5-minute files are not enough for the profit objective. The winning book buys at most one name a day, and only when a forecast of the hold-to-close return clears 20 bp. On the eight names already on disk it stood aside on about four of every five validation sessions (85 trades, 19.4% of days, +$1,261). The holdout was the same shape: 19 trades, 15.4% of 123 sessions, +$297. Those eight names are one tape (mega-cap growth). Adding another name from that tape rarely creates a new day. A bank, an oil major, or a staples name can clear 20 bp on a day the Nasdaq book does not.
+
+Nothing below was downloaded here. IB Gateway is on the owner's PC at `127.0.0.1:4001` and is not reachable from this VM. The causal profit result stands. Look 8 was not opened.
+
+## Run this
+
+From the repo root, on the PC where Gateway is logged in:
+
+```powershell
+pip install ib-insync pandas pyarrow tzdata
+python scripts/fetch_history.py --dry-run
+python scripts/fetch_history.py --max-priority 3
+```
+
+`--dry-run` does not connect. `--max-priority 3` is the upload that unblocks the next fit (5,720 requests, about 17.5 hours). A later run with no priority flag continues with sector ETFs and the 2018 backfill of the new names (10,364 requests, about 31.7 hours in total) and skips days already saved. Ctrl+C is safe. Run it again to resume.
+
+Gateway must already be running. The script uses client id **19** (the dashboard uses 7). It does not place, cancel, or preview orders, and it does not request positions, executions, or account updates.
+
+## What to fetch
+
+5-minute, regular-hours, `TRADES` bars only. Each request is one week, which is IB's maximum for this bar size. Requests are at least 11 seconds apart and at most 50 in any 10 minutes (IB's cap is 60). A pacing reply waits two minutes and retries.
+
+| Priority | Symbols | Start | End | Role | Requests | About |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | JPM, BAC, V, XOM, CVX, JNJ, UNH, WMT, PG, HON, NFLX, ORCL | 2021-12-23 | 2026-09-25 | tradeable | 3,480 | 10.6 h |
+| 2 | AAPL, AMD, AMZN, GOOGL, META, MSFT, NVDA | 2018-01-02 | 2021-12-22 | backfill | 1,694 | 5.2 h |
+| 3 | SPY, QQQ, TSLA | 2018-01-02 | 2020-12-23 | backfill | 546 | 1.7 h |
+| 4 | XLK, XLF, XLE, XLV, XLP, XLI | 2021-12-23 | 2026-09-25 | context, not traded | 1,740 | 5.3 h |
+| 5 | the 12 new names | 2018-01-02 | 2021-12-22 | backfill | 2,904 | 8.9 h |
+
+Counts are one request per 6-day step. Days already in `data/raw5` are omitted, so priorities 2 and 3 do not re-download the files on disk. The end date is the last bar already stored (2026-09-25). Do not extend it; a newer session would sit outside the locked sample.
+
+### Why these names
+
+Whole shares, US$2,120, long only. A name has to leave room for several shares or the P&L is one tick. Prices are the 2026-09-28 Yahoo regular-session print, used only as a share-count screen.
+
+| Symbol | Price | Shares | Why it can add a trade day |
+| --- | ---: | ---: | --- |
+| JPM | 336.59 | 6 | Banks. A different tape from the eight growth names. |
+| BAC | 55.47 | 38 | Same, with a tight spread and a full lot of shares. |
+| V | 367.74 | 5 | Payments. Not a bank and not Nasdaq beta. |
+| XOM | 162.52 | 13 | Energy. |
+| CVX | 206.37 | 10 | Energy, and it does not move as one print with XOM. |
+| JNJ | 271.95 | 7 | Health. |
+| UNH | 377.83 | 5 | Health, different business from JNJ. |
+| WMT | 108.73 | 19 | Staples / retail. |
+| PG | 149.03 | 14 | Staples. |
+| HON | 211.52 | 10 | Industrials. |
+| NFLX | 69.23 | 30 | Liquid, and not one of the eight. |
+| ORCL | 132.60 | 15 | Software. Less overlap with NVDA/AMD than another chip name. |
+
+Priority 1 is the profit lever: same dates the model already uses, twelve more names it can rank at the first bar of the day. If the per-name hit rate stays near the current one, idle days fall and dollar P&L moves because each added trade is the same full ticket, 2 bp, hold to 15:50. That is the reason to fetch. It is not a dollar forecast.
+
+### Why the longer history
+
+AAPL, AMD, AMZN, GOOGL, META, MSFT, and NVDA start on 2021-12-23. Every walk-forward fold is trained inside that sample, so the model never sees 2018Q4 or the 2020 crash. SPY, QQQ, and TSLA start on 2020-12-24, which includes the crash and still misses 2018–2019. Extending those files to 2018-01-02 adds those regimes as training rows. The holdout window stays 2026-04-01 through 2026-09-25. Priority 5 gives the new names the same start, so the cross-section does not change size in the backfill years.
+
+2018 is the cutoff. Another year at this symbol list is about five hours of pacing, and 2022 is already in the file. The missing stress window is 2018 through 2021.
+
+### Why the sector ETFs
+
+Published importance on the current model is dominated by QQQ and SPY. Once the book includes banks and energy, one index treats a weak tech day like a weak everything day. XLK, XLF, XLE, XLV, XLP, and XLI are context features, not positions. They are priority 4 because the new stocks matter more.
+
+## Where the files go
+
+```
+data/raw5/<SYMBOL>/YYYYMMDD.parquet
+```
+
+Same columns as the files already there:
+
+| column | type |
+| --- | --- |
+| date | datetime64[us, US/Eastern], bar start, 09:30–15:55 |
+| open, high, low, close, volume, average | float64 |
+| barCount | int64 |
+
+`average` is IB's bar WAP. The file name is the date of the last bar in that week. A boundary day can land in two files; the loader drops duplicate timestamps. Upload the symbol folders. `data/raw5/_fetch_log.csv` is only a resume note so empty holiday weeks are not requested again. The loader ignores it.
+
+## Not requested
+
+- **15-minute bars.** They are an aggregation of the 5-minute files.
+- **1-minute bars.** The book enters on a 5-minute open and holds to 15:50. IB allows one day of 1-minute bars per request, so the same history is tens of thousands of requests, and the label would not change.
+- **Daily bars from IB, and free Yahoo/Stooq daily bars.** The overnight gap and the prior close are already the 9:30 open versus the previous 15:55 close inside these regular-hours files. A second daily source can disagree on the auction and on splits, and it would not change the 2 bp cost or the hold-to-close label.
+- **Bid, ask, or tick data.** Slippage stays 2 bp per side. Quotes would be a different cost model.
+- **Names that do not fit the account.** LLY was about $1,184 (one share). MU was about $1,054 and is the same semiconductor tape as NVDA and AMD. GS (~$916) and COST (~$923) leave only two shares; JPM and WMT already cover those sectors with a fuller ticket. AVGO is affordable and liquid, and it was left out so the request spends its hours on ORCL instead of another chip name.
+
+## After the upload
+
+The next fit stays on validation dollars after 2 bp, then one holdout read of the single winner. That read is not authorized by this file. `models/ACTIVE` stays `v0.1`.
+
+## Why the eight names still have no intraday edge
+
+Measured on the files already on disk, the next 15, 30, and 60 minutes, and the hold to 15:55, do not pay even before commission. A slot fade, an opening-range break, a same-day residual versus SPY, a 40 bp bar in either direction, a VWAP discount, and the last half-hour were all negative after 2 bp of slippage. The fills concentrate in TSLA, AMD, and NVDA. They are one growth tape, so a "dislocated" name is usually the same factor with a larger print. A US$2,120 order is about a quarter of a basis point of square-root impact in these bars. The market is not moving because of this ticket.
+
+Priority 1 is the test this VM cannot run. Banks, energy, health, and staples are a different tape from that growth factor. Until those files are in `data/raw5`, a loss on the eight names is not a result about those sectors, and it is not a reason to invent their prices. Do not add another chip name in their place. AVGO and MU stay out for the reason already given.
+
+## Earnings calendar, still absent
+
+Do not guess announcement dates, and do not pull them with `scripts/fetch_history.py`. The bar fetcher does not know them. A wrong date is worse than a missing file.
+
+Add a separate file, `data/events/earnings.csv`, with one row per announcement the company had published before that session:
+
+| column | meaning |
+| --- | --- |
+| symbol | the eight names on disk, plus the twelve priority-1 names |
+| session | the first regular session the news applies to, `YYYY-MM-DD` |
+| when | `BMO` if the news was out before 09:30 ET, `AMC` if it was after the prior close |
+| source | where the timestamp came from |
+
+Cover 2018-01-02 through 2026-09-25. The timestamp has to be the one known before the entry, not a later correction.
+
+This is not a daily book on eight names. Four announcements a year is about 32 sessions, which fails the near-daily requirement by itself. The calendar is useful in two ways once it exists: sit those sessions out of a rule that was not built for a gap, and, on the wider universe, test whether announcement volume has a drift the ordinary price path does not (Bernard and Thomas, Journal of Accounting and Economics, 1989). FOMC, CPI, and payroll dates are already coded and are just as sparse. They were not fetched because they are not missing.
+
+## Closing imbalances, index lists, and dealer gamma
+
+`research/ECONOMIC_HYPOTHESES.md` is the reason these three are separate from the bar request. The 5-minute files cannot sign them. Do not substitute a Friday, a quarter-end, or a guessed strike. A wrong sign is worse than a missing file. None of this is fetched by `scripts/fetch_history.py`.
+
+### Market-on-close imbalance
+
+Cushing and Madhavan (Journal of Financial Markets, 2000): the signed closing imbalance moves the auction, and part of that move reverses. The account is flat at 15:55, so it cannot hold the auction. It could hold the half hour before the auction if the sign were known before the entry.
+
+Add `data/events/moc.csv`, one row per name per session, known before 15:30 ET:
+
+| column | meaning |
+| --- | --- |
+| symbol | SPY plus the eight names on disk. The twelve priority-1 names when those bars exist. |
+| session | `YYYY-MM-DD` |
+| side | `buy` or `sell`, the imbalance direction |
+| shares | imbalance size, if the feed publishes it |
+| asof | the timestamp the print was public, ET |
+| source | NYSE or Nasdaq imbalance feed |
+
+Cover 2018-01-02 through 2026-09-25. A row that was revised after 15:30 is not usable.
+
+### Index additions and deletions
+
+Chang, Hong, and Liskovich (Journal of Finance, 2015) and Madhavan (Financial Analysts Journal, 2003): the addition is demanded because of the list. The eight names already on disk are incumbents. They are not the test. The test is the name that changes membership, on the effective date, and only if that name also has bars and fits a US$2,120 ticket.
+
+Add `data/events/index_changes.csv`:
+
+| column | meaning |
+| --- | --- |
+| symbol | the addition or the deletion |
+| index | `SPX`, `NDX`, `RUT`, or the Russell band the paper uses |
+| action | `add` or `delete` |
+| announced | the session the change was public before the open, `YYYY-MM-DD` |
+| effective | the session the membership change takes effect |
+| source | the index publisher's list, not a secondary write-up |
+
+Do not type a partial list from memory. Official effective dates only.
+
+### Dealer gamma
+
+Ni, Pearson, and Poteshman (Journal of Financial Economics, 2005) and Baltussen, Da, Lammers, and Martens (Journal of Finance, 2021): the hedge sign comes from open interest by strike. Expiration Friday without that sign is a clock, and it is not a registered book.
+
+Add `data/events/gamma.csv`, one row per underlying per session, known before 9:30 ET:
+
+| column | meaning |
+| --- | --- |
+| symbol | SPY, and the eight names if the chain is available |
+| session | `YYYY-MM-DD` |
+| sign | `short` if dealer gamma is negative, `long` if it is positive |
+| asof | the timestamp the open interest was public |
+| source | the open-interest file or the published gamma estimate |
+
+A row built from a close that had not happened yet is not usable. Until this file exists, no expiration-day book is scored.

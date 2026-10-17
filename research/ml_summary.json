@@ -1,0 +1,382 @@
+{
+  "id": "ml_lgb_60m",
+  "threshold_bps": 20.0,
+  "thresholds": [
+    {
+      "threshold_bps": 0.0,
+      "net": -1436.20341157134,
+      "trades": 2348
+    },
+    {
+      "threshold_bps": 10.0,
+      "net": -93.91626157140627,
+      "trades": 344
+    },
+    {
+      "threshold_bps": 20.0,
+      "net": -93.03195342856407,
+      "trades": 126
+    },
+    {
+      "threshold_bps": 30.0,
+      "net": -195.80642599999692,
+      "trades": 79
+    }
+  ],
+  "ideas_tried": 54,
+  "decision": "rejected",
+  "reasons": [
+    "Pooled sample does not beat the champion on net and expectancy (challenger $-319 on 270 trades, $-1.18/trade, -6.6 bp; champion $-786 on 1228 trades, $-0.64/trade, -4.2 bp).",
+    "Does not beat the champion in every market regime (down, high_vol, low_vol).",
+    "Does not beat the champion in every ticker group (megacap, high_beta).",
+    "Beats the champion in 0 half-years; need at least 2.",
+    "Improves in 1 of 12 windows; need at least 9 (75%).",
+    "After removing the top 5 days by daily gap (2024-07-25, 2024-11-11, 2023-04-27, 2025-02-03, 2024-08-02), the challenger is behind on dollars per trade, basis points per trade (challenger $-644 on 259 trades, $-2.49/trade, -14.1 bp; champion $-791 on 1216 trades, $-0.65/trade, -4.3 bp).",
+    "Paired tests do not clear the Bonferroni line for 54 ideas tried (bootstrap p=0.1068, permutation p=0.1072, alpha=0.00093)."
+  ],
+  "bars": {
+    "walk_forward": false,
+    "fresh_slice": true,
+    "consistency": false
+  },
+  "windows_won": 1,
+  "windows": 12,
+  "bootstrap_p": 0.10677864427114576,
+  "permutation_p": 0.10717856428714258,
+  "alpha": 0.000925925925925926,
+  "pooled": {
+    "trades": 270,
+    "win_rate": 0.4666666666666667,
+    "net": -318.81293171426796,
+    "per_trade": -1.1807886359787703,
+    "bps": -6.557711376645064,
+    "per_day": -0.3921438274468241,
+    "trades_per_day": 0.33210332103321033,
+    "signal_days": 97,
+    "fill_days": 97,
+    "sessions": 813,
+    "signal_day_frac": 0.11931119311193111,
+    "fill_day_frac": 0.11931119311193111,
+    "max_drawdown": 455.7762497142703
+  },
+  "validation": {
+    "trades": 126,
+    "win_rate": 0.46825396825396826,
+    "net": -93.03195342856482,
+    "per_trade": -0.7383488367346415,
+    "bps": -10.356031111097591,
+    "per_day": -0.2119178893589176,
+    "trades_per_day": 0.2870159453302961,
+    "signal_days": 40,
+    "fill_days": 40,
+    "sessions": 439,
+    "signal_day_frac": 0.09111617312072894,
+    "fill_day_frac": 0.09111617312072894,
+    "max_drawdown": 358.0793894285698
+  },
+  "holdout": {
+    "trades": 29,
+    "win_rate": 0.4827586206896552,
+    "net": 77.20928400000236,
+    "per_trade": 2.662389103448357,
+    "bps": 12.588899143923753,
+    "per_day": 0.6277177560975802,
+    "trades_per_day": 0.23577235772357724,
+    "signal_days": 8,
+    "fill_days": 8,
+    "sessions": 123,
+    "signal_day_frac": 0.06504065040650407,
+    "fill_day_frac": 0.06504065040650407,
+    "max_drawdown": 86.13702400000057
+  },
+  "holdout_look": 4,
+  "holdout_bootstrap": {
+    "draws": 2000,
+    "pValue": 0.197,
+    "days": 8
+  },
+  "holdout_random": {
+    "draws": 100,
+    "pValue": 0.03
+  },
+  "folds": [
+    {
+      "fold": "2023H1",
+      "trades": 109,
+      "win_rate": 0.46788990825688076,
+      "net": -92.561067999991,
+      "per_trade": -0.8491841100916605,
+      "bps": -3.71200259079365,
+      "per_day": -0.746460225806379,
+      "trades_per_day": 0.8790322580645161,
+      "signal_days": 38,
+      "fill_days": 38,
+      "sessions": 124,
+      "signal_day_frac": 0.3064516129032258,
+      "fill_day_frac": 0.3064516129032258,
+      "max_drawdown": 210.80087199999366
+    },
+    {
+      "fold": "2023H2",
+      "trades": 28,
+      "win_rate": 0.42857142857142855,
+      "net": -121.86218199999783,
+      "per_trade": -4.352220785714208,
+      "bps": -22.9963537522025,
+      "per_day": -0.9671601746031574,
+      "trades_per_day": 0.2222222222222222,
+      "signal_days": 11,
+      "fill_days": 11,
+      "sessions": 126,
+      "signal_day_frac": 0.0873015873015873,
+      "fill_day_frac": 0.0873015873015873,
+      "max_drawdown": 162.88996399999792
+    },
+    {
+      "fold": "2024H1",
+      "trades": 19,
+      "win_rate": 0.47368421052631576,
+      "net": -36.67507085714209,
+      "per_trade": -1.9302668872180047,
+      "bps": 11.007924465470946,
+      "per_day": -0.2957667004608233,
+      "trades_per_day": 0.1532258064516129,
+      "signal_days": 8,
+      "fill_days": 8,
+      "sessions": 124,
+      "signal_day_frac": 0.06451612903225806,
+      "fill_day_frac": 0.06451612903225806,
+      "max_drawdown": 121.94773685714244
+    },
+    {
+      "fold": "2024H2",
+      "trades": 34,
+      "win_rate": 0.4411764705882353,
+      "net": -13.49481542856887,
+      "per_trade": -0.39690633613437853,
+      "bps": -10.411277604527257,
+      "per_day": -0.1054282455356943,
+      "trades_per_day": 0.265625,
+      "signal_days": 11,
+      "fill_days": 11,
+      "sessions": 128,
+      "signal_day_frac": 0.0859375,
+      "fill_day_frac": 0.0859375,
+      "max_drawdown": 181.36255542857134
+    },
+    {
+      "fold": "2025H1",
+      "trades": 66,
+      "win_rate": 0.48484848484848486,
+      "net": -122.1837619999974,
+      "per_trade": -1.8512691212120818,
+      "bps": -14.278316894317589,
+      "per_day": -1.001506245901618,
+      "trades_per_day": 0.5409836065573771,
+      "signal_days": 19,
+      "fill_days": 19,
+      "sessions": 122,
+      "signal_day_frac": 0.1557377049180328,
+      "fill_day_frac": 0.1557377049180328,
+      "max_drawdown": 297.68271799999866
+    },
+    {
+      "fold": "2025H2",
+      "trades": 12,
+      "win_rate": 0.5,
+      "net": 60.658490000000285,
+      "per_trade": 5.05487416666669,
+      "bps": 25.431971469202065,
+      "per_day": 0.4738944531250022,
+      "trades_per_day": 0.09375,
+      "signal_days": 6,
+      "fill_days": 6,
+      "sessions": 128,
+      "signal_day_frac": 0.046875,
+      "fill_day_frac": 0.046875,
+      "max_drawdown": 30.158939999999802
+    },
+    {
+      "fold": "2026Q1",
+      "trades": 10,
+      "win_rate": 0.5,
+      "net": -11.399025999998884,
+      "per_trade": -1.1399025999998884,
+      "bps": -7.845117647711464,
+      "per_day": -0.18686927868850628,
+      "trades_per_day": 0.16393442622950818,
+      "signal_days": 4,
+      "fill_days": 4,
+      "sessions": 61,
+      "signal_day_frac": 0.06557377049180328,
+      "fill_day_frac": 0.06557377049180328,
+      "max_drawdown": 54.83775799999967
+    }
+  ],
+  "calibration": [
+    {
+      "bin": 0,
+      "rows": 20438,
+      "mean_pred_bps": -10.051746487147117,
+      "mean_realized_bps": 1.425081666217105
+    },
+    {
+      "bin": 1,
+      "rows": 20440,
+      "mean_pred_bps": -2.8968666641324115,
+      "mean_realized_bps": -1.1141412466643004
+    },
+    {
+      "bin": 2,
+      "rows": 20435,
+      "mean_pred_bps": -1.3435546664793216,
+      "mean_realized_bps": -0.5761043299961185
+    },
+    {
+      "bin": 3,
+      "rows": 20438,
+      "mean_pred_bps": -0.4128933007479727,
+      "mean_realized_bps": 0.7072222617379555
+    },
+    {
+      "bin": 4,
+      "rows": 20441,
+      "mean_pred_bps": 0.21357272028592691,
+      "mean_realized_bps": -0.3890129242817052
+    },
+    {
+      "bin": 5,
+      "rows": 20435,
+      "mean_pred_bps": 0.7364296592363927,
+      "mean_realized_bps": -1.7029189030984033
+    },
+    {
+      "bin": 6,
+      "rows": 20442,
+      "mean_pred_bps": 1.261734371266853,
+      "mean_realized_bps": 0.26224508993305584
+    },
+    {
+      "bin": 7,
+      "rows": 20432,
+      "mean_pred_bps": 1.9659159495861034,
+      "mean_realized_bps": -1.3797935735619429
+    },
+    {
+      "bin": 8,
+      "rows": 20437,
+      "mean_pred_bps": 3.192331820097144,
+      "mean_realized_bps": -1.5241259326796643
+    },
+    {
+      "bin": 9,
+      "rows": 20438,
+      "mean_pred_bps": 10.532281504870577,
+      "mean_realized_bps": -2.139718834484512
+    }
+  ],
+  "importance": [
+    {
+      "feature": "qqq_prior_ret",
+      "gain": 1499.1249438126881
+    },
+    {
+      "feature": "spy_prior_ret",
+      "gain": 937.5348844925562
+    },
+    {
+      "feature": "qqq_from_open",
+      "gain": 493.3341828584671
+    },
+    {
+      "feature": "spy_from_open",
+      "gain": 454.21006246407825
+    },
+    {
+      "feature": "prior_range_atr",
+      "gain": 409.48150050640106
+    },
+    {
+      "feature": "qqq_vwap_dist",
+      "gain": 406.2019129594167
+    },
+    {
+      "feature": "tod",
+      "gain": 379.3692592382431
+    },
+    {
+      "feature": "dow",
+      "gain": 325.8307426770528
+    },
+    {
+      "feature": "gap",
+      "gain": 272.65694002310437
+    },
+    {
+      "feature": "spy_vwap_dist",
+      "gain": 233.65583312511444
+    },
+    {
+      "feature": "dist_ma5",
+      "gain": 120.66495358943939
+    },
+    {
+      "feature": "rv_12",
+      "gain": 81.2320266564687
+    },
+    {
+      "feature": "rv_36",
+      "gain": 69.46357639630635
+    },
+    {
+      "feature": "vwap_dist",
+      "gain": 62.49506342411041
+    },
+    {
+      "feature": "prior_ret",
+      "gain": 62.26178650061289
+    },
+    {
+      "feature": "ret_12",
+      "gain": 20.635893265406292
+    },
+    {
+      "feature": "session_pos",
+      "gain": 20.174230019251507
+    },
+    {
+      "feature": "rvol",
+      "gain": 8.626986622810364
+    },
+    {
+      "feature": "resid_12",
+      "gain": 1.6482000350952148
+    },
+    {
+      "feature": "ret_3",
+      "gain": 1.3319366772969563
+    },
+    {
+      "feature": "ret_6",
+      "gain": 1.3231933116912842
+    },
+    {
+      "feature": "xs_rank_vwap",
+      "gain": 1.1289933522542317
+    },
+    {
+      "feature": "xs_rank_ret12",
+      "gain": 0.0
+    },
+    {
+      "feature": "ret_1",
+      "gain": 0.0
+    }
+  ],
+  "checkpoint": null,
+  "costs_and_random": false,
+  "cost_reasons": [
+    "holdout profit is not significant at 5 percent versus a flat result"
+  ],
+  "active": "v0.1"
+}

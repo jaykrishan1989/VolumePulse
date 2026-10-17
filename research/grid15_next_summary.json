@@ -1,0 +1,1577 @@
+{
+  "meta": {
+    "schedule": "tiered",
+    "slipBps": 2.0,
+    "accountUsd": 2120.0,
+    "sessions": 433,
+    "screenPasses": [],
+    "holdoutOpened": false
+  },
+  "rows": [
+    {
+      "id": "x_flat",
+      "kind": "exit",
+      "exit": "flat",
+      "side": "",
+      "regime": false,
+      "signals": 1097,
+      "trades": 793,
+      "winRate": 0.37326607818411095,
+      "net": -815.2786503868736,
+      "fees": 562.7177643868704,
+      "avgWin": 2.853113215144906,
+      "avgLoss": -3.3396381530578494,
+      "maxDrawdown": 878.8177072435092,
+      "exTop5": -920.4092602106286,
+      "topDays": [
+        {
+          "day": "2024-12-20",
+          "net": 23.797388755504166
+        },
+        {
+          "day": "2025-04-30",
+          "net": 22.571615181878467
+        },
+        {
+          "day": "2024-07-05",
+          "net": 22.186644049237223
+        },
+        {
+          "day": "2025-04-24",
+          "net": 20.46768269471281
+        },
+        {
+          "day": "2025-09-11",
+          "net": 16.10727914243682
+        }
+      ],
+      "fillsPerDay": 1.8314087759815243,
+      "daysWithFill": 331,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 102,
+        "1": 98,
+        "2": 88,
+        "3": 62,
+        "4": 82,
+        "5": 1
+      },
+      "reasons": {
+        "flat": 579,
+        "stop": 214
+      },
+      "pooledNet": -1023.004489409426,
+      "pooledTrades": 1579,
+      "recentNet": -452.6460174971148,
+      "recentTrades": 377,
+      "positiveHalves": 1,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 44,
+          "net": -51.75323122379818
+        },
+        {
+          "month": "2024-08",
+          "fills": 48,
+          "net": -76.45219355421207
+        },
+        {
+          "month": "2024-09",
+          "fills": 35,
+          "net": -85.12332990387776
+        },
+        {
+          "month": "2024-10",
+          "fills": 48,
+          "net": -33.06559558234874
+        },
+        {
+          "month": "2024-11",
+          "fills": 34,
+          "net": -28.256582065862155
+        },
+        {
+          "month": "2024-12",
+          "fills": 44,
+          "net": -9.573438197189656
+        },
+        {
+          "month": "2025-01",
+          "fills": 42,
+          "net": -49.741645482223525
+        },
+        {
+          "month": "2025-02",
+          "fills": 35,
+          "net": -19.81258955091603
+        },
+        {
+          "month": "2025-03",
+          "fills": 35,
+          "net": -15.920367919894604
+        },
+        {
+          "month": "2025-04",
+          "fills": 41,
+          "net": -24.767893143654497
+        },
+        {
+          "month": "2025-05",
+          "fills": 36,
+          "net": -25.815143552517853
+        },
+        {
+          "month": "2025-06",
+          "fills": 38,
+          "net": -68.1734948031482
+        },
+        {
+          "month": "2025-07",
+          "fills": 38,
+          "net": -34.8331332398743
+        },
+        {
+          "month": "2025-08",
+          "fills": 42,
+          "net": -7.510152666130327
+        },
+        {
+          "month": "2025-09",
+          "fills": 39,
+          "net": -20.448232014071436
+        },
+        {
+          "month": "2025-10",
+          "fills": 44,
+          "net": -79.67161262133067
+        },
+        {
+          "month": "2025-11",
+          "fills": 29,
+          "net": -71.00602892359633
+        },
+        {
+          "month": "2025-12",
+          "fills": 22,
+          "net": -16.252515050353704
+        },
+        {
+          "month": "2026-01",
+          "fills": 30,
+          "net": -37.11847317611397
+        },
+        {
+          "month": "2026-02",
+          "fills": 30,
+          "net": -27.436553163810608
+        },
+        {
+          "month": "2026-03",
+          "fills": 39,
+          "net": -32.54644455193455
+        }
+      ]
+    },
+    {
+      "id": "x_30",
+      "kind": "exit",
+      "exit": "30",
+      "side": "",
+      "regime": false,
+      "signals": 1097,
+      "trades": 814,
+      "winRate": 0.28869778869778867,
+      "net": -676.4587890359098,
+      "fees": 577.9333130359056,
+      "avgWin": 1.3429627643192088,
+      "avgLoss": -1.7133938491380105,
+      "maxDrawdown": 685.1190717617887,
+      "exTop5": -719.5845434194465,
+      "topDays": [
+        {
+          "day": "2025-01-28",
+          "net": 10.421519561544397
+        },
+        {
+          "day": "2024-12-20",
+          "net": 10.250475370166164
+        },
+        {
+          "day": "2025-08-22",
+          "net": 8.828809360660836
+        },
+        {
+          "day": "2025-03-20",
+          "net": 7.483532676466573
+        },
+        {
+          "day": "2024-07-05",
+          "net": 6.141417414714596
+        }
+      ],
+      "fillsPerDay": 1.879907621247113,
+      "daysWithFill": 331,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 102,
+        "1": 97,
+        "2": 87,
+        "3": 64,
+        "4": 67,
+        "5": 13,
+        "6": 3
+      },
+      "reasons": {
+        "sell": 791,
+        "stop": 23
+      },
+      "pooledNet": -1146.0119112771135,
+      "pooledTrades": 1511,
+      "recentNet": -332.6847198597043,
+      "recentTrades": 392,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 44,
+          "net": -54.865154041013305
+        },
+        {
+          "month": "2024-08",
+          "fills": 48,
+          "net": -59.226118452413395
+        },
+        {
+          "month": "2024-09",
+          "fills": 35,
+          "net": -45.24111212542945
+        },
+        {
+          "month": "2024-10",
+          "fills": 53,
+          "net": -50.843874825358085
+        },
+        {
+          "month": "2024-11",
+          "fills": 34,
+          "net": -19.009597866829637
+        },
+        {
+          "month": "2024-12",
+          "fills": 44,
+          "net": -31.976031068127718
+        },
+        {
+          "month": "2025-01",
+          "fills": 44,
+          "net": -43.848063613201724
+        },
+        {
+          "month": "2025-02",
+          "fills": 39,
+          "net": -6.878950438277382
+        },
+        {
+          "month": "2025-03",
+          "fills": 37,
+          "net": -0.9412538959173744
+        },
+        {
+          "month": "2025-04",
+          "fills": 42,
+          "net": -49.06369068262779
+        },
+        {
+          "month": "2025-05",
+          "fills": 40,
+          "net": -28.811805279433102
+        },
+        {
+          "month": "2025-06",
+          "fills": 38,
+          "net": -33.605351977763675
+        },
+        {
+          "month": "2025-07",
+          "fills": 40,
+          "net": -33.570659320680946
+        },
+        {
+          "month": "2025-08",
+          "fills": 42,
+          "net": -9.600828450190093
+        },
+        {
+          "month": "2025-09",
+          "fills": 39,
+          "net": -26.566837912098823
+        },
+        {
+          "month": "2025-10",
+          "fills": 44,
+          "net": -55.14720041894394
+        },
+        {
+          "month": "2025-11",
+          "fills": 29,
+          "net": -26.736554121898806
+        },
+        {
+          "month": "2025-12",
+          "fills": 22,
+          "net": -25.407517334102785
+        },
+        {
+          "month": "2026-01",
+          "fills": 30,
+          "net": -29.578004658999518
+        },
+        {
+          "month": "2026-02",
+          "fills": 31,
+          "net": -24.27166883968887
+        },
+        {
+          "month": "2026-03",
+          "fills": 39,
+          "net": -21.268513712897594
+        }
+      ]
+    },
+    {
+      "id": "x_60",
+      "kind": "exit",
+      "exit": "60",
+      "side": "",
+      "regime": false,
+      "signals": 1097,
+      "trades": 799,
+      "winRate": 0.3141426783479349,
+      "net": -772.7808348780188,
+      "fees": 566.9374848780163,
+      "avgWin": 1.608727058137694,
+      "avgLoss": -2.1470279680119817,
+      "maxDrawdown": 782.8657159433728,
+      "exTop5": -841.0887356510516,
+      "topDays": [
+        {
+          "day": "2024-12-20",
+          "net": 17.198892198808167
+        },
+        {
+          "day": "2025-03-27",
+          "net": 15.665193778683284
+        },
+        {
+          "day": "2025-01-28",
+          "net": 12.551034359387216
+        },
+        {
+          "day": "2024-08-06",
+          "net": 11.537060882570087
+        },
+        {
+          "day": "2025-08-22",
+          "net": 11.355719553598068
+        }
+      ],
+      "fillsPerDay": 1.8452655889145497,
+      "daysWithFill": 331,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 102,
+        "1": 99,
+        "2": 87,
+        "3": 62,
+        "4": 75,
+        "5": 8
+      },
+      "reasons": {
+        "sell": 741,
+        "stop": 58
+      },
+      "pooledNet": -1137.0094225605794,
+      "pooledTrades": 1483,
+      "recentNet": -363.84436795147485,
+      "recentTrades": 377,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 43,
+          "net": -53.61655604877861
+        },
+        {
+          "month": "2024-08",
+          "fills": 48,
+          "net": -84.51035753102515
+        },
+        {
+          "month": "2024-09",
+          "fills": 35,
+          "net": -67.8972548020791
+        },
+        {
+          "month": "2024-10",
+          "fills": 51,
+          "net": -55.004798775433315
+        },
+        {
+          "month": "2024-11",
+          "fills": 34,
+          "net": -23.00777798667208
+        },
+        {
+          "month": "2024-12",
+          "fills": 43,
+          "net": -19.45042537917967
+        },
+        {
+          "month": "2025-01",
+          "fills": 42,
+          "net": -44.3128824060328
+        },
+        {
+          "month": "2025-02",
+          "fills": 36,
+          "net": -8.217942855575105
+        },
+        {
+          "month": "2025-03",
+          "fills": 36,
+          "net": 3.0159886740993964
+        },
+        {
+          "month": "2025-04",
+          "fills": 42,
+          "net": -60.49610891613295
+        },
+        {
+          "month": "2025-05",
+          "fills": 36,
+          "net": -27.093224412585254
+        },
+        {
+          "month": "2025-06",
+          "fills": 38,
+          "net": -44.14875664211003
+        },
+        {
+          "month": "2025-07",
+          "fills": 39,
+          "net": -34.3497675627585
+        },
+        {
+          "month": "2025-08",
+          "fills": 42,
+          "net": -18.39767198467879
+        },
+        {
+          "month": "2025-09",
+          "fills": 39,
+          "net": -27.466632897102713
+        },
+        {
+          "month": "2025-10",
+          "fills": 44,
+          "net": -74.64620667414655
+        },
+        {
+          "month": "2025-11",
+          "fills": 29,
+          "net": -44.4320836998114
+        },
+        {
+          "month": "2025-12",
+          "fills": 22,
+          "net": -15.325169713824584
+        },
+        {
+          "month": "2026-01",
+          "fills": 30,
+          "net": -24.951245434448786
+        },
+        {
+          "month": "2026-02",
+          "fills": 31,
+          "net": -25.683292004060178
+        },
+        {
+          "month": "2026-03",
+          "fills": 39,
+          "net": -22.788667825668664
+        }
+      ]
+    },
+    {
+      "id": "x_noon",
+      "kind": "exit",
+      "exit": "noon",
+      "side": "",
+      "regime": false,
+      "signals": 1097,
+      "trades": 793,
+      "winRate": 0.31021437578814626,
+      "net": -811.4590470612484,
+      "fees": 562.6527870612488,
+      "avgWin": 2.016256544635779,
+      "avgLoss": -2.3902342907525407,
+      "maxDrawdown": 846.0783380510447,
+      "exTop5": -896.6517125550666,
+      "topDays": [
+        {
+          "day": "2024-12-20",
+          "net": 27.09663703385211
+        },
+        {
+          "day": "2024-07-08",
+          "net": 16.670184365747918
+        },
+        {
+          "day": "2024-08-06",
+          "net": 16.44594241186969
+        },
+        {
+          "day": "2025-01-28",
+          "net": 13.060918184222807
+        },
+        {
+          "day": "2024-07-05",
+          "net": 11.918983498136084
+        }
+      ],
+      "fillsPerDay": 1.8314087759815243,
+      "daysWithFill": 331,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 102,
+        "1": 98,
+        "2": 88,
+        "3": 62,
+        "4": 82,
+        "5": 1
+      },
+      "reasons": {
+        "sell": 693,
+        "stop": 100
+      },
+      "pooledNet": -1030.6880302881013,
+      "pooledTrades": 1562,
+      "recentNet": -395.2505059383577,
+      "recentTrades": 380,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 44,
+          "net": -55.034868708854155
+        },
+        {
+          "month": "2024-08",
+          "fills": 48,
+          "net": -76.4321981101008
+        },
+        {
+          "month": "2024-09",
+          "fills": 35,
+          "net": -84.19354175270728
+        },
+        {
+          "month": "2024-10",
+          "fills": 48,
+          "net": -48.96197365075312
+        },
+        {
+          "month": "2024-11",
+          "fills": 34,
+          "net": -20.008461369991956
+        },
+        {
+          "month": "2024-12",
+          "fills": 44,
+          "net": 3.080263403993504
+        },
+        {
+          "month": "2025-01",
+          "fills": 42,
+          "net": -49.05952629420645
+        },
+        {
+          "month": "2025-02",
+          "fills": 35,
+          "net": -18.97278089824551
+        },
+        {
+          "month": "2025-03",
+          "fills": 35,
+          "net": -42.92421519207032
+        },
+        {
+          "month": "2025-04",
+          "fills": 41,
+          "net": -63.88637978644272
+        },
+        {
+          "month": "2025-05",
+          "fills": 36,
+          "net": -11.375545681350697
+        },
+        {
+          "month": "2025-06",
+          "fills": 38,
+          "net": -48.85100130676261
+        },
+        {
+          "month": "2025-07",
+          "fills": 38,
+          "net": -25.61523350461129
+        },
+        {
+          "month": "2025-08",
+          "fills": 42,
+          "net": 1.2078609663526647
+        },
+        {
+          "month": "2025-09",
+          "fills": 39,
+          "net": -31.075810559174343
+        },
+        {
+          "month": "2025-10",
+          "fills": 44,
+          "net": -74.62621123003524
+        },
+        {
+          "month": "2025-11",
+          "fills": 29,
+          "net": -60.648388873994605
+        },
+        {
+          "month": "2025-12",
+          "fills": 22,
+          "net": -20.20654989998294
+        },
+        {
+          "month": "2026-01",
+          "fills": 30,
+          "net": -27.670625833571936
+        },
+        {
+          "month": "2026-02",
+          "fills": 30,
+          "net": -27.766477991645512
+        },
+        {
+          "month": "2026-03",
+          "fills": 39,
+          "net": -28.437380787082823
+        }
+      ]
+    },
+    {
+      "id": "x_trail",
+      "kind": "exit",
+      "exit": "trail",
+      "side": "",
+      "regime": false,
+      "signals": 1097,
+      "trades": 798,
+      "winRate": 0.3032581453634085,
+      "net": -775.5345648396062,
+      "fees": 566.2787488396064,
+      "avgWin": 2.7019170785650983,
+      "avgLoss": -2.5708606076481093,
+      "maxDrawdown": 820.1128144822258,
+      "exTop5": -874.9164844813943,
+      "topDays": [
+        {
+          "day": "2025-04-30",
+          "net": 22.571615181878467
+        },
+        {
+          "day": "2024-07-05",
+          "net": 22.186644049237223
+        },
+        {
+          "day": "2024-12-20",
+          "net": 20.64810630798999
+        },
+        {
+          "day": "2025-04-24",
+          "net": 17.868274960256837
+        },
+        {
+          "day": "2025-09-11",
+          "net": 16.10727914243682
+        }
+      ],
+      "fillsPerDay": 1.8429561200923787,
+      "daysWithFill": 331,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 102,
+        "1": 98,
+        "2": 88,
+        "3": 61,
+        "4": 79,
+        "5": 5
+      },
+      "reasons": {
+        "stop": 518,
+        "flat": 280
+      },
+      "pooledNet": -1047.7549786269647,
+      "pooledTrades": 1561,
+      "recentNet": -397.67044965076525,
+      "recentTrades": 382,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 44,
+          "net": -71.6210895990945
+        },
+        {
+          "month": "2024-08",
+          "fills": 48,
+          "net": -46.299063834522485
+        },
+        {
+          "month": "2024-09",
+          "fills": 35,
+          "net": -76.29435112184535
+        },
+        {
+          "month": "2024-10",
+          "fills": 51,
+          "net": -46.94760283665689
+        },
+        {
+          "month": "2024-11",
+          "fills": 34,
+          "net": -33.00550004227214
+        },
+        {
+          "month": "2024-12",
+          "fills": 44,
+          "net": -9.543445031023186
+        },
+        {
+          "month": "2025-01",
+          "fills": 42,
+          "net": -35.2449485016037
+        },
+        {
+          "month": "2025-02",
+          "fills": 35,
+          "net": -44.53695619441473
+        },
+        {
+          "month": "2025-03",
+          "fills": 35,
+          "net": -1.693609434775865
+        },
+        {
+          "month": "2025-04",
+          "fills": 41,
+          "net": -26.267551451994542
+        },
+        {
+          "month": "2025-05",
+          "fills": 36,
+          "net": -40.48180180808283
+        },
+        {
+          "month": "2025-06",
+          "fills": 38,
+          "net": -63.536089387177554
+        },
+        {
+          "month": "2025-07",
+          "fills": 39,
+          "net": -44.75739622263809
+        },
+        {
+          "month": "2025-08",
+          "fills": 42,
+          "net": -2.0513964237727
+        },
+        {
+          "month": "2025-09",
+          "fills": 39,
+          "net": -17.598881228225263
+        },
+        {
+          "month": "2025-10",
+          "fills": 44,
+          "net": -67.7577761778383
+        },
+        {
+          "month": "2025-11",
+          "fills": 29,
+          "net": -43.97218848525391
+        },
+        {
+          "month": "2025-12",
+          "fills": 22,
+          "net": -12.57579614853453
+        },
+        {
+          "month": "2026-01",
+          "fills": 30,
+          "net": -35.00895382238221
+        },
+        {
+          "month": "2026-02",
+          "fills": 31,
+          "net": -29.862339823300942
+        },
+        {
+          "month": "2026-03",
+          "fills": 39,
+          "net": -26.477827264185134
+        }
+      ]
+    },
+    {
+      "id": "k_mom",
+      "kind": "rank",
+      "exit": "",
+      "side": "mom",
+      "regime": false,
+      "signals": 1732,
+      "trades": 1266,
+      "winRate": 0.26224328593996843,
+      "net": -1097.75212753391,
+      "fees": 897.566155045226,
+      "avgWin": 0.6551242144438745,
+      "avgLoss": -1.4081941827936377,
+      "maxDrawdown": 1097.7521275339104,
+      "exTop5": -1109.838873459458,
+      "topDays": [
+        {
+          "day": "2024-09-05",
+          "net": 3.6874325344200787
+        },
+        {
+          "day": "2024-07-29",
+          "net": 2.310087085977803
+        },
+        {
+          "day": "2024-09-19",
+          "net": 2.159322179873377
+        },
+        {
+          "day": "2024-09-11",
+          "net": 1.98599993186906
+        },
+        {
+          "day": "2024-11-06",
+          "net": 1.9439041934263224
+        }
+      ],
+      "fillsPerDay": 2.92378752886836,
+      "daysWithFill": 431,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 2,
+        "1": 38,
+        "2": 89,
+        "3": 166,
+        "4": 138
+      },
+      "reasons": {
+        "stop": 494,
+        "target": 443,
+        "sell": 329
+      },
+      "pooledNet": -1480.6142368031794,
+      "pooledTrades": 1774,
+      "recentNet": -520.9250918436574,
+      "recentTrades": 579,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 80,
+          "net": -69.75576806804114
+        },
+        {
+          "month": "2024-08",
+          "fills": 80,
+          "net": -73.454755809757
+        },
+        {
+          "month": "2024-09",
+          "fills": 72,
+          "net": -55.3344521381473
+        },
+        {
+          "month": "2024-10",
+          "fills": 79,
+          "net": -48.97968393191108
+        },
+        {
+          "month": "2024-11",
+          "fills": 65,
+          "net": -56.29833573238074
+        },
+        {
+          "month": "2024-12",
+          "fills": 65,
+          "net": -78.47003450137218
+        },
+        {
+          "month": "2025-01",
+          "fills": 60,
+          "net": -44.34391814887129
+        },
+        {
+          "month": "2025-02",
+          "fills": 66,
+          "net": -64.09226299923404
+        },
+        {
+          "month": "2025-03",
+          "fills": 68,
+          "net": -63.982998402986574
+        },
+        {
+          "month": "2025-04",
+          "fills": 59,
+          "net": -60.99824121114291
+        },
+        {
+          "month": "2025-05",
+          "fills": 65,
+          "net": -57.687793697658336
+        },
+        {
+          "month": "2025-06",
+          "fills": 67,
+          "net": -69.75397506459626
+        },
+        {
+          "month": "2025-07",
+          "fills": 69,
+          "net": -55.94886624490927
+        },
+        {
+          "month": "2025-08",
+          "fills": 57,
+          "net": -38.80144874631555
+        },
+        {
+          "month": "2025-09",
+          "fills": 58,
+          "net": -54.97223796694258
+        },
+        {
+          "month": "2025-10",
+          "fills": 63,
+          "net": -54.22913358408498
+        },
+        {
+          "month": "2025-11",
+          "fills": 43,
+          "net": -36.463222892797845
+        },
+        {
+          "month": "2025-12",
+          "fills": 37,
+          "net": -35.53363564228101
+        },
+        {
+          "month": "2026-01",
+          "fills": 37,
+          "net": -21.47237447580118
+        },
+        {
+          "month": "2026-02",
+          "fills": 33,
+          "net": -18.86671195309321
+        },
+        {
+          "month": "2026-03",
+          "fills": 43,
+          "net": -38.312276321566884
+        }
+      ]
+    },
+    {
+      "id": "k_mom_regime",
+      "kind": "rank",
+      "exit": "",
+      "side": "mom",
+      "regime": true,
+      "signals": 1224,
+      "trades": 970,
+      "winRate": 0.26082474226804125,
+      "net": -881.6061301067205,
+      "fees": 688.3491557333556,
+      "avgWin": 0.7090214960311328,
+      "avgLoss": -1.4797609046061158,
+      "maxDrawdown": 881.6061301067207,
+      "exTop5": -896.4264425151111,
+      "topDays": [
+        {
+          "day": "2024-10-03",
+          "net": 3.9672763362687924
+        },
+        {
+          "day": "2024-09-05",
+          "net": 3.6874325344200787
+        },
+        {
+          "day": "2024-10-02",
+          "net": 2.6877428922821367
+        },
+        {
+          "day": "2024-09-19",
+          "net": 2.6671789243181454
+        },
+        {
+          "day": "2024-10-11",
+          "net": 1.8106817211135884
+        }
+      ],
+      "fillsPerDay": 2.240184757505774,
+      "daysWithFill": 306,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 127,
+        "1": 8,
+        "2": 50,
+        "3": 130,
+        "4": 118
+      },
+      "reasons": {
+        "stop": 360,
+        "target": 315,
+        "sell": 295
+      },
+      "pooledNet": -1336.4015563989715,
+      "pooledTrades": 1641,
+      "recentNet": -388.67547431459366,
+      "recentTrades": 428,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 56,
+          "net": -52.02747592457946
+        },
+        {
+          "month": "2024-08",
+          "fills": 47,
+          "net": -34.3850017963778
+        },
+        {
+          "month": "2024-09",
+          "fills": 54,
+          "net": -52.84207185665219
+        },
+        {
+          "month": "2024-10",
+          "fills": 83,
+          "net": -48.887726616333794
+        },
+        {
+          "month": "2024-11",
+          "fills": 53,
+          "net": -46.659049754231496
+        },
+        {
+          "month": "2024-12",
+          "fills": 54,
+          "net": -68.8642138066191
+        },
+        {
+          "month": "2025-01",
+          "fills": 41,
+          "net": -43.89397890002568
+        },
+        {
+          "month": "2025-02",
+          "fills": 49,
+          "net": -49.924311072707276
+        },
+        {
+          "month": "2025-03",
+          "fills": 6,
+          "net": -7.943205538334688
+        },
+        {
+          "month": "2025-04",
+          "fills": 20,
+          "net": -16.23802009483457
+        },
+        {
+          "month": "2025-05",
+          "fills": 65,
+          "net": -60.967053232641085
+        },
+        {
+          "month": "2025-06",
+          "fills": 68,
+          "net": -76.27163341893075
+        },
+        {
+          "month": "2025-07",
+          "fills": 69,
+          "net": -55.88946840512413
+        },
+        {
+          "month": "2025-08",
+          "fills": 57,
+          "net": -48.83689390864067
+        },
+        {
+          "month": "2025-09",
+          "fills": 58,
+          "net": -58.28155420475438
+        },
+        {
+          "month": "2025-10",
+          "fills": 52,
+          "net": -38.718935653597654
+        },
+        {
+          "month": "2025-11",
+          "fills": 22,
+          "net": -21.264789628070158
+        },
+        {
+          "month": "2025-12",
+          "fills": 49,
+          "net": -53.13788355566048
+        },
+        {
+          "month": "2026-01",
+          "fills": 33,
+          "net": -18.77127764373115
+        },
+        {
+          "month": "2026-02",
+          "fills": 20,
+          "net": -14.746709788799127
+        },
+        {
+          "month": "2026-03",
+          "fills": 14,
+          "net": -13.054875306062726
+        }
+      ]
+    },
+    {
+      "id": "k_rev",
+      "kind": "rank",
+      "exit": "",
+      "side": "rev",
+      "regime": false,
+      "signals": 1732,
+      "trades": 1304,
+      "winRate": 0.3389570552147239,
+      "net": -925.7862182859756,
+      "fees": 924.8783555756538,
+      "avgWin": 0.6444342393745687,
+      "avgLoss": -1.4044386915191591,
+      "maxDrawdown": 926.1236508975271,
+      "exTop5": -951.2147309507944,
+      "topDays": [
+        {
+          "day": "2024-10-30",
+          "net": 6.320810242150782
+        },
+        {
+          "day": "2024-08-06",
+          "net": 6.262524294125408
+        },
+        {
+          "day": "2025-01-28",
+          "net": 4.879453700552668
+        },
+        {
+          "day": "2024-12-16",
+          "net": 4.731395989017091
+        },
+        {
+          "day": "2025-07-14",
+          "net": 3.23432843899248
+        }
+      ],
+      "fillsPerDay": 3.0115473441108547,
+      "daysWithFill": 431,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 2,
+        "1": 13,
+        "2": 93,
+        "3": 195,
+        "4": 130
+      },
+      "reasons": {
+        "stop": 443,
+        "target": 582,
+        "sell": 279
+      },
+      "pooledNet": -1402.7786217334688,
+      "pooledTrades": 1961,
+      "recentNet": -368.36314606618635,
+      "recentTrades": 593,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 81,
+          "net": -86.37579404295825
+        },
+        {
+          "month": "2024-08",
+          "fills": 85,
+          "net": -66.25291774257045
+        },
+        {
+          "month": "2024-09",
+          "fills": 71,
+          "net": -80.53491669575129
+        },
+        {
+          "month": "2024-10",
+          "fills": 80,
+          "net": -29.66598897115462
+        },
+        {
+          "month": "2024-11",
+          "fills": 65,
+          "net": -54.86551097818713
+        },
+        {
+          "month": "2024-12",
+          "fills": 64,
+          "net": -51.39965316918207
+        },
+        {
+          "month": "2025-01",
+          "fills": 64,
+          "net": -59.66075934560042
+        },
+        {
+          "month": "2025-02",
+          "fills": 61,
+          "net": -27.984789109732596
+        },
+        {
+          "month": "2025-03",
+          "fills": 66,
+          "net": -41.436949684467386
+        },
+        {
+          "month": "2025-04",
+          "fills": 58,
+          "net": -42.964962155799576
+        },
+        {
+          "month": "2025-05",
+          "fills": 65,
+          "net": -33.05797986772527
+        },
+        {
+          "month": "2025-06",
+          "fills": 68,
+          "net": -46.208085734240896
+        },
+        {
+          "month": "2025-07",
+          "fills": 66,
+          "net": -32.29536983545897
+        },
+        {
+          "month": "2025-08",
+          "fills": 63,
+          "net": -52.53852922340807
+        },
+        {
+          "month": "2025-09",
+          "fills": 57,
+          "net": -37.71352679363772
+        },
+        {
+          "month": "2025-10",
+          "fills": 59,
+          "net": -32.889810306553564
+        },
+        {
+          "month": "2025-11",
+          "fills": 48,
+          "net": -31.695973997556006
+        },
+        {
+          "month": "2025-12",
+          "fills": 53,
+          "net": -38.49874224311459
+        },
+        {
+          "month": "2026-01",
+          "fills": 44,
+          "net": -30.24913968898741
+        },
+        {
+          "month": "2026-02",
+          "fills": 43,
+          "net": -21.275655614405736
+        },
+        {
+          "month": "2026-03",
+          "fills": 43,
+          "net": -28.221163085463992
+        }
+      ]
+    },
+    {
+      "id": "k_rev_regime",
+      "kind": "rank",
+      "exit": "",
+      "side": "rev",
+      "regime": true,
+      "signals": 1224,
+      "trades": 962,
+      "winRate": 0.3586278586278586,
+      "net": -678.5604660502258,
+      "fees": 683.0188017337732,
+      "avgWin": 0.7148661169891936,
+      "avgLoss": -1.4994963961288148,
+      "maxDrawdown": 678.7417503088786,
+      "exTop5": -703.3480413276247,
+      "topDays": [
+        {
+          "day": "2024-10-30",
+          "net": 6.320810242150782
+        },
+        {
+          "day": "2024-12-16",
+          "net": 5.566973379450049
+        },
+        {
+          "day": "2025-01-28",
+          "net": 5.177492983618752
+        },
+        {
+          "day": "2025-05-12",
+          "net": 4.487970233205628
+        },
+        {
+          "day": "2025-07-14",
+          "net": 3.23432843899248
+        }
+      ],
+      "fillsPerDay": 2.2217090069284064,
+      "daysWithFill": 306,
+      "sessions": 433,
+      "fillHistogram": {
+        "0": 127,
+        "1": 5,
+        "2": 52,
+        "3": 143,
+        "4": 106
+      },
+      "reasons": {
+        "stop": 312,
+        "target": 407,
+        "sell": 243
+      },
+      "pooledNet": -1240.7351299394645,
+      "pooledTrades": 1690,
+      "recentNet": -251.10343490373316,
+      "recentTrades": 435,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net from 2023-01-01 is not positive",
+        "recent net from 2025-07-01 is not positive",
+        "fewer than 4 of 6 half-years are positive",
+        "validation net without the five best days is not positive",
+        "fills on fewer than 80% of validation sessions"
+      ],
+      "screenPass": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 57,
+          "net": -71.88276080849803
+        },
+        {
+          "month": "2024-08",
+          "fills": 50,
+          "net": -40.16003558048746
+        },
+        {
+          "month": "2024-09",
+          "fills": 54,
+          "net": -54.571555512031026
+        },
+        {
+          "month": "2024-10",
+          "fills": 81,
+          "net": -27.65442133864172
+        },
+        {
+          "month": "2024-11",
+          "fills": 51,
+          "net": -38.924383597988935
+        },
+        {
+          "month": "2024-12",
+          "fills": 56,
+          "net": -60.54078935708776
+        },
+        {
+          "month": "2025-01",
+          "fills": 41,
+          "net": -40.38331807281322
+        },
+        {
+          "month": "2025-02",
+          "fills": 44,
+          "net": -19.029116363525887
+        },
+        {
+          "month": "2025-03",
+          "fills": 6,
+          "net": -3.769825626553355
+        },
+        {
+          "month": "2025-04",
+          "fills": 16,
+          "net": -11.794440780585381
+        },
+        {
+          "month": "2025-05",
+          "fills": 66,
+          "net": -35.32326509954734
+        },
+        {
+          "month": "2025-06",
+          "fills": 68,
+          "net": -44.89105101749987
+        },
+        {
+          "month": "2025-07",
+          "fills": 66,
+          "net": -32.224815330386974
+        },
+        {
+          "month": "2025-08",
+          "fills": 54,
+          "net": -43.051180832138165
+        },
+        {
+          "month": "2025-09",
+          "fills": 56,
+          "net": -37.37106832580369
+        },
+        {
+          "month": "2025-10",
+          "fills": 48,
+          "net": -24.241152544314673
+        },
+        {
+          "month": "2025-11",
+          "fills": 22,
+          "net": -7.8544784986723215
+        },
+        {
+          "month": "2025-12",
+          "fills": 48,
+          "net": -33.907920442287086
+        },
+        {
+          "month": "2026-01",
+          "fills": 44,
+          "net": -32.35766880407747
+        },
+        {
+          "month": "2026-02",
+          "fills": 22,
+          "net": -10.456828927054394
+        },
+        {
+          "month": "2026-03",
+          "fills": 12,
+          "net": -8.170389190212276
+        }
+      ]
+    }
+  ]
+}

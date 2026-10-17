@@ -1,0 +1,9 @@
+{
+  "ibkrRole": "broker and market data",
+  "execution": "IBKR. Tiered commission, US$0.35 minimum per side, plus SEC and FINRA fees on sells.",
+  "schedule": "tiered",
+  "commissionPerTradeUsd": 0.35,
+  "regulatoryFees": true,
+  "slipBpsPerSide": 2,
+  "fill": "next bar open"
+}

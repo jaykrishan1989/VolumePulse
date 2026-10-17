@@ -1,0 +1,74 @@
+{
+  "holdout_used": false,
+  "active": "v0.1",
+  "chosen_id": null,
+  "milestone": false,
+  "rows": [
+    {
+      "id": "n_intraday_cont",
+      "decision": "rejected",
+      "reason": "Validation net was $-312 after 2 bp. A loss is not a candidate. Holdout was not opened.",
+      "validate_signals": 722,
+      "validate_trades": 722,
+      "validate_net": -312.29991842854156,
+      "validate_bps": -4.596282111926951,
+      "validate_win_rate": 0.09695290858725762,
+      "validate_max_drawdown": 528.4577271428307,
+      "validate_trades_per_day": 1.644646924829157,
+      "validate_stop_trades": 649,
+      "validate_top5_net": 266.72981600000014,
+      "validate_rest_net": -579.0297344285417,
+      "validate_largest": {
+        "day": "2025-04-07",
+        "symbol": "AMZN",
+        "net": 63.36371999999997
+      },
+      "pooled_trades": 1353,
+      "pooled_net": -398.70291728565303
+    },
+    {
+      "id": "n_mid_reversal",
+      "decision": "rejected",
+      "reason": "Validation net was $-488 after 2 bp. A loss is not a candidate. Holdout was not opened.",
+      "validate_signals": 388,
+      "validate_trades": 388,
+      "validate_net": -488.1450237142544,
+      "validate_bps": -7.309275167669494,
+      "validate_win_rate": 0.3170103092783505,
+      "validate_max_drawdown": 555.6509325714023,
+      "validate_trades_per_day": 0.8838268792710706,
+      "validate_stop_trades": 233,
+      "validate_top5_net": 200.2219920000005,
+      "validate_rest_net": -688.3670157142549,
+      "validate_largest": {
+        "day": "2025-04-07",
+        "symbol": "AMD",
+        "net": 66.58916000000005
+      },
+      "pooled_trades": 715,
+      "pooled_net": -546.1564242856559
+    },
+    {
+      "id": "n_close_reversal",
+      "decision": "rejected",
+      "reason": "Validation net was $-154 after 2 bp. A loss is not a candidate. Holdout was not opened.",
+      "validate_signals": 386,
+      "validate_trades": 386,
+      "validate_net": -154.18817585710917,
+      "validate_bps": -2.0976654334930904,
+      "validate_win_rate": 0.15025906735751296,
+      "validate_max_drawdown": 410.66960699997344,
+      "validate_trades_per_day": 0.8792710706150342,
+      "validate_stop_trades": 322,
+      "validate_top5_net": 329.38543200000066,
+      "validate_rest_net": -483.57360785710983,
+      "validate_largest": {
+        "day": "2025-11-19",
+        "symbol": "GOOGL",
+        "net": 79.69492800000035
+      },
+      "pooled_trades": 714,
+      "pooled_net": -602.44276957137
+    }
+  ]
+}
