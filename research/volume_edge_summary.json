@@ -1,0 +1,557 @@
+{
+  "meta": {
+    "schedule": "tiered",
+    "slipBps": 2.0,
+    "accountUsd": 2120.0,
+    "sessions": 439,
+    "screenPasses": [],
+    "holdoutOpened": false,
+    "coverage": {
+      "days": 439,
+      "shareLoudUp": 0.9681093394077449,
+      "shareLoudDown": 0.9225512528473804,
+      "shareQuietUp": 0.6651480637813212
+    }
+  },
+  "rows": [
+    {
+      "id": "u_primary",
+      "signals": 423,
+      "trades": 423,
+      "winRate": 0.3877068557919622,
+      "net": -721.9947008930228,
+      "fees": 315.9289496530883,
+      "avgBps": -10.30573464225657,
+      "avgNotional": 1643.8721602269504,
+      "avgWin": 8.58741068730745,
+      "avgLoss": -8.225212562206488,
+      "maxDrawdown": 800.1291327298557,
+      "exTop5": -938.9821506803055,
+      "topDays": [
+        {
+          "day": "2024-11-08",
+          "net": 55.61227113350005
+        },
+        {
+          "day": "2025-04-02",
+          "net": 44.43838402104108
+        },
+        {
+          "day": "2024-07-03",
+          "net": 41.74501785941785
+        },
+        {
+          "day": "2025-01-27",
+          "net": 39.41767911556057
+        },
+        {
+          "day": "2024-11-06",
+          "net": 35.7740976577268
+        }
+      ],
+      "fillsPerDay": 0.9635535307517085,
+      "daysWithFill": 423,
+      "sessions": 439,
+      "dayShare": 0.9635535307517085,
+      "reasons": {
+        "sell": 367,
+        "stop": 55,
+        "flat": 1
+      },
+      "symbols": {
+        "AMZN": 48,
+        "TSLA": 43,
+        "META": 71,
+        "AMD": 68,
+        "GOOGL": 53,
+        "NVDA": 37,
+        "MSFT": 51,
+        "AAPL": 52
+      },
+      "medianSignalRvol": 2.4113272176993643,
+      "shockOverlap": 0.3144208037825059,
+      "pooledNet": -1168.578637490506,
+      "pooledTrades": 776,
+      "recentNet": -381.7407099390871,
+      "recentTrades": 179,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net is not positive",
+        "recent net is not positive",
+        "fewer than 4 positive half-years",
+        "validation net without the five best days is not positive",
+        "average net basis points are not positive"
+      ],
+      "screenPass": false,
+      "adoptable": true,
+      "milestone": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 22,
+          "net": 7.026621691498144
+        },
+        {
+          "month": "2024-08",
+          "fills": 20,
+          "net": -39.42090418570412
+        },
+        {
+          "month": "2024-09",
+          "fills": 20,
+          "net": -7.062499218535585
+        },
+        {
+          "month": "2024-10",
+          "fills": 23,
+          "net": -116.13005978439784
+        },
+        {
+          "month": "2024-11",
+          "fills": 19,
+          "net": 53.08477979429812
+        },
+        {
+          "month": "2024-12",
+          "fills": 19,
+          "net": 25.289283504500027
+        },
+        {
+          "month": "2025-01",
+          "fills": 20,
+          "net": -100.27336903777649
+        },
+        {
+          "month": "2025-02",
+          "fills": 19,
+          "net": -32.84315024982284
+        },
+        {
+          "month": "2025-03",
+          "fills": 21,
+          "net": -61.35098769561828
+        },
+        {
+          "month": "2025-04",
+          "fills": 20,
+          "net": -17.198571753854118
+        },
+        {
+          "month": "2025-05",
+          "fills": 21,
+          "net": -82.3189786119712
+        },
+        {
+          "month": "2025-06",
+          "fills": 20,
+          "net": 1.117873606910896
+        },
+        {
+          "month": "2025-07",
+          "fills": 22,
+          "net": -91.98387271269591
+        },
+        {
+          "month": "2025-08",
+          "fills": 20,
+          "net": -20.882406084616882
+        },
+        {
+          "month": "2025-09",
+          "fills": 21,
+          "net": 16.1397696301598
+        },
+        {
+          "month": "2025-10",
+          "fills": 23,
+          "net": -125.9402134597139
+        },
+        {
+          "month": "2025-11",
+          "fills": 18,
+          "net": -40.2806738816978
+        },
+        {
+          "month": "2025-12",
+          "fills": 18,
+          "net": -15.970247904002909
+        },
+        {
+          "month": "2026-01",
+          "fills": 20,
+          "net": -44.29354751061307
+        },
+        {
+          "month": "2026-02",
+          "fills": 17,
+          "net": 15.140035083292974
+        },
+        {
+          "month": "2026-03",
+          "fills": 20,
+          "net": -43.84358211269817
+        }
+      ]
+    },
+    {
+      "id": "u_fade",
+      "signals": 405,
+      "trades": 405,
+      "winRate": 0.39753086419753086,
+      "net": -580.3263166988111,
+      "fees": 302.4287231588748,
+      "avgBps": -8.293544228222212,
+      "avgNotional": 1639.3881083555555,
+      "avgWin": 8.672856312619073,
+      "avgLoss": -8.101049930452946,
+      "maxDrawdown": 689.3159898692938,
+      "exTop5": -771.1806809676208,
+      "topDays": [
+        {
+          "day": "2024-11-08",
+          "net": 45.47581301710868
+        },
+        {
+          "day": "2025-04-07",
+          "net": 41.42377535256011
+        },
+        {
+          "day": "2025-01-28",
+          "net": 36.234495656627146
+        },
+        {
+          "day": "2024-07-09",
+          "net": 35.68728054622684
+        },
+        {
+          "day": "2024-10-14",
+          "net": 32.032999696250045
+        }
+      ],
+      "fillsPerDay": 0.9225512528473804,
+      "daysWithFill": 405,
+      "sessions": 439,
+      "dayShare": 0.9225512528473804,
+      "reasons": {
+        "sell": 352,
+        "stop": 50,
+        "flat": 3
+      },
+      "symbols": {
+        "TSLA": 41,
+        "AMZN": 45,
+        "META": 79,
+        "AMD": 65,
+        "GOOGL": 71,
+        "NVDA": 24,
+        "MSFT": 43,
+        "AAPL": 37
+      },
+      "medianSignalRvol": 2.4590467886508796,
+      "shockOverlap": 0.0,
+      "pooledNet": -887.27761347772,
+      "pooledTrades": 747,
+      "recentNet": -144.84645886817611,
+      "recentTrades": 172,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net is not positive",
+        "recent net is not positive",
+        "fewer than 4 positive half-years",
+        "validation net without the five best days is not positive",
+        "average net basis points are not positive"
+      ],
+      "screenPass": false,
+      "adoptable": false,
+      "milestone": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 20,
+          "net": -3.6814368636657306
+        },
+        {
+          "month": "2024-08",
+          "fills": 19,
+          "net": -35.373481259643775
+        },
+        {
+          "month": "2024-09",
+          "fills": 19,
+          "net": -106.36770431755743
+        },
+        {
+          "month": "2024-10",
+          "fills": 22,
+          "net": -30.58249722636088
+        },
+        {
+          "month": "2024-11",
+          "fills": 18,
+          "net": 31.861520915757
+        },
+        {
+          "month": "2024-12",
+          "fills": 19,
+          "net": -5.029853861599072
+        },
+        {
+          "month": "2025-01",
+          "fills": 19,
+          "net": -29.79178352543139
+        },
+        {
+          "month": "2025-02",
+          "fills": 19,
+          "net": -34.57160623442708
+        },
+        {
+          "month": "2025-03",
+          "fills": 21,
+          "net": -70.15775354167256
+        },
+        {
+          "month": "2025-04",
+          "fills": 18,
+          "net": -41.64071748182495
+        },
+        {
+          "month": "2025-05",
+          "fills": 19,
+          "net": -92.8636863590712
+        },
+        {
+          "month": "2025-06",
+          "fills": 20,
+          "net": -11.76575151703909
+        },
+        {
+          "month": "2025-07",
+          "fills": 21,
+          "net": -9.192480737911872
+        },
+        {
+          "month": "2025-08",
+          "fills": 21,
+          "net": -40.21066148935705
+        },
+        {
+          "month": "2025-09",
+          "fills": 21,
+          "net": -39.47435016740838
+        },
+        {
+          "month": "2025-10",
+          "fills": 23,
+          "net": -24.632821035270105
+        },
+        {
+          "month": "2025-11",
+          "fills": 18,
+          "net": -33.28420274637137
+        },
+        {
+          "month": "2025-12",
+          "fills": 15,
+          "net": -8.40262038794641
+        },
+        {
+          "month": "2026-01",
+          "fills": 20,
+          "net": 9.24396298510457
+        },
+        {
+          "month": "2026-02",
+          "fills": 17,
+          "net": 28.26974699881229
+        },
+        {
+          "month": "2026-03",
+          "fills": 16,
+          "net": -32.67813884596348
+        }
+      ]
+    },
+    {
+      "id": "u_quiet",
+      "signals": 292,
+      "trades": 292,
+      "winRate": 0.4006849315068493,
+      "net": -501.96758240230406,
+      "fees": 218.37471564235045,
+      "avgBps": -10.209351251504662,
+      "avgNotional": 1678.9673701643835,
+      "avgWin": 4.850785208021038,
+      "avgLoss": -6.111482581375953,
+      "maxDrawdown": 549.2399081611186,
+      "exTop5": -601.7845727120219,
+      "topDays": [
+        {
+          "day": "2024-08-08",
+          "net": 23.758463201556047
+        },
+        {
+          "day": "2024-08-06",
+          "net": 21.853634139380166
+        },
+        {
+          "day": "2024-09-24",
+          "net": 20.207810581702795
+        },
+        {
+          "day": "2025-09-08",
+          "net": 18.052959132818525
+        },
+        {
+          "day": "2025-12-26",
+          "net": 15.944123254234228
+        }
+      ],
+      "fillsPerDay": 0.6651480637813212,
+      "daysWithFill": 292,
+      "sessions": 439,
+      "dayShare": 0.6651480637813212,
+      "reasons": {
+        "sell": 278,
+        "stop": 14
+      },
+      "symbols": {
+        "AMD": 54,
+        "META": 70,
+        "NVDA": 17,
+        "AAPL": 25,
+        "AMZN": 25,
+        "TSLA": 37,
+        "GOOGL": 49,
+        "MSFT": 15
+      },
+      "medianSignalRvol": 0.44707434158588194,
+      "shockOverlap": 0.010273972602739725,
+      "pooledNet": -671.0827044139082,
+      "pooledTrades": 510,
+      "recentNet": -167.36411540888548,
+      "recentTrades": 113,
+      "positiveHalves": 0,
+      "screenFailures": [
+        "validation net is not positive",
+        "pooled net is not positive",
+        "recent net is not positive",
+        "fewer than 4 positive half-years",
+        "validation net without the five best days is not positive",
+        "average net basis points are not positive"
+      ],
+      "screenPass": false,
+      "adoptable": false,
+      "milestone": false,
+      "months": [
+        {
+          "month": "2024-07",
+          "fills": 16,
+          "net": -16.818879081841793
+        },
+        {
+          "month": "2024-08",
+          "fills": 21,
+          "net": -58.11339814297712
+        },
+        {
+          "month": "2024-09",
+          "fills": 15,
+          "net": -30.677215374307462
+        },
+        {
+          "month": "2024-10",
+          "fills": 13,
+          "net": -32.19907557015412
+        },
+        {
+          "month": "2024-11",
+          "fills": 14,
+          "net": -27.46078961354891
+        },
+        {
+          "month": "2024-12",
+          "fills": 14,
+          "net": -26.689105788810693
+        },
+        {
+          "month": "2025-01",
+          "fills": 10,
+          "net": -34.32988803686378
+        },
+        {
+          "month": "2025-02",
+          "fills": 13,
+          "net": -69.94454528344465
+        },
+        {
+          "month": "2025-03",
+          "fills": 15,
+          "net": -33.780051072562706
+        },
+        {
+          "month": "2025-04",
+          "fills": 15,
+          "net": 5.042297215664618
+        },
+        {
+          "month": "2025-05",
+          "fills": 17,
+          "net": 6.260851748895473
+        },
+        {
+          "month": "2025-06",
+          "fills": 16,
+          "net": -28.93054248303917
+        },
+        {
+          "month": "2025-07",
+          "fills": 14,
+          "net": -16.261713348905396
+        },
+        {
+          "month": "2025-08",
+          "fills": 18,
+          "net": -7.05085638986386
+        },
+        {
+          "month": "2025-09",
+          "fills": 9,
+          "net": 16.266450192888417
+        },
+        {
+          "month": "2025-10",
+          "fills": 14,
+          "net": -49.43273327003501
+        },
+        {
+          "month": "2025-11",
+          "fills": 12,
+          "net": -5.152692885740968
+        },
+        {
+          "month": "2025-12",
+          "fills": 18,
+          "net": -26.538078232496293
+        },
+        {
+          "month": "2026-01",
+          "fills": 3,
+          "net": -3.094869905756907
+        },
+        {
+          "month": "2026-02",
+          "fills": 11,
+          "net": -36.11657434573176
+        },
+        {
+          "month": "2026-03",
+          "fills": 14,
+          "net": -26.946172733698063
+        }
+      ]
+    }
+  ]
+}

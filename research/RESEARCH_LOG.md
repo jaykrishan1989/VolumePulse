@@ -1353,3 +1353,27 @@ Fading a −40 bp bar and buying a +40 bp bar both lose, and both trade almost e
 
 No book cleared the screen. The promotion gate was not run. Look 8 stays closed. Do not adopt `m_thrust` or `m_lasthour` because −6 bp is the smallest loss. Do not raise the 30 bp residual, the 40 bp bar, or the 15 bp impulse after seeing that the loose bands already trade almost every day and lose. Do not lower the half-of-sessions line. No order was placed.
 <!-- SESSION_EDGE_END -->
+
+<!-- VOLUME_EDGE_BEGIN -->
+## Why the price path has no gross edge, and what volume adds
+
+The losses above are not a cost problem. After 2 bp of slippage and before commission, the slot fade, the opening-range break, the same-day residual, a 40 bp bar in either direction, a VWAP discount, and the last half-hour are all negative. The hold was 15 minutes, 30 minutes, 60 minutes, or the flat. The clock ran from the open through 15:30. Changing the exit or the threshold inside that price path has not produced a positive gross result.
+
+Two facts sit under that. The eight names are one growth tape: the residual book put 255 of 431 fills in TSLA, AMD, and NVDA. A name that is "behind SPY" is usually that factor printing larger, and the next hour does not come back. Separately, a US$2,120 order is about a quarter of a basis point of square-root impact in these bars, so the ticket is not the flow the microstructure papers are about. The appear/disappear list is a pullback that has just turned up (`app/entry.py`). It is another price path. A dollar-volume floor on that list kept every spell. It was not run again.
+
+What the files do contain, and the price books did not use as the signal, is volume at the minute. `u_primary` buys the first bar from 10:00 to 14:00 whose volume is at least twice the prior 20 sessions of that same minute and whose own return is at least +10 bp (Blume, Easley, and O'Hara 1994; the intraday reading of Gervais, Kaniel, and Mingelgrin 2001). The multiple is 2.0, not the rejected 1.2 opening-range filter. The 10 bp assigns a direction. It is not the rejected 40 bp shock. One full ticket, 30 minutes, 100 bp disaster stop. `u_fade` is Campbell, Grossman, and Wang (1993) on the same clock: twice the usual volume and a bar down at least 10 bp. `u_quiet` is the control, a +10 bp bar on at most half the usual volume. Only `u_primary` may open the holdout. Earnings dates are not in the files and were not invented. `DATA_REQUEST.md` now says what to add, and why priority 1 is still the other tape this VM cannot score.
+
+| Book | Fills | /day | Days | Win | Net | bp | Commission | After slip, before commission | Ex top 5 | Avg win | Avg loss | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `u_primary` | 423 | 0.96 | 423/439 | 38.8% | −$722 | −10.3 | $316 | −$406 | −$939 | $8.59 | −$8.23 | $800 |
+| `u_fade` | 405 | 0.92 | 405/439 | 39.8% | −$580 | −8.3 | $302 | −$278 | −$771 | $8.67 | −$8.10 | $689 |
+| `u_quiet` | 292 | 0.67 | 292/439 | 40.1% | −$502 | −10.2 | $218 | −$284 | −$602 | $4.85 | −$6.11 | $549 |
+
+`u_primary` exits: 367 at the 30-minute time stop, 55 at the disaster stop, one at the flat. Median signal is 2.41 times the usual minute and +29 bp. 31% of those bars were also a +40 bp shock. The other 69% were not, so this is not a rerun of `m_thrust`. Average ticket $1,644. Pooled −$1,169 on 776 trades. Recent, from 2025-07-01, −$382 on 179. No half-year is positive. Six of 21 validation months are positive. The five largest days are 2024-11-08 $56, 2025-04-02 $44, 2024-07-03 $42, 2025-01-27 $39, 2024-11-06 $36. Symbols: META 71, AMD 68, GOOGL 53, AAPL 52, MSFT 51, AMZN 48, TSLA 43, NVDA 37. `u_fade`: 352 time, 50 stop, 3 flat. Median signal 2.46 times and −31 bp. 35% were a −40 bp bar. Pooled −$887 on 747. Recent −$145 on 172. `u_quiet`: 278 time, 14 stop. Median volume 0.45 times. Pooled −$671 on 510. Recent −$167 on 113. Every book fails the screen. Decision: rejected.
+
+Reading. Twice the usual volume is not a rare event on these names. A bar at least twice its own minute and up 10 bp exists on 96.8% of the 439 sessions, and the down version on 92.3%. The rule takes the first such bar, so the median multiple is 2.41 rather than a news spike. The next 30 minutes lose about $406 before commission, about 6 bp on a $1,644 ticket, and the win rate is 38.8%. The average win is slightly larger than the average loss. The hit rate is what makes the book negative, and commission then takes $316. Fading the heavy down bar loses $278 before commission. The quiet up bar loses $284 before commission and wins 40% of the time. Volume, high or low, does not sign the next half hour here.
+
+The symbol mix is wider than the residual book. META, AMD, GOOGL, AAPL, and MSFT each have 50 or more primary fills. The loss is not an artifact of holding only TSLA and NVDA. Removing the five best days deepens every loss. 423 trades is not a small sample of the sign.
+
+No book cleared the screen. The promotion gate was not run. Look 8 stays closed. Do not adopt `u_fade` because −8.3 bp is the smallest loss. Do not raise 2.0, and do not lower the 10 bp direction or the half-of-sessions line, after seeing that 2.0 already fires on almost every day. The other tape and the earnings calendar are still absent. Their P&L was not guessed. No order was placed.
+<!-- VOLUME_EDGE_END -->

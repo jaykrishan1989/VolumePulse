@@ -179,5 +179,13 @@ Validation: one full ticket lost $383 on 433 fills (1.00 a day), win 52.4%, −4
 Validation, 439 SPY sessions: the residual book lost $681 on 431 fills (0.98 a day), win 43.6%, −9.5 bp, and −$896 without the five best days. After slippage and before commission it was −$359. The impulse slice lost $358, −11.2 bp, on 176 fills. The down-bar fade lost $746. The up-bar lost $479, −6.2 bp. The VWAP discount lost $659. The last half-hour lost $479, −6.9 bp, with the 100 bp stop binding 21 times. The median day's worst residual was −178 bp, so the 30 bp band was not a rare dislocation. ACTIVE stays v0.1. No order was placed.
 <!-- SESSION_EDGE_CHANGELOG_END -->
 
+<!-- VOLUME_EDGE_CHANGELOG_BEGIN -->
+## Same-minute volume — 2026-10-17 — no checkpoint
+
+Price-path rules on the eight names are negative before commission, across 15 to 60 minutes and the flat. `backtest/volume_edge.py` freezes the missing field: a bar from 10:00 to 14:00 whose volume is at least twice the prior 20 sessions of that same minute, and up at least 10 bp. One full ticket, 30 minutes. The fade of a heavy down bar and a quiet up bar are controls. The holdout was not loaded. Earnings dates were not invented.
+
+Validation, 439 SPY sessions: the loud up bar lost $722 on 423 fills (0.96 a day), win 38.8%, −10.3 bp, and −$939 without the five best days. After slippage and before commission it was −$406. The fade lost $580, −8.3 bp. The quiet bar lost $502, −10.2 bp. A 2× up bar exists on 96.8% of sessions, so the multiple is not a rare-event filter. ACTIVE stays v0.1. No order was placed.
+<!-- VOLUME_EDGE_CHANGELOG_END -->
+
 
 
