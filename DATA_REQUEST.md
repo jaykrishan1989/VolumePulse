@@ -90,3 +90,26 @@ Same columns as the files already there:
 ## After the upload
 
 The next fit stays on validation dollars after 2 bp, then one holdout read of the single winner. That read is not authorized by this file. `models/ACTIVE` stays `v0.1`.
+
+## Why the eight names still have no intraday edge
+
+Measured on the files already on disk, the next 15, 30, and 60 minutes, and the hold to 15:55, do not pay even before commission. A slot fade, an opening-range break, a same-day residual versus SPY, a 40 bp bar in either direction, a VWAP discount, and the last half-hour were all negative after 2 bp of slippage. The fills concentrate in TSLA, AMD, and NVDA. They are one growth tape, so a "dislocated" name is usually the same factor with a larger print. A US$2,120 order is about a quarter of a basis point of square-root impact in these bars. The market is not moving because of this ticket.
+
+Priority 1 is the test this VM cannot run. Banks, energy, health, and staples are a different tape from that growth factor. Until those files are in `data/raw5`, a loss on the eight names is not a result about those sectors, and it is not a reason to invent their prices. Do not add another chip name in their place. AVGO and MU stay out for the reason already given.
+
+## Earnings calendar, still absent
+
+Do not guess announcement dates, and do not pull them with `scripts/fetch_history.py`. The bar fetcher does not know them. A wrong date is worse than a missing file.
+
+Add a separate file, `data/events/earnings.csv`, with one row per announcement the company had published before that session:
+
+| column | meaning |
+| --- | --- |
+| symbol | the eight names on disk, plus the twelve priority-1 names |
+| session | the first regular session the news applies to, `YYYY-MM-DD` |
+| when | `BMO` if the news was out before 09:30 ET, `AMC` if it was after the prior close |
+| source | where the timestamp came from |
+
+Cover 2018-01-02 through 2026-09-25. The timestamp has to be the one known before the entry, not a later correction.
+
+This is not a daily book on eight names. Four announcements a year is about 32 sessions, which fails the near-daily requirement by itself. The calendar is useful in two ways once it exists: sit those sessions out of a rule that was not built for a gap, and, on the wider universe, test whether announcement volume has a drift the ordinary price path does not (Bernard and Thomas, Journal of Accounting and Economics, 1989). FOMC, CPI, and payroll dates are already coded and are just as sparse. They were not fetched because they are not missing.
