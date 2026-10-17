@@ -1377,3 +1377,24 @@ The symbol mix is wider than the residual book. META, AMD, GOOGL, AAPL, and MSFT
 
 No book cleared the screen. The promotion gate was not run. Look 8 stays closed. Do not adopt `u_fade` because −8.3 bp is the smallest loss. Do not raise 2.0, and do not lower the 10 bp direction or the half-of-sessions line, after seeing that 2.0 already fires on almost every day. The other tape and the earnings calendar are still absent. Their P&L was not guessed. No order was placed.
 <!-- VOLUME_EDGE_END -->
+
+<!-- ECONOMIC_BEGIN -->
+## Mechanisms, and the one clock the bars can score
+
+`research/ECONOMIC_HYPOTHESES.md` was committed before this fill. It lists eight mechanisms with the counterparty and the size against an 8 bp full-ticket round trip. Three of them are already on file and were not rerun. Gao, Han, Li, and Zhou (Journal of Financial Economics, 2018) is `h1_spy`: the paper's predictor is the prior close to 10:00, and the no-stop row was −$605, −8.6 bp, on 466 SPY trades. Their timing strategy earned 6.67 percent a year in 1993–2013 by going long or short the last half-hour, about 2.6 bp a session, and this account can take only the long side and must be flat at 15:55. Lou, Polk, and Skouras (Journal of Financial Economics, 2019) is `h5_gap_down`. The overnight continuation cannot be held. The liquidity-provision premium (Nagel, Review of Financial Studies, 2012; Hendershott and Menkveld, Journal of Financial Economics, 2014) is earned by the passive quote. This account buys the next open and pays 2 bp. Those books were already negative before commission.
+
+Four mechanisms are not scored, and the reason is the data or the identification, not a skipped backtest. Closing imbalances, index additions, and dealer gamma need a signed feed. The request is in `DATA_REQUEST.md`. Earnings dates are the file already requested. The month-end payment cycle (Etula, Rinne, Suominen, and Vaittinen, Review of Financial Studies, 2020) is real, and its published labels are the T+3 settlement labels. Validation starts July 2024, after the move to T+1 on May 28, 2024. Scoring T−3 through T+3 here would be a stale calendar. Relabeling the days for T+1 would be a new theory. Neither was run.
+
+The one registered fill is Lucca and Moench (Journal of Finance, 2015). In their sample the S&P 500 rose 49 bp in the 24 hours before a scheduled FOMC statement. Their figure rises sharply on the morning of the announcement. This account cannot hold the overnight half. `e_fomc` buys SPY at the 9:30 open on a frozen statement day and sells the 13:55 open, before a 14:00 release. `e_morning` is the same clock on every other session. It is the comparison, not a strategy. Neither id is adoptable. No coefficient was estimated. CPI days and payroll days stay in the control, because their paper finds no pre-announcement drift on other macro releases.
+
+| Book | Fills | /day | Days | Win | Net | bp | Commission | After slip, before commission | Ex top 5 | Avg win | Avg loss | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `e_fomc` | 14 | 0.03 | 14/439 | 42.9% | −$23 | −7.9 | $11 | −$12 | −$37 | $2.44 | −$4.65 | $31 |
+| `e_morning` | 419 | 0.95 | 419/439 | 45.8% | −$631 | −9.5 | $311 | −$320 | −$863 | $6.90 | −$8.62 | $662 |
+
+`e_fomc` exits: all 14 at the 13:55 open. The 100 bp stop did not bind, so the cap is not the loss. Average ticket $1,858. After 2 bp a side and before commission the path is −3.8 bp. The best day, 2024-11-07, made $4. That is not 49 bp. Six of the fourteen days were up. Pooled, from 2023, −$42 on 26 statement days, −8.1 bp. Recent, from 2025-07-01, −$22 on 6. One of six half-years is positive. `e_morning`: 354 exited at 13:55 and 65 hit the stop. Average ticket $1,513. After slippage and before commission, −4.5 bp. Pooled −$843 on 779, −7.8 bp. Recent −$271 on 180. One of six half-years is positive. The five best control days are 2025-04-09 $112, 2025-04-11 $37, 2024-12-20 $32, 2024-08-06 $25, 2025-04-24 $25, and the book is negative with them in it.
+
+The pre-registered gap, statement mornings minus other mornings, is +1.6 bp after costs. Statement mornings lose less. They do not make money. 1.6 bp on 14 days does not clear an 8 bp ticket, and it does not open the holdout. The control already has 419 trades, which is the sample size the screen asks for, and it fails every money bar. A daily morning buy is not hiding in the control.
+
+Both books fail the screen. The promotion gate was not run. Look 8 stays closed. Do not move the exit to 15:50, do not drop the stop, and do not take CPI or payroll days out of the control after seeing a 1.6 bp gap. Do not score the T+3 month-end labels on this T+1 sample. No order was placed.
+<!-- ECONOMIC_END -->

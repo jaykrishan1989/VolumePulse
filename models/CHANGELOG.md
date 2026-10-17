@@ -187,5 +187,15 @@ Price-path rules on the eight names are negative before commission, across 15 to
 Validation, 439 SPY sessions: the loud up bar lost $722 on 423 fills (0.96 a day), win 38.8%, −10.3 bp, and −$939 without the five best days. After slippage and before commission it was −$406. The fade lost $580, −8.3 bp. The quiet bar lost $502, −10.2 bp. A 2× up bar exists on 96.8% of sessions, so the multiple is not a rare-event filter. ACTIVE stays v0.1. No order was placed.
 <!-- VOLUME_EDGE_CHANGELOG_END -->
 
+<!-- ECONOMIC_CHANGELOG_BEGIN -->
+## Economic mechanisms — 2026-10-17 — no checkpoint
+
+`research/ECONOMIC_HYPOTHESES.md` freezes eight mechanisms before the fill. Gao, the overnight-versus-intraday split, and the liquidity-provision premium were already scored and were not rerun. Closing imbalances, index lists, dealer gamma, and earnings dates are not on disk. The month-end payment cycle was not scored: its published days are a T+3 settlement clock, and this validation sample is T+1.
+
+`backtest/economic.py` scores the one clock the bars can identify. On a frozen FOMC statement day, buy SPY at the 9:30 open and sell the 13:55 open. The same clock on every other morning is the control, not a candidate. Costs are tiered IBKR commission and 2 bp. The holdout was not loaded.
+
+Validation, 439 SPY sessions: the 14 statement mornings lost $23, win 6 of 14, −7.9 bp, and −$12 before commission. The other 419 mornings lost $631, −9.5 bp, and −$320 before commission. The gap is +1.6 bp. The 49 bp in Lucca and Moench is the 24-hour window, and it is not in this morning. ACTIVE stays v0.1. No order was placed.
+<!-- ECONOMIC_CHANGELOG_END -->
+
 
 

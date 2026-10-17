@@ -124,3 +124,13 @@ On that filter the eight mechanisms sort as follows. Sections 1, 2, and 3 were t
 | `e_morning` | The same clock on every other session. The control. | No. A clock is not a candidate. |
 
 `ADOPTABLE` is empty. The holdout is not loaded. `ideas_tried()` stays 54. No threshold is fit on validation returns. The estimand is the average net basis-point gap between `e_fomc` and `e_morning`, together with the dollar result of `e_fomc` after tiered commission and 2 bp. The gap is a report. It is not a promotion rule. A positive gap on fourteen days does not lower the 80-trade bar, the half-of-sessions bar, or the published-net lock of $1,260.74.
+
+## Result, written after the fill
+
+Scored once, after the rules above were committed. Tiered IBKR commission and 2 bp. Validation is 439 SPY sessions from 2024-07-01 through 2026-03-31. The holdout was not loaded. The full table is `research/economic_summary.json` and the research log.
+
+`e_fomc` is 14 statement days, all exited at 13:55. The 100 bp stop did not bind. Win rate 6 of 14. Net −$23, −7.9 bp. After slippage and before commission, −$12, −3.8 bp. The best day, 2024-11-07, made $4. The 49 bp figure is not in this window. Pooled, 26 statement days from 2023, −$42, −8.1 bp.
+
+`e_morning` is the other 419 sessions. Net −$631, −9.5 bp, and −$320 of that is before commission. The pre-registered gap is +1.6 bp. Statement mornings lose less. They do not make money, and 1.6 bp does not clear an 8 bp ticket. The control has the sample size of a daily book and fails the money bars. It stays a control.
+
+No threshold moves. CPI and payroll dates stay in the control. The month-end clock stays unscored. Look 8 stays closed.
